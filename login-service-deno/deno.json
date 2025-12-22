@@ -1,0 +1,39 @@
+{
+  "name": "@mtp-target/login-service",
+  "version": "1.0.0",
+  "exports": "./start.ts",
+  "tasks": {
+    "start": "deno run --allow-net --allow-read --allow-write --allow-env --allow-ffi start.ts",
+    "start:sudo": "bash start-with-sudo.sh",
+    "dev": "deno run --allow-net --allow-read --allow-write --allow-env --allow-ffi --watch=./ start.ts",
+    "dev:sudo": "bash dev-with-sudo.sh",
+    "login": "deno run --allow-net --allow-read --allow-write --allow-env --allow-ffi --watch=./ login-only.ts",
+    "login:stable": "deno run --allow-net --allow-read --allow-write --allow-env --allow-ffi login-only.ts",
+    "http": "deno run --allow-net http-only.ts",
+    "setup": "deno run --allow-read --allow-write --allow-env --allow-ffi db-setup.ts",
+    "shard:online": "deno run --allow-read --allow-write --allow-env --allow-ffi set-shard-online.ts",
+    "check-db": "deno run --allow-read --allow-env --allow-ffi check-db.ts",
+    "update-password": "deno run --allow-read --allow-write --allow-env --allow-ffi update-password.ts",
+    "stop": "bash -c 'if [ \"$(uname)\" = \"Linux\" ]; then bash stop.sh; else powershell -ExecutionPolicy Bypass -File stop.ps1; fi'"
+  },
+  "imports": {
+    "@db/sqlite": "jsr:@db/sqlite@0.12"
+  },
+  "lint": {
+    "rules": {
+      "tags": ["recommended"]
+    }
+  },
+  "fmt": {
+    "useTabs": false,
+    "lineWidth": 120,
+    "indentWidth": 4,
+    "semiColons": true,
+    "singleQuote": false,
+    "proseWrap": "preserve"
+  },
+  "compilerOptions": {
+    "strict": true,
+    "lib": ["deno.window"]
+  }
+}
