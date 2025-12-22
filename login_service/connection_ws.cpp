@@ -364,7 +364,7 @@ static void cbWSShardChooseShard(CMessage &msgin, const std::string &serviceName
 
 	CLoginCookie lc;
 	lc.setFromString(cookie);
-	sendToClient(msgout, (TSockId)lc.getUserAddr());
+	sendToClient(msgout, reinterpret_cast<TSockId>((uintptr_t)lc.getUserAddr()));
 }
 
 static void cbScoreUpdate(CMessage &msgin, const std::string &serviceName, TServiceId sid)

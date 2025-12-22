@@ -75,6 +75,21 @@ static const uint32 EncryptedSize = 13;
 void sendToClient(CMessage &msgout, TSockId sockId)
 {
 	nlassert(ClientsServer != 0);
+
+	// DEBUG: Log the exact bytes being sent to client
+	nlinfo("=== SENDING MESSAGE TO CLIENT ===");
+	nlinfo("Message type: %s", msgout.getName().c_str());
+	nlinfo("Message length: %d bytes", msgout.length());
+	const uint8 *buffer = msgout.buffer();
+	for(uint32 i = 0; i < msgout.length(); i += 16) {
+		string hexLine;
+		for(uint32 j = 0; j < 16 && (i+j) < msgout.length(); j++) {
+			hexLine += toString("%02X ", buffer[i+j]);
+		}
+		nlinfo("  %04X: %s", i, hexLine.c_str());
+	}
+	nlinfo("=== END MESSAGE ===");
+
 	ClientsServer->send(msgout, sockId);
 }
 
@@ -245,7 +260,7 @@ static void cbClientVerifyLoginPassword(CMessage &msgin, TSockId from, CCallback
 		if(!reason.empty()) break;
 
 		CLoginCookie c;
-		c.set((uint32)from, rand(), uid);
+		c.set((uint32)(uintptr_t)from, rand(), uid);
 
 		reason = sqlQuery("update user set State='Authorized', Cookie='"+c.setToString()+"' where UId="+toString(uid), nbrow, row, result);
 		if(!reason.empty()) break;
@@ -314,7 +329,7 @@ static void cbClientChooseShard(CMessage &msgin, TSockId from, CCallbackNetBase 
 		{
 			CLoginCookie lc;
 			lc.setFromString(row[5]);
-			if(lc.getUserAddr() == (uint32)from)
+			if(lc.getUserAddr() == (uint32)(uintptr_t)from)
 			{
 				ok = true;
 				break;
@@ -434,7 +449,7 @@ static void cbClientDisconnection (TSockId from, void *arg)
 		if(!str.empty())
 		{
 			lc.setFromString(str);
-			if(lc.getUserAddr() == (uint32)from)
+			if(lc.getUserAddr() == (uint32)(uintptr_t)from)
 			{
 				// got it, if he is not in waiting state, it s not normal, remove all
 				if(row[4] != string("Waiting"))
