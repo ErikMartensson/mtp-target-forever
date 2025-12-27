@@ -184,7 +184,9 @@ bool luaLoad(lua_State * L, const string &filename)
 	int res = luaL_dofile(L, fn.c_str());
 	if(res > 0)
 	{
-		nlwarning("LUA: luaL_dofile(\"%s\") failed with code %d", filename.c_str(), res);
+		const char *msg = lua_tostring(L, -1);
+		if (msg == NULL) msg = "(error with no message)";
+		nlwarning("LUA: luaL_dofile(\"%s\") failed with code %d: %s", filename.c_str(), res, msg);
 		luaClose(L);
 		return false;
 	}
