@@ -292,7 +292,8 @@ static void nearCallback(void *data, dGeomID o1, dGeomID o2)
 
 				//SKEET_WARNING
 				//entity->CurrentScore = module->score();
-				entity->Accel = module->accel();
+				if(module->accel() > 0)  // Only override if module explicitly sets accel
+					entity->Accel = module->accel();
 				if(module->friction()>0)
 					entity->Friction = module->friction();
 				
