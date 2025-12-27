@@ -195,10 +195,24 @@ void CEntity::update()
 //	nlinfo("set matrix for %hu", (uint16)id());
 				
 	if(!OpenMesh.empty())
-		OpenMesh.setMatrix(interpolator().getMatrix());
+	{
+		CMatrix m2;
+		m2.identity();
+		m2.setScale(CVector(2*GScale, 2*GScale, 2*GScale));
+		CMatrix m3;
+		m3.setMulMatrix(interpolator().getMatrix(), m2);
+		OpenMesh.setMatrix(m3);
+	}
 
 	if(!CloseMesh.empty())
-		CloseMesh.setMatrix(interpolator().getMatrix());
+	{
+		CMatrix m2;
+		m2.identity();
+		m2.setScale(CVector(2*GScale, 2*GScale, 2*GScale));
+		CMatrix m3;
+		m3.setMulMatrix(interpolator().getMatrix(), m2);
+		CloseMesh.setMatrix(m3);
+	}
 
 	{
 /*ace todo		if (OnWater && WaterModel)
