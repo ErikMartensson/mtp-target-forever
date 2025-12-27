@@ -103,7 +103,8 @@ void CRunningSessionState::update()
 		{
 
 			CLuaEngine::getInstance().levelEndSession();
-			CLuaEngine::getInstance().release();
+			// Note: Don't release Lua engine here - it will be released in CLevel destructor
+			// Releasing it here causes double-free when level transitions (crash after few sessions)
 			CEntityManager::getInstance().checkAfkClient();//kick away client
 
 			nlinfo("compute best tit");
