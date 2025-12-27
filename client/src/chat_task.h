@@ -51,6 +51,8 @@ public:
 	void	addLine(const std::string &text);
 	void	addToInput(const std::string &text);
 
+	bool	isChatActive() const { return chatActive; }
+
 private:
 	int chatLineCount;
 	bool logChat;

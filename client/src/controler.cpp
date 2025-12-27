@@ -33,6 +33,7 @@
 #include "network_task.h"
 #include "level_manager.h"
 #include "entity_manager.h"
+#include "chat_task.h"
 
 using namespace std;
 using namespace NLMISC;
@@ -134,31 +135,35 @@ void CControler::update()
 			nlinfo(">>right = %f",right.norm());
 		*/
 		if (!FollowEntity && !CEditorTask::getInstance().enable())
-		{			
+		{
 			CVector dv(0,0,0);
-			if (C3DTask::getInstance().kbDown(KeyUP))
+			// Don't process arrow keys when chat is active
+			if (!CChatTask::getInstance().isChatActive())
 			{
-				dv.y += 1.0f;
-			}
-			if (C3DTask::getInstance().kbDown(KeyDOWN))
-			{
-				dv.y -= 1.0f;
-			}
-			if (C3DTask::getInstance().kbDown(KeyLEFT))
-			{
-				dv.x -= 1.0f;
-			}
-			if (C3DTask::getInstance().kbDown(KeyRIGHT))
-			{
-				dv.x += 1.0f;
-			}
-			if (C3DTask::getInstance().kbDown(KeyPRIOR))
-			{
-				dv.z += 1.0f;
-			}
-			if (C3DTask::getInstance().kbDown(KeyNEXT))
-			{
-				dv.z -= 1.0f;
+				if (C3DTask::getInstance().kbDown(KeyUP))
+				{
+					dv.y += 1.0f;
+				}
+				if (C3DTask::getInstance().kbDown(KeyDOWN))
+				{
+					dv.y -= 1.0f;
+				}
+				if (C3DTask::getInstance().kbDown(KeyLEFT))
+				{
+					dv.x -= 1.0f;
+				}
+				if (C3DTask::getInstance().kbDown(KeyRIGHT))
+				{
+					dv.x += 1.0f;
+				}
+				if (C3DTask::getInstance().kbDown(KeyPRIOR))
+				{
+					dv.z += 1.0f;
+				}
+				if (C3DTask::getInstance().kbDown(KeyNEXT))
+				{
+					dv.z -= 1.0f;
+				}
 			}
 
 			dv /= 4.0f;
@@ -192,45 +197,49 @@ void CControler::update()
 		}
 		else
 		{
-			if(!CEntityManager::getInstance()[EId].openClose())
+			// Don't process arrow keys when chat is active
+			if (!CChatTask::getInstance().isChatActive())
 			{
-				/*
-				if (C3DTask::getInstance().kbDown(mtLEFT))
-					deltaRot += ROT_SPEED_CLOSE;
-				if (C3DTask::getInstance().kbDown(mtRIGHT))
-					deltaRot -= ROT_SPEED_CLOSE;
-				*/
-				if(speed>1.0f)
+				if(!CEntityManager::getInstance()[EId].openClose())
 				{
-					if (C3DTask::getInstance().kbDown(KeyLEFT))
-						deltaAccel -= right * speed * speedRatio;
-					if (C3DTask::getInstance().kbDown(KeyRIGHT))
-						deltaAccel += right * speed * speedRatio;	
+					/*
+					if (C3DTask::getInstance().kbDown(mtLEFT))
+						deltaRot += ROT_SPEED_CLOSE;
+					if (C3DTask::getInstance().kbDown(mtRIGHT))
+						deltaRot -= ROT_SPEED_CLOSE;
+					*/
+					if(speed>1.0f)
+					{
+						if (C3DTask::getInstance().kbDown(KeyLEFT))
+							deltaAccel -= right * speed * speedRatio;
+						if (C3DTask::getInstance().kbDown(KeyRIGHT))
+							deltaAccel += right * speed * speedRatio;
+					}
+					else
+					{
+						if (C3DTask::getInstance().kbDown(KeyLEFT))
+							deltaAccel -= right ;
+						if (C3DTask::getInstance().kbDown(KeyRIGHT))
+							deltaAccel += right ;
+					}
+
+					if (C3DTask::getInstance().kbDown(KeyUP))
+						deltaAccel += lookAt;
+					if (C3DTask::getInstance().kbDown(KeyDOWN))
+						deltaAccel -= lookAt;
 				}
 				else
 				{
+					if (C3DTask::getInstance().kbDown(KeyUP))
+						deltaPique -= PIQUE_SPEED;
+					if (C3DTask::getInstance().kbDown(KeyDOWN))
+						deltaPique += PIQUE_SPEED;
+
 					if (C3DTask::getInstance().kbDown(KeyLEFT))
-						deltaAccel -= right ;
+						deltaRot += ROT_SPEED_OPEN;
 					if (C3DTask::getInstance().kbDown(KeyRIGHT))
-						deltaAccel += right ;					
+						deltaRot -= ROT_SPEED_OPEN;
 				}
-
-				if (C3DTask::getInstance().kbDown(KeyUP))
-					deltaAccel += lookAt;
-				if (C3DTask::getInstance().kbDown(KeyDOWN))
-					deltaAccel -= lookAt;
-			}
-			else
-			{
-				if (C3DTask::getInstance().kbDown(KeyUP))
-					deltaPique -= PIQUE_SPEED;
-				if (C3DTask::getInstance().kbDown(KeyDOWN))
-					deltaPique += PIQUE_SPEED;
-
-				if (C3DTask::getInstance().kbDown(KeyLEFT))
-					deltaRot += ROT_SPEED_OPEN;
-				if (C3DTask::getInstance().kbDown(KeyRIGHT))
-					deltaRot -= ROT_SPEED_OPEN;
 			}
 		}
 		
