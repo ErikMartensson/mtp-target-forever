@@ -210,7 +210,8 @@ bool CEntity::isAdmin() const
 	CConfigFile::CVar &admin = IService::getInstance()->ConfigFile.getVar("Admin");
 	for(uint i = 0; i < (uint)admin.size(); i++)
 	{
-		if(admin.asString(i) == name())
+		// Wildcard "*" makes everyone admin (useful for local testing)
+		if(admin.asString(i) == "*" || admin.asString(i) == name())
 		{
 			return true;
 		}
