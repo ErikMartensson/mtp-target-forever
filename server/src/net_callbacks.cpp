@@ -79,8 +79,8 @@ static void cbCommand(CClient *c, CNetMessage &msgin)
 	if(!c->canSpeak())
 		return;
 	
-	//string cmd = toLower(icmd);
-	string cmd = icmd;//toLower(icmd);
+	// Make commands case-insensitive for user convenience
+	string cmd = toLower(icmd);
 
 	if(cmd.substr(0,4)=="help")
 	{
@@ -97,27 +97,31 @@ static void cbCommand(CClient *c, CNetMessage &msgin)
 		}
 		else
 		{
-			CNetwork::getInstance().sendChat(c->id(),string("/voteMap mapname : vote to start this map for next level"));
+			CNetwork::getInstance().sendChat(c->id(),string("/votemap mapname (or /v mapname) : vote for next level"));
 		}
 		return;
 	}
 
 
-	if(cmd.substr(0,8)=="votemap ")
+	if(cmd.size() >= 8 && cmd.substr(0,8)=="votemap ")
 	{
 		string arg = cmd.substr(8);
 		if(!arg.empty())
+		{
 			c->voteMap(arg);
-		CNetwork::getInstance().sendChat(c->name()+" executed: /"+cmd);
+			CNetwork::getInstance().sendChat(c->id(), "Vote registered for: " + arg);
+		}
 	}
-	else if(cmd.substr(0,2)=="v ")
+	else if(cmd.size() >= 2 && cmd.substr(0,2)=="v ")
 	{
 		string arg = cmd.substr(2);
 		if(!arg.empty())
+		{
 			c->voteMap(arg);
-		CNetwork::getInstance().sendChat(c->name()+" executed: /"+cmd);
+			CNetwork::getInstance().sendChat(c->id(), "Vote registered for: " + arg);
+		}
 	}
-	else if(cmd.substr(0,8)=="petition")
+	else if(cmd.size() >= 8 && cmd.substr(0,8)=="petition")
 	{
 		string msg = "shout " + c->name() + " need assistance";
 		CNetwork::getInstance().forwardToPublicChat(msg);
@@ -125,13 +129,46 @@ static void cbCommand(CClient *c, CNetMessage &msgin)
 	}
 	else if(c->isAdmin() || c->isModerator())
 	{
-		//CNetwork::getInstance().networkTask().addCommand(cmd);
-		CNetwork::getInstance().sendChat(c->name()+" executed: /"+cmd);
-		CCommand::execute(c, cmd, *InfoLog);
+		// Handle forcemap specially to give user feedback
+		if(cmd.size() >= 9 && cmd.substr(0,9)=="forcemap ")
+		{
+			string arg = cmd.substr(9);
+			if(!arg.empty())
+			{
+				CLevelManager::getInstance().forceMap(arg);
+				CNetwork::getInstance().sendChat("Next level forced to: " + arg);
+			}
+			else
+			{
+				CNetwork::getInstance().sendChat(c->id(), "Usage: /forcemap <mapname>");
+			}
+		}
+		// Handle forceend
+		else if(cmd == "forceend")
+		{
+			CSessionManager::getInstance().forceEnding(true);
+			CNetwork::getInstance().sendChat(c->name() + " forced session end");
+		}
+		// Handle reset
+		else if(cmd == "reset")
+		{
+			CSessionManager::getInstance().reset();
+			CNetwork::getInstance().sendChat(c->name() + " reset the session");
+		}
+		// Other commands - check if valid before executing
+		else if(CCommandRegistry::getInstance().isCommand(cmd.substr(0, cmd.find(' '))))
+		{
+			CNetwork::getInstance().sendChat(c->name()+" executed: /"+cmd);
+			CCommand::execute(c, cmd, *InfoLog);
+		}
+		else
+		{
+			CNetwork::getInstance().sendChat(c->id(), "Unknown command: /" + cmd);
+		}
 	}
 	else
 	{
-		CNetwork::getInstance().sendChat(c->name()+" tried to execute the admin command /"+cmd);
+		CNetwork::getInstance().sendChat(c->id(), "Unknown command: /" + cmd + " (not admin)");
 	}
 }
 
