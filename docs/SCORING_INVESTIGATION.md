@@ -1,4 +1,4 @@
-# Scoring System - FIXED (Dec 27, 2025)
+# Scoring System - FULLY FIXED (Dec 29, 2025)
 
 This document describes how the scoring system works and the fixes that were applied.
 
@@ -139,42 +139,18 @@ end
 - `level_run_away_server.lua` - Uses default collision
 - `level_snow_funnel_server.lua` - Uses default collision
 
-### Still Using Wrong API (Need Conversion)
-These files still use `CEntity:collideWithModule()` or `CEntity:collideWithGate()` which won't work:
-- `level_bowls1_server.lua`
-- `level_city_paint_server.lua`
-- `level_darts_server.lua`
-- `level_extra_ball_server.lua`
-- `level_gates_server.lua`
-- `level_paint_server.lua`
-- `level_stairs_server.lua`
-- `level_sun_extra_ball_server.lua`
-- `level_team_server.lua`
+### All Server Scripts Converted (Dec 29, 2025) ✓
+- `level_bowls1_server.lua` - Distance-based scoring from center target
+- `level_city_paint_server.lua` - Claim buildings for points (team mode simplified)
+- `level_darts_server.lua` - Standard target scoring
+- `level_extra_ball_server.lua` - Accumulate score from targets
+- `level_gates_server.lua` - Pass through gates for points
+- `level_paint_server.lua` - Claim blocks for points (team mode simplified)
+- `level_stairs_server.lua` - 50 points per unique stair step
+- `level_sun_extra_ball_server.lua` - Pass through gates for points
+- `level_team_server.lua` - Standard scoring (team mode simplified)
 
-**Impact:** Levels using these scripts may not score correctly. However, if they fall back to `level_default_server.lua`, they will work.
-
-### To Fix a Server Script
-Convert from v1.5.19 API:
-```lua
--- WRONG (v1.5.19)
-function CEntity:collideWithModule(module)
-    self:setCurrentScore(module:getScore())
-end
-```
-
-To v1.2.2a API:
-```lua
--- CORRECT (v1.2.2a)
-function entitySceneCollideEvent(entity, module)
-    module:collide(entity)
-end
-
-function Module:collide(entity)
-    if entity:getIsOpen() == 0 and self:getScore() ~= 0 then
-        entity:setCurrentScore(self:getScore())
-    end
-end
-```
+**Note:** Team mode and advanced features (texture changes, respawn mechanics) are simplified due to v1.2.2a API limitations. Core scoring functionality works.
 
 ---
 
