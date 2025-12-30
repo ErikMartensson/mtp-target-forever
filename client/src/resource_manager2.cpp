@@ -381,46 +381,66 @@ void CResourceManager::loadChildren(const std::string &filename)
 		// need to get texture inside the shape
 		NL3D::registerSerial3d();
 
-		CShapeStream ss;
-		NLMISC::CIFile i(CPath::lookup(filename, false).c_str());
-		i.serial(ss);
-		i.close();
-
-		CMesh *m = (CMesh*)ss.getShapePointer();
-		uint nbm = m->getNbMaterial();
-		for(uint i = 0; i < nbm; i++)
+		try
 		{
-			CMaterial &mat = m->getMaterial(i);
-			for(uint j = 0; j < IDRV_MAT_MAXTEXTURES; j++)
+			string lookupPath = CPath::lookup(filename, false);
+			if(lookupPath.empty())
 			{
-				ITexture *t = mat.getTexture(j);
-				if(t)
+				nlwarning("loadChildren: File '%s' not found in search paths, skipping", filename.c_str());
+				return;
+			}
+
+			CShapeStream ss;
+			NLMISC::CIFile i(lookupPath.c_str());
+			i.serial(ss);
+			i.close();
+
+			CMesh *m = (CMesh*)ss.getShapePointer();
+			if(!m)
+			{
+				nlwarning("loadChildren: Invalid shape pointer for '%s', skipping", filename.c_str());
+				return;
+			}
+			uint nbm = m->getNbMaterial();
+			for(uint i = 0; i < nbm; i++)
+			{
+				CMaterial &mat = m->getMaterial(i);
+				for(uint j = 0; j < IDRV_MAT_MAXTEXTURES; j++)
 				{
-					CTextureFile *tf = dynamic_cast<CTextureFile *>(t);
-					if(tf)
+					ITexture *t = mat.getTexture(j);
+					if(t)
 					{
-						get(tf->getFileName());
-					}
-					else
-					{
-						CTextureMultiFile *tmf = dynamic_cast<CTextureMultiFile *>(t);
-						if(tmf)
+						CTextureFile *tf = dynamic_cast<CTextureFile *>(t);
+						if(tf)
 						{
-							for(uint t = 0; t < tmf->getNumFileName(); t++)
-								get(tmf->getFileName(t));
+							get(tf->getFileName());
+						}
+						else
+						{
+							CTextureMultiFile *tmf = dynamic_cast<CTextureMultiFile *>(t);
+							if(tmf)
+							{
+								for(uint t = 0; t < tmf->getNumFileName(); t++)
+									get(tmf->getFileName(t));
+							}
 						}
 					}
 				}
 			}
+		}
+		catch(const std::exception &e)
+		{
+			nlwarning("loadChildren: Exception while loading shape '%s': %s", filename.c_str(), e.what());
 		}
 	}
 	else if(ext == "ps")
 	{
 		// need to get texture inside the shape
 		NL3D::registerSerial3d();
-		
 
-		string fn = CFile::getFilename(filename);
+		try
+		{
+			string fn = CFile::getFilename(filename);
 		CShapeBank *bank = new CShapeBank;
 		string shapeCache("mtptShapeCache");
 		bank->addShapeCache(shapeCache);
@@ -433,22 +453,32 @@ void CResourceManager::loadChildren(const std::string &filename)
 		IShape *is = bank->getShape(fn);
 		//bank->load(filename)
 
-		CParticleSystemShape *ps = (CParticleSystemShape *)is;
-		
-		uint numTexture = ps->getNumCachedTextures();
-		nlinfo("loadchildren(%s) : num texture = %d",filename.c_str(),numTexture);
-		
-		for(uint i=0;i<numTexture;i++)
-		{
-			ITexture *tex = ps->getCachedTexture(i);
-			CTextureFile *utex = (CTextureFile *)tex;
-			nlinfo("loadchildren(%s) : texture = %s",filename.c_str(),utex->getFileName().c_str());
-			get(utex->getFileName());
+			CParticleSystemShape *ps = (CParticleSystemShape *)is;
+			if(!ps)
+			{
+				nlwarning("loadChildren: Invalid particle system shape for '%s', skipping", filename.c_str());
+				delete bank;
+				return;
+			}
+
+			uint numTexture = ps->getNumCachedTextures();
+			nlinfo("loadchildren(%s) : num texture = %d",filename.c_str(),numTexture);
+
+			for(uint i=0;i<numTexture;i++)
+			{
+				ITexture *tex = ps->getCachedTexture(i);
+				CTextureFile *utex = (CTextureFile *)tex;
+				nlinfo("loadchildren(%s) : texture = %s",filename.c_str(),utex->getFileName().c_str());
+				get(utex->getFileName());
+			}
+
+			bank->reset();
+			delete bank;
 		}
-		
-		bank->reset();
-		delete bank;
-		
+		catch(const std::exception &e)
+		{
+			nlwarning("loadChildren: Exception while loading particle system '%s': %s", filename.c_str(), e.what());
+		}
 	}
 }
 

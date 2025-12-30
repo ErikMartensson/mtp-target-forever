@@ -198,7 +198,7 @@ void CEntity::update()
 	{
 		CMatrix m2;
 		m2.identity();
-		m2.setScale(CVector(2*GScale, 2*GScale, 2*GScale));
+		m2.setScale(CVector(0.01f, 0.01f, 0.01f));
 		CMatrix m3;
 		m3.setMulMatrix(interpolator().getMatrix(), m2);
 		OpenMesh.setMatrix(m3);
@@ -208,7 +208,7 @@ void CEntity::update()
 	{
 		CMatrix m2;
 		m2.identity();
-		m2.setScale(CVector(2*GScale, 2*GScale, 2*GScale));
+		m2.setScale(CVector(0.01f, 0.01f, 0.01f));
 		CMatrix m3;
 		m3.setMulMatrix(interpolator().getMatrix(), m2);
 		CloseMesh.setMatrix(m3);
@@ -530,39 +530,59 @@ void CEntity::load3d()
 	if(CloseMesh.empty())
 	{
 		string res = CResourceManager::getInstance().get("entity_"+MeshName+"_close.shape");
-		CloseMesh = C3DTask::getInstance().scene().createInstance(res);
+		if(!res.empty())
+		{
+			CloseMesh = C3DTask::getInstance().scene().createInstance(res);
+		}
+		else
+		{
+			nlwarning("CEntity::load3d(): Failed to load close mesh '%s', entity will be invisible", ("entity_"+MeshName+"_close.shape").c_str());
+		}
 	}
-	for(uint i = 0; i < CloseMesh.getNumMaterials(); i++)
+	if(!CloseMesh.empty())
 	{
-		CloseMesh.getMaterial(i).setDiffuse(Color);
-		CloseMesh.getMaterial(i).setAmbient(Color);
-		if(!TextureFilename.empty())// && i == 0)
-			CloseMesh.getMaterial(i).setTextureFileName(TextureFilename);
+		for(uint i = 0; i < CloseMesh.getNumMaterials(); i++)
+		{
+			CloseMesh.getMaterial(i).setDiffuse(Color);
+			CloseMesh.getMaterial(i).setAmbient(Color);
+			if(!TextureFilename.empty())// && i == 0)
+				CloseMesh.getMaterial(i).setTextureFileName(TextureFilename);
+		}
+		if(OpenClose)
+			CloseMesh.hide();
+		else
+			CloseMesh.show();
+		CloseMesh.setTransformMode (UTransformable::DirectMatrix);
 	}
-	if(OpenClose)
-		CloseMesh.hide();
-	else
-		CloseMesh.show();
-	CloseMesh.setTransformMode (UTransformable::DirectMatrix);
 
 
 	if(OpenMesh.empty())
 	{
 		string res = CResourceManager::getInstance().get("entity_"+MeshName+"_open.shape");
-		OpenMesh = C3DTask::getInstance().scene().createInstance(res);
+		if(!res.empty())
+		{
+			OpenMesh = C3DTask::getInstance().scene().createInstance(res);
+		}
+		else
+		{
+			nlwarning("CEntity::load3d(): Failed to load open mesh '%s', entity will be invisible", ("entity_"+MeshName+"_open.shape").c_str());
+		}
 	}
-	for(uint i = 0; i < OpenMesh.getNumMaterials(); i++)
+	if(!OpenMesh.empty())
 	{
-		OpenMesh.getMaterial(i).setDiffuse(Color);
-		OpenMesh.getMaterial(i).setAmbient(Color);
-		if(!TextureFilename.empty())// && i == 0)
-			OpenMesh.getMaterial(i).setTextureFileName(TextureFilename);
+		for(uint i = 0; i < OpenMesh.getNumMaterials(); i++)
+		{
+			OpenMesh.getMaterial(i).setDiffuse(Color);
+			OpenMesh.getMaterial(i).setAmbient(Color);
+			if(!TextureFilename.empty())// && i == 0)
+				OpenMesh.getMaterial(i).setTextureFileName(TextureFilename);
+		}
+		if(OpenClose)
+			OpenMesh.show();
+		else
+			OpenMesh.hide();
+		OpenMesh.setTransformMode (UTransformable::DirectMatrix);
 	}
-	if(OpenClose)
-		OpenMesh.show();
-	else
-		OpenMesh.hide();
-	OpenMesh.setTransformMode (UTransformable::DirectMatrix);
 
 
 	if(CConfigFileTask::getInstance().configFile().getVar("DisplayParticle").asInt() == 1)
@@ -574,22 +594,36 @@ void CEntity::load3d()
 		if(TraceParticleOpen.empty())
 		{
 			string res = CResourceManager::getInstance().get(TraceFilename+"_open.ps");
-			TraceParticleOpen.cast(C3DTask::getInstance().scene().createInstance(res));
-			TraceParticleOpen.setTransformMode (UTransformable::RotQuat);
-			TraceParticleOpen.setOrderingLayer(2);
-			TraceParticleOpen.activateEmitters(true);
-			TraceParticleOpen.show();
-			TraceParticleOpen.setUserColor(CRGBA(0,0,0,0));
+			if(!res.empty())
+			{
+				TraceParticleOpen.cast(C3DTask::getInstance().scene().createInstance(res));
+				TraceParticleOpen.setTransformMode (UTransformable::RotQuat);
+				TraceParticleOpen.setOrderingLayer(2);
+				TraceParticleOpen.activateEmitters(true);
+				TraceParticleOpen.show();
+				TraceParticleOpen.setUserColor(CRGBA(0,0,0,0));
+			}
+			else
+			{
+				nlwarning("CEntity::load3d(): Failed to load trace particle '%s'", (TraceFilename+"_open.ps").c_str());
+			}
 		}
 		if(TraceParticleClose.empty())
 		{
 			string res = CResourceManager::getInstance().get(TraceFilename+"_close.ps");
-			TraceParticleClose.cast(C3DTask::getInstance().scene().createInstance(res));
-			TraceParticleClose.setTransformMode (UTransformable::RotQuat);
-			TraceParticleClose.setOrderingLayer(2);
-			TraceParticleClose.activateEmitters(true);
-			TraceParticleClose.show();
-			TraceParticleClose.setUserColor(CRGBA(0,0,0,0));
+			if(!res.empty())
+			{
+				TraceParticleClose.cast(C3DTask::getInstance().scene().createInstance(res));
+				TraceParticleClose.setTransformMode (UTransformable::RotQuat);
+				TraceParticleClose.setOrderingLayer(2);
+				TraceParticleClose.activateEmitters(true);
+				TraceParticleClose.show();
+				TraceParticleClose.setUserColor(CRGBA(0,0,0,0));
+			}
+			else
+			{
+				nlwarning("CEntity::load3d(): Failed to load trace particle '%s'", (TraceFilename+"_close.ps").c_str());
+			}
 		}
 		ParticuleOpenActivated = OpenClose ? 1:0;
 		ParticuleCloseActivated = OpenClose ? 0:1;
@@ -598,12 +632,19 @@ void CEntity::load3d()
 	if(ImpactParticle.empty() && CConfigFileTask::getInstance().configFile().getVar("DisplayParticle").asInt() == 1)
 	{
 		string res = CResourceManager::getInstance().get("impact.ps");
-		ImpactParticle.cast(C3DTask::getInstance().scene().createInstance(res));
-		ImpactParticle.setTransformMode (UTransformable::RotQuat);
-		ImpactParticle.setOrderingLayer(2);
-		ImpactParticle.activateEmitters(false);
-		ImpactParticle.hide();
-		//ImpactParticle.setScale(1,1,1);
+		if(!res.empty())
+		{
+			ImpactParticle.cast(C3DTask::getInstance().scene().createInstance(res));
+			ImpactParticle.setTransformMode (UTransformable::RotQuat);
+			ImpactParticle.setOrderingLayer(2);
+			ImpactParticle.activateEmitters(false);
+			ImpactParticle.hide();
+			//ImpactParticle.setScale(1,1,1);
+		}
+		else
+		{
+			nlwarning("CEntity::load3d(): Failed to load impact particle 'impact.ps'");
+		}
 	}
 
 }

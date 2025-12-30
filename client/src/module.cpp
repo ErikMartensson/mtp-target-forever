@@ -101,22 +101,32 @@ void CModule::init(const string &name, const std::string &shapeName, uint8 id, c
 //	loadMesh(ShapeName, Vertices, Normals, Indices,false);
 	
 	ShapeName = CResourceManager::getInstance().get(shapeName+".shape");
-	NbFaces = loadMesh(ShapeName, Vertices, Normals, Indices, AutoEdges);
-
-	Mesh = C3DTask::getInstance().scene().createInstance (ShapeName);
-	if (Mesh.empty())
+	if(!ShapeName.empty())
 	{
-		nlwarning ("Can't load '%s.shape'", Name.c_str());
+		NbFaces = loadMesh(ShapeName, Vertices, Normals, Indices, AutoEdges);
+
+		Mesh = C3DTask::getInstance().scene().createInstance (ShapeName);
+		if (Mesh.empty())
+		{
+			nlwarning ("Can't load '%s.shape'", Name.c_str());
+		}
+		else
+		{
+			Mesh.setTransformMode(UTransformable::RotQuat);
+			Mesh.setRotQuat(CQuat(rotation));
+			Mesh.setPos(position);
+			CVector oldScale = Mesh.getScale();
+			oldScale.x *= scale.x;
+			oldScale.y *= scale.y;
+			oldScale.z *= scale.z;
+			Mesh.setScale(oldScale);
+			CMatrix mmatrix = mesh().getMatrix();
+		}
 	}
-	Mesh.setTransformMode(UTransformable::RotQuat);
-	Mesh.setRotQuat(CQuat(rotation));
-	Mesh.setPos(position);
-	CVector oldScale = Mesh.getScale();
-	oldScale.x *= scale.x;
-	oldScale.y *= scale.y;
-	oldScale.z *= scale.z;
-	Mesh.setScale(oldScale);
-	CMatrix mmatrix = mesh().getMatrix();
+	else
+	{
+		nlwarning("CModule::init(): Failed to get '%s.shape', module will have no visual/collision", shapeName.c_str());
+	}
 	Color.set(255,255,255);
 	this->color(color);
 	

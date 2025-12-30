@@ -92,16 +92,26 @@ void CStartPoint::init(const std::string &name, const std::string &shapeName, ui
 	CStartPointCommon::init(name, shapeName, id, position, rotation);
 
 	ShapeName = CResourceManager::getInstance().get("col_box.shape");
-	NbFaces = loadMesh(ShapeName, Vertices, Normals, Indices, AutoEdges);
-
-	Mesh = C3DTask::getInstance().scene().createInstance (ShapeName);
-	if (Mesh.empty())
+	if(!ShapeName.empty())
 	{
-		nlwarning ("Can't load '%s.shape'", Name.c_str());
+		NbFaces = loadMesh(ShapeName, Vertices, Normals, Indices, AutoEdges);
+
+		Mesh = C3DTask::getInstance().scene().createInstance (ShapeName);
+		if (Mesh.empty())
+		{
+			nlwarning ("Can't load '%s.shape'", Name.c_str());
+		}
+		else
+		{
+			Mesh.setTransformMode(UTransformable::RotQuat);
+			Mesh.setRotQuat(CQuat(rotation));
+			Mesh.setPos(position);
+		}
 	}
-	Mesh.setTransformMode(UTransformable::RotQuat);
-	Mesh.setRotQuat(CQuat(rotation));
-	Mesh.setPos(position);
+	else
+	{
+		nlwarning("CStartPoint::init(): Failed to get col_box.shape, start point will have no visual/collision");
+	}
 	
 
 

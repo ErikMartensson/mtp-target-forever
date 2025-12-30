@@ -33,17 +33,13 @@
 #include <nel/3d/u_cloud_scape.h>
 #include <nel/3d/u_text_context.h>
 
-#include <nel/3d/nelu.h>
 #include <nel/3d/scene.h>
-#include "time_task.h"
 #include <nel/3d/scene_user.h>
 #include <nel/3d/water_model.h>
 #include <nel/3d/water_shape.h>
 #include <nel/3d/texture_file.h>
-#include <nel/3d/texture_blend.h>
 #include <nel/3d/transform_shape.h>
-#include <nel/3d/water_height_map.h>
-#include <nel/3d/water_pool_manager.h>
+#include <nel/3d/transformable.h>
 
 #include "3d_task.h"
 #include "time_task.h"
@@ -89,8 +85,8 @@ CWaterTask::CWaterTask():ITask()
 	nelWaterScene   = 0;
 	WaterShape    = 0;
 	WaterModel    = 0;
-	WaterMesh     = 0;	
-	WaterInstance = 0;	
+	WaterMesh     = 0;
+	WaterInstance = 0;
 }
 
 void cbVar (CConfigFile::CVar &var)
@@ -100,7 +96,7 @@ void cbVar (CConfigFile::CVar &var)
 		nlwarning ("Can't set water parameter");
 		return;
 	}
-	
+
 	if (var.Name == "Map1Scale")
 		CWaterTask::getInstance().WaterShape->setHeightMapScale(0, NLMISC::CVector2f(var.asFloat(0), var.asFloat(1)));
 	else if (var.Name == "Map2Scale")
@@ -109,194 +105,225 @@ void cbVar (CConfigFile::CVar &var)
 		CWaterTask::getInstance().WaterShape->setHeightMapSpeed(0, NLMISC::CVector2f(var.asFloat(0), var.asFloat(1)));
 	else if (var.Name == "Map2Speed")
 		CWaterTask::getInstance().WaterShape->setHeightMapSpeed(1, NLMISC::CVector2f(var.asFloat(0), var.asFloat(1)));
-	else if (var.Name == "WaveHeightFactor")
-		CWaterTask::getInstance().WaterShape->setWaveHeightFactor(var.asFloat());
-	else if (var.Name == "WavesParams")
-	{
-		CWaterHeightMap &whm = GetWaterPoolManager().getPoolByID(0);
-		whm.setWaves (var.asFloat(0), var.asFloat(1), (uint)var.asFloat(2), var.asFloat(3) == 1.0f);
-	}
-	else if (var.Name == "WavesPropagation")
-	{
-		CWaterHeightMap &whm = GetWaterPoolManager().getPoolByID(0);
-		whm.setPropagationTime(var.asFloat());
-	}
 	else
-		nlstop;
+		nlwarning("Unknown water parameter: %s", var.Name.c_str());
 }
 
 
 void CWaterTask::init()
 {
-	nelWaterScene = C3DTask::getInstance().driver().createScene(false);
+	int displayWater = CConfigFileTask::getInstance().configFile().getVar("DisplayWater").asInt();
 
-	nelWaterScene->getCam().setPerspective(degToRad(CConfigFileTask::getInstance().configFile().getVar("Fov").asFloat()), 1.33f, 1.0f*GScale, 30000.0f*GScale);
-	nelWaterScene->getCam().setTransformMode (UTransformable::DirectMatrix);
-
-////
-	if(CConfigFileTask::getInstance().configFile().getVar("DisplayWater").asInt() == 2)
+	if(displayWater == 2)
 	{
-		string res;
-		static std::string shapeName("water_quad.shape");
-		CSceneUser *su = dynamic_cast<CSceneUser *>(&C3DTask::getInstance().scene());
-//		CSceneUser *su = dynamic_cast<CSceneUser *>(nelWaterScene);
-		CScene		&scene = su->getScene ();
+		// Advanced pixel shader water
+		nlinfo("CWaterTask: Starting advanced water init (DisplayWater=2)");
 
-		// load textures
-		res = CResourceManager::getInstance().get(envMap0Name());
-		ITexture *envMap1   = new CTextureFile(res);
-		res = CResourceManager::getInstance().get(envMap1Name());
-		ITexture *envMap2   = new CTextureFile(res);
-		
-		res = CResourceManager::getInstance().get(heightMap0Name());
-		ITexture *heightMap  = new CTextureFile(res);
-		res = CResourceManager::getInstance().get(heightMap1Name());
-		ITexture *heightMap2 = new CTextureFile(res);
+		try
+		{
+			// Ensure 3D model classes are registered (including CWaterModel)
+			nlinfo("CWaterTask: Calling CScene::registerBasics()...");
+			CScene::registerBasics();
 
-		res = CResourceManager::getInstance().get("colormap.tga");
-		ITexture *colorMap = new CTextureFile(res);
-		
-		WaterShape = new CWaterShape;
-		WaterShape->setEnvMap(0, envMap1);
-		WaterShape->setEnvMap(1, envMap2);
-		
-		WaterShape->setHeightMap(0, heightMap);
-		WaterShape->setHeightMap(1, heightMap2);
+			string res;
+			CSceneUser *su = dynamic_cast<CSceneUser *>(&C3DTask::getInstance().scene());
+			if(!su)
+			{
+				nlwarning("CWaterTask: Failed to get CSceneUser, falling back to basic water");
+				displayWater = 1;
+				goto basic_water;
+			}
+			CScene &scene = su->getScene();
+			nlinfo("CWaterTask: Got internal CScene at %p", &scene);
 
-		//WaterShape->setColorMap(colorMap);
+			// Load textures
+			nlinfo("CWaterTask: Loading water textures...");
+			res = CResourceManager::getInstance().get(envMap0Name());
+			nlinfo("CWaterTask: envMap0 path: %s", res.c_str());
+			ITexture *envMap1 = new CTextureFile(res);
 
-		WaterShape->setWaterPoolID(0);
+			res = CResourceManager::getInstance().get(envMap1Name());
+			nlinfo("CWaterTask: envMap1 path: %s", res.c_str());
+			ITexture *envMap2 = new CTextureFile(res);
 
-		CWaterHeightMap &whm = GetWaterPoolManager().getPoolByID(0);
-//		float res = whm.getUnitSize();
-//		res /= 10.0f;
-//		whm.setUnitSize(res);
-		whm.enableWaves ();
+			res = CResourceManager::getInstance().get(heightMap0Name());
+			nlinfo("CWaterTask: heightMap0 path: %s", res.c_str());
+			ITexture *heightMap = new CTextureFile(res);
 
-		float res2 = whm.getPropagationTime ();
+			res = CResourceManager::getInstance().get(heightMap1Name());
+			nlinfo("CWaterTask: heightMap1 path: %s", res.c_str());
+			ITexture *heightMap2 = new CTextureFile(res);
 
-		CConfigFileTask::getInstance().configFile().setCallback("Map1Scale", cbVar);
-		cbVar (CConfigFileTask::getInstance().configFile().getVar("Map1Scale"));
-		CConfigFileTask::getInstance().configFile().setCallback("Map2Scale", cbVar);
-		cbVar (CConfigFileTask::getInstance().configFile().getVar("Map2Scale"));
-		CConfigFileTask::getInstance().configFile().setCallback("Map1Speed", cbVar);
-		cbVar (CConfigFileTask::getInstance().configFile().getVar("Map1Speed"));
-		CConfigFileTask::getInstance().configFile().setCallback("Map2Speed", cbVar);
-		cbVar (CConfigFileTask::getInstance().configFile().getVar("Map2Speed"));
-		CConfigFileTask::getInstance().configFile().setCallback("WaveHeightFactor", cbVar);
-		cbVar (CConfigFileTask::getInstance().configFile().getVar("WaveHeightFactor"));
-		CConfigFileTask::getInstance().configFile().setCallback("WavesParams", cbVar);
-		cbVar (CConfigFileTask::getInstance().configFile().getVar("WavesParams"));
-		CConfigFileTask::getInstance().configFile().setCallback("WavesPropagation", cbVar);
-		cbVar (CConfigFileTask::getInstance().configFile().getVar("WavesPropagation"));
+			// Create water shape
+			nlinfo("CWaterTask: Creating CWaterShape...");
+			WaterShape = new CWaterShape;
 
-//		WaterShape->setHeightMapScale(0, NLMISC::CVector2f(0.08f/2, 0.072f/2));
-//		WaterShape->setHeightMapScale(1, NLMISC::CVector2f(0.1f/2, 0.091f/2));
-//		WaterShape->setHeightMapSpeed(0, NLMISC::CVector2f(0.06f, 0.051f));
-//		WaterShape->setHeightMapSpeed(1, NLMISC::CVector2f(-0.0623f, 0.085f));
-//		WaterShape->setWaveHeightFactor(3);
+			// Create water polygon FIRST (required before other settings)
+			nlinfo("CWaterTask: Creating water polygon...");
+			const float wqSize = 10000.0f;
+			CVector2f corners[] = {
+				CVector2f(-wqSize, wqSize), CVector2f(wqSize, wqSize),
+				CVector2f(wqSize, -wqSize), CVector2f(-wqSize, -wqSize)
+			};
+			CPolygon2D waterPoly;
+			waterPoly.Vertices.resize(4);
+			copy(corners, corners + 4, waterPoly.Vertices.begin());
+			WaterShape->setShape(waterPoly);
 
-		const float wqSize = 10000.0f;
-		CVector2f corners[] =	{ CVector2f(-wqSize, wqSize), CVector2f(wqSize, wqSize),
-								  CVector2f(wqSize, -wqSize), CVector2f(-wqSize, -wqSize)
-								};
-		CPolygon2D waterPoly;
-		waterPoly.Vertices.resize(4);
-		std::copy(corners, corners + 4, waterPoly.Vertices.begin());
-		WaterShape->setShape(waterPoly);
+			nlinfo("CWaterTask: Setting env maps...");
+			WaterShape->setEnvMap(0, envMap1);
+			WaterShape->setEnvMap(1, envMap2);
 
-		scene.getShapeBank()->add(shapeName, WaterShape);
+			nlinfo("CWaterTask: Setting height maps...");
+			WaterShape->setHeightMap(0, heightMap);
+			WaterShape->setHeightMap(1, heightMap2);
 
-		WaterInstance = scene.createInstance(shapeName);
-		WaterModel = NLMISC::safe_cast<CWaterModel *>(WaterInstance);
-		WaterModel->setPos(0.0f,0.0f,1.0f*GScale);
+			nlinfo("CWaterTask: Setting water pool ID...");
+			WaterShape->setWaterPoolID(0);
 
-		//	CWaterHeightMap &whm = GetWaterPoolManager().getPoolByID(0);
-		//	whm.enableWaves ();
-		//	whm.setWaves (3.0f, 1.0f, 2.0f, false);
+			// Setup config callbacks for wave parameters
+			nlinfo("CWaterTask: Setting up wave parameters...");
+			CConfigFileTask::getInstance().configFile().setCallback("Map1Scale", cbVar);
+			cbVar(CConfigFileTask::getInstance().configFile().getVar("Map1Scale"));
+			CConfigFileTask::getInstance().configFile().setCallback("Map2Scale", cbVar);
+			cbVar(CConfigFileTask::getInstance().configFile().getVar("Map2Scale"));
+			CConfigFileTask::getInstance().configFile().setCallback("Map1Speed", cbVar);
+			cbVar(CConfigFileTask::getInstance().configFile().getVar("Map1Speed"));
+			CConfigFileTask::getInstance().configFile().setCallback("Map2Speed", cbVar);
+			cbVar(CConfigFileTask::getInstance().configFile().getVar("Map2Speed"));
+
+			// Use shape bank approach like v1.5.19 code
+			static string shapeName("water_quad_dynamic.shape");
+			nlinfo("CWaterTask: Adding shape to bank as '%s'...", shapeName.c_str());
+			scene.getShapeBank()->add(shapeName, WaterShape);
+
+			nlinfo("CWaterTask: Creating instance from shape bank...");
+			WaterInstance = scene.createInstance(shapeName);
+
+			if(!WaterInstance)
+			{
+				nlwarning("CWaterTask: createInstance returned null!");
+				WaterShape = 0; // Don't delete, shape bank owns it now
+				goto basic_water;
+			}
+			nlinfo("CWaterTask: createInstance returned %p", WaterInstance);
+
+			nlinfo("CWaterTask: Casting to CWaterModel...");
+			WaterModel = NLMISC::safe_cast<CWaterModel *>(WaterInstance);
+			if(!WaterModel)
+			{
+				nlwarning("CWaterTask: Failed to cast to CWaterModel!");
+				scene.deleteInstance(WaterInstance);
+				WaterInstance = 0;
+				WaterShape = 0;
+				goto basic_water;
+			}
+
+			nlinfo("CWaterTask: Setting position...");
+			WaterModel->setPos(0.0f, 0.0f, 1.0f * GScale);
+
+			nlinfo("CWaterTask: Advanced water init complete!");
+			return;
+		}
+		catch(const std::exception &e)
+		{
+			nlwarning("CWaterTask: Advanced water init failed: %s", e.what());
+			nlwarning("CWaterTask: Falling back to basic water");
+			if(WaterShape) { delete WaterShape; WaterShape = 0; }
+			WaterInstance = 0;
+			WaterModel = 0;
+			displayWater = 1;
+		}
+		catch(...)
+		{
+			nlwarning("CWaterTask: Advanced water init failed with unknown exception");
+			nlwarning("CWaterTask: Falling back to basic water");
+			if(WaterShape) { delete WaterShape; WaterShape = 0; }
+			WaterInstance = 0;
+			WaterModel = 0;
+			displayWater = 1;
+		}
 	}
-	else if(CConfigFileTask::getInstance().configFile().getVar("DisplayWater").asInt() == 1)
+
+basic_water:
+	if(displayWater == 1)
 	{
+		// Basic water using pre-made shape
+		nlinfo("CWaterTask: Using basic water (DisplayWater=1)");
 		string res;
 		res = CResourceManager::getInstance().get("water_light.shape");
-		WaterMesh = C3DTask::getInstance().scene().createInstance(res);
-		WaterMesh.setPos(0.0f,0.0f,1.0f*GScale);
+		if(!res.empty())
+		{
+			WaterMesh = C3DTask::getInstance().scene().createInstance(res);
+			if(!WaterMesh.empty())
+			{
+				WaterMesh.setPos(0.0f, 0.0f, 1.0f * GScale);
+				nlinfo("CWaterTask: Basic water init complete!");
+			}
+			else
+			{
+				nlwarning("CWaterTask: Failed to create water mesh instance");
+			}
+		}
+		else
+		{
+			nlwarning("CWaterTask: Failed to get water_light.shape, water will be disabled");
+		}
 	}
-
 }
 
 void CWaterTask::update()
 {
-	/*
-	CMatrix waterCameraMatrix;
-	waterCameraMatrix.identity();
-	waterCameraMatrix = C3DTask::getInstance().scene().getCam()->getMatrix();
-	waterCameraMatrix.setPos(CVector::Null);
-	*/
-	
-	nelWaterScene->getCam().setMatrix(C3DTask::getInstance().scene().getCam().getMatrix());
-	
-	nelWaterScene->animate (CTimeTask::getInstance().time());
-	
+	// Water is rendered as part of the main scene, no separate update needed
 }
 
 void CWaterTask::render()
 {
-	C3DTask::getInstance().driver().enableFog(true);
-	nelWaterScene->render ();
-	C3DTask::getInstance().driver().enableFog(false);
-	
-	// Must clear ZBuffer For incoming rendering.
-	//C3DTask::getInstance().driver().clearZBuffer();
+	// Water is rendered as part of the main scene, no separate render needed
 }
 
 void CWaterTask::release()
 {
 	CSceneUser *su = dynamic_cast<CSceneUser *>(&C3DTask::getInstance().scene());
-//	CSceneUser *su = dynamic_cast<CSceneUser *>(nelWaterScene);
-	CScene		&scene = su->getScene ();
+	CScene &scene = su->getScene();
+
+	if(!WaterMesh.empty())
+	{
+		C3DTask::getInstance().scene().deleteInstance(WaterMesh);
+	}
 
 	if(WaterInstance)
 	{
 		scene.deleteInstance(WaterInstance);
 		WaterInstance = 0;
-		//delete WaterShape;
 	}
-
-	if(nelWaterScene)
-	{
-		C3DTask::getInstance().driver().deleteScene(nelWaterScene);
-		nelWaterScene = 0;
-	}
-
-	
 }
 
 
 void CWaterTask::envMap0Name(const std::string &envMapName)
 {
-	EnvMap0Name = "water_env.tga";
+	EnvMap0Name = "water_env.dds";
 	if(envMapName.empty()) return;
 	EnvMap0Name = envMapName;
 }
 
 void CWaterTask::envMap1Name(const std::string &envMapName)
 {
-	EnvMap1Name = "water_env.tga";
+	EnvMap1Name = "water_env.dds";
 	if(envMapName.empty()) return;
 	EnvMap1Name = envMapName;
 }
 
 void CWaterTask::heightMap0Name(const std::string &heightMap)
 {
-	HeightMap0Name = "water_disp.tga";
+	HeightMap0Name = "water_disp.dds";
 	if(heightMap.empty()) return;
 	HeightMap0Name = heightMap;
 }
 
 void CWaterTask::heightMap1Name(const std::string &heightMap)
 {
-	HeightMap1Name = "water_disp2.tga";
+	HeightMap1Name = "water_disp2.dds";
 	if(heightMap.empty()) return;
 	HeightMap1Name = heightMap;
 }

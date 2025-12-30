@@ -95,8 +95,14 @@ void CLevelManager::loadLevel(const std::string &fileName)
 
 	string res = CResourceManager::getInstance().get(fileName);
 	if(CMtpTarget::getInstance().error()) return;
-	nlassert(!res.empty());
-	
+
+	if(res.empty())
+	{
+		nlwarning("Failed to get level file '%s'", fileName.c_str());
+		CMtpTarget::getInstance().error(string("Missing file : "+fileName));
+		return;
+	}
+
 	CurrentLevel = new CLevel(res);
 	if(!CurrentLevel->valid())
 	{
