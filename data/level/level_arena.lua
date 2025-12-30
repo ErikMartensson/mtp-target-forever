@@ -1,3 +1,5 @@
+include("level_arena_server.lua")
+
 Name = "Arena"
 ReleaseLevel = 0
 
@@ -45,9 +47,9 @@ StartPoints =
 
 Modules =
 {
-	{ Position = CVector(0,0,0.5), Shape="arena" },
-	{ Position = CVector(-0.023449,0.000023,1), Shape="boxae" },
-	{ Position = CVector(0.476551,0,1), Rotation = CAngleAxis(0,0,1,3), Shape="boxae" },
+	{ Position = CVector(0,0,0.5), Scale = CVector(1,1,1), Rotation = CAngleAxis(0,0,1,0), Shape="arena" },
+	{ Position = CVector(-0.023449,0.000023,1), Scale = CVector(1,1,1), Rotation = CAngleAxis(0,0,1,0), Shape="boxae" },
+	{ Position = CVector(0.476551,0,1), Scale = CVector(1,1,1), Rotation = CAngleAxis(0,0,1,3), Shape="boxae" },
 }
 
 ExternalCameras =

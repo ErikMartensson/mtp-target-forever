@@ -1,3 +1,5 @@
+include("level_hit_me_server.lua")
+
 Name = "Hit me"
 ReleaseLevel = 0
 

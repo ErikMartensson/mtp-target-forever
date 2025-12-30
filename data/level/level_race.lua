@@ -1,3 +1,5 @@
+include("level_race_server.lua")
+
 Name = "Race"
 ReleaseLevel = 0
 

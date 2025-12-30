@@ -1,3 +1,5 @@
+include("level_snow_funnel_server.lua")
+
 Name = "Snow funnel"
 ReleaseLevel = 0
 

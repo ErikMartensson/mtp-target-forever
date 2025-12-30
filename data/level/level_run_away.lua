@@ -1,3 +1,5 @@
+include("level_run_away_server.lua")
+
 Name = "Run Away"
 ReleaseLevel = 0
 
