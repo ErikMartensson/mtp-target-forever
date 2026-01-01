@@ -53,6 +53,9 @@ using namespace NLNET;
 // Variables
 //
 
+// Debug logging for physics issues (generates a lot of output)
+static bool PhysicsDebugLog = false;
+
 class PhysicsThread;
 
 static const float worldStep = 0.001f;	// in second (1ms)
@@ -237,7 +240,8 @@ static void nearCallback(void *data, dGeomID o1, dGeomID o2)
 			{
 				if(module->bounce())
 				{
-					contact[i].surface.mode = dContactBounce;
+					// Use dContactApprox1 to prevent momentum loss at trimesh edges
+					contact[i].surface.mode = dContactBounce | dContactApprox1;
 					contact[i].surface.mu = dInfinity;
 					contact[i].surface.mu2 = 0;
 					contact[i].surface.bounce = module->bounceCoef();// BounceScene;
@@ -245,9 +249,11 @@ static void nearCallback(void *data, dGeomID o1, dGeomID o2)
 				}
 				else
 				{
-					contact[i].surface.mode = dContactMu2;
+					// Use dContactApprox1 to prevent momentum loss at trimesh edges
+					// This uses friction pyramid approximation which preserves tangential velocity
+					contact[i].surface.mode = dContactApprox1;
 					contact[i].surface.mu = dInfinity;
-					contact[i].surface.mu2 = dInfinity;
+					contact[i].surface.mu2 = 0;
 				}
 			}
 			else
@@ -280,6 +286,16 @@ static void nearCallback(void *data, dGeomID o1, dGeomID o2)
 			if(ct == CLIENT_SCENE)
 			{
 				nlassert(entity && module);
+
+				// Debug: log collision with velocity
+				if(PhysicsDebugLog)
+				{
+					const dReal *vel = dBodyGetLinearVel(entity->Body);
+					const dReal *pos = dBodyGetPosition(entity->Body);
+					nlinfo("[COLLISION] %s pos(%.3f,%.3f,%.3f) vel(%.3f,%.3f,%.3f) hit %s",
+						   entity->name().c_str(), pos[0], pos[1], pos[2],
+						   vel[0], vel[1], vel[2], module->name().c_str());
+				}
 
 				entity->collideModules.insert(module);
 
@@ -320,6 +336,8 @@ static void nearCallback(void *data, dGeomID o1, dGeomID o2)
 					entity->NbOpenClose = entity->MaxOpenClose;
 					entity->FreezeCommand = true;
 					entity->InGame = false;
+					if(PhysicsDebugLog)
+						nlinfo("[VEL-ZERO] %s velocity zeroed: CRASH IN FLY (OpenClose=%d)", entity->name().c_str(), entity->OpenClose);
 					dBodySetLinearVel(entity->Body, 0.0f, 0.0f, 0.0f);
 					entity->Force = CVector::Null;
 				}
@@ -339,13 +357,15 @@ static void nearCallback(void *data, dGeomID o1, dGeomID o2)
 
 					//entity->NbOpenClose = entity->MaxOpenClose;
 					//entity->FreezeCommand = true;
+					if(PhysicsDebugLog)
+						nlinfo("[VEL-ZERO] %s velocity zeroed: WATER COLLISION", entity->name().c_str());
 					dBodySetLinearVel(entity->Body, 0.0f, 0.0f, 0.0f);
 					entity->Force = CVector::Null;
 					entity->OnTheWater = true;
 					//entity->CurrentScore = 0;
 //					nlinfo("on the water!!!");
 				}
-				
+
 				entity->Friction = 999;
 //				nlinfo(">>Water<<");
 //	nlinfo("entity %s just frozzen because on the water", entity->Name.c_str());
@@ -497,7 +517,31 @@ void updatePhysics()
 			{
 				const dReal *vel = dBodyGetLinearVel((*it)->Body);
 				if(fabs(vel[0])>1000.0 || fabs(vel[1])>1000.0 || fabs(vel[2])>1000.0)
+				{
+					if(PhysicsDebugLog)
+						nlinfo("[VEL-ZERO] %s velocity zeroed: EXCEEDED 1000 (was %.1f,%.1f,%.1f)",
+							   (*it)->name().c_str(), vel[0], vel[1], vel[2]);
 					dBodySetLinearVel((*it)->Body, 0.0f, 0.0f, 0.0f);
+				}
+			}
+
+			// Debug: periodically log player velocity
+			if(PhysicsDebugLog)
+			{
+				static int frameCount = 0;
+				if(++frameCount % 500 == 0)  // Log every 500 physics frames (~0.5 sec)
+				{
+					for(it = CEntityManager::getInstance().entities().begin(); it != CEntityManager::getInstance().entities().end(); it++)
+					{
+						if((*it)->type() == CEntity::Client)
+						{
+							const dReal *vel = dBodyGetLinearVel((*it)->Body);
+							float norm = (float)sqrt(vel[0]*vel[0] + vel[1]*vel[1] + vel[2]*vel[2]);
+							nlinfo("[VELOCITY] %s: vel(%.3f,%.3f,%.3f) speed=%.3f",
+								   (*it)->name().c_str(), vel[0], vel[1], vel[2], norm);
+						}
+					}
+				}
 			}
 
 			dJointGroupEmpty(ContactGroup);

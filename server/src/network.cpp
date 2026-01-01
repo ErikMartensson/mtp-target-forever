@@ -136,10 +136,10 @@ void CNetwork::update()
 {
 	H_AUTO(CNetworkUpdate);
 
-	// update only network every 50ms
+	// update network every 20ms (50 Hz) for smoother transitions
 	static TTime tb = 0;
 	TTime ct = CTime::getLocalTime();
-	if(ct < tb + 40) return;
+	if(ct < tb + 20) return;
 	tb = ct;
 
 	uint8 ch[257];
