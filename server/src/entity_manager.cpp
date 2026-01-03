@@ -799,7 +799,12 @@ string CEntityManager::check(const string &login, const string &password, bool d
 			}
 		}
 
-		if(password.empty())
+		// Check if empty passwords are allowed (for LAN mode convenience)
+		bool allowEmptyPasswords = false;
+		if(IService::getInstance()->ConfigFile.exists("AllowEmptyPasswords"))
+			allowEmptyPasswords = IService::getInstance()->ConfigFile.getVar("AllowEmptyPasswords").asBool();
+
+		if(password.empty() && !allowEmptyPasswords)
 		{
 			return "Bad password, it must not be empty";
 		}
