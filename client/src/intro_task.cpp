@@ -76,7 +76,7 @@ public:
 
 	virtual ~CGuiServerButtonEventBehaviour()
 	{
-		
+
 	}
 
 	virtual void onPressed()
@@ -192,35 +192,35 @@ void CIntroTask::updateInit()
 	header->elements.push_back(new CGuiText(string("Players")));
 	header->elements.push_back(new CGuiText(string("Ping")));
 	listView->rows.push_back(header);
-	
+
 	guiSPG<CGuiHBox> row1 = new CGuiHBox;
 	row1->elements.push_back(new CGuiText(string("Easy")));
 	row1->elements.push_back(new CGuiText(string("12")));
 	row1->elements.push_back(new CGuiText(string("34")));
 	listView->rows.push_back(row1);
-	
+
 	guiSPG<CGuiHBox> row2 = new CGuiHBox;
 	row2->elements.push_back(new CGuiText(string("Expert")));
 	row2->elements.push_back(new CGuiText(string("56")));
 	row2->elements.push_back(new CGuiText(string("78")));
 	listView->rows.push_back(row2);
-	
+
 	guiSPG<CGuiHBox> row3 = new CGuiHBox;
 	row3->elements.push_back(new CGuiText(string("Testing")));
 	row3->elements.push_back(new CGuiText(string("01")));
 	row3->elements.push_back(new CGuiText(string("120")));
 	listView->rows.push_back(row3);
-	
+
 	guiSPG<CGuiHBox> row4 = new CGuiHBox;
 	row4->elements.push_back(new CGuiText(string("Fake one")));
 	row4->elements.push_back(new CGuiText(string("0")));
 	row4->elements.push_back(new CGuiText(string("3")));
 	listView->rows.push_back(row4);
-	
-	
+
+
 	CGuiObjectManager::getInstance().objects.push_back(testFrame);
 	State = eNone;
-	
+
 #else
 	guiSPG<CGuiXml> xml = 0;
 	xml = CGuiXmlManager::getInstance().Load("menu.xml");
@@ -231,7 +231,7 @@ void CIntroTask::updateInit()
 	optionsButton = (CGuiButton *)xml->get("bOptions");
 	exitButton3 = (CGuiButton *)xml->get("bExit");
 	exitButton3->eventBehaviour = new CGuiExitButtonEventBehaviour();
-	
+
 	xml = CGuiXmlManager::getInstance().Load("login.xml");
 	loginFrame = (CGuiFrame *)xml->get("loginFrame");
 	loginText = (CGuiText*)xml->get("loginEntry");
@@ -251,7 +251,7 @@ void CIntroTask::updateInit()
 	serverLanText->text = CConfigFileTask::getInstance().configFile().getVar("ServerHost").asString();
 	loginLanButton = (CGuiButton *)xml->get("bLogin");
 	backLanButton1 = (CGuiButton *)xml->get("bBack");
-	
+
 	xml = CGuiXmlManager::getInstance().Load("server_list.xml");
 	serverListFrame = (CGuiFrame *)xml->get("serverListFrame");
 	serverVbox = (CGuiVBox *)xml->get("serverVbox");
@@ -277,7 +277,7 @@ void CIntroTask::updateInit()
 	serverListBackButton	= new CGuiButton();
 	serverListBackButton->element(new CGuiText("Back"));
 	serverListBackButton->minWidth(80);
-	
+
 	serverListView = new CGuiListView;
 
 	if(_autoLogin==1)
@@ -296,10 +296,10 @@ void CIntroTask::updateInit()
 		State = eMenu;
 	}
 #endif
-	
+
 	if(CConfigFileTask::getInstance().configFile().getVar("CustomGui").asInt()>0)
 		CGuiCustom::getInstance().load("data/gui/custom/");
-	
+
 }
 
 void CIntroTask::updateMenu()
@@ -308,7 +308,7 @@ void CIntroTask::updateMenu()
 
 	if(howToPlay->pressed())
 	{
-		openURL("http://www.mtp-target.org/index.php?page=./lang/en/howto-play.php");
+		openURL("https://github.com/ErikMartensson/tux_target/blob/main/docs/CONTROLS.md");
 	}
 	if(playOnLineButton->pressed())
 	{
@@ -354,7 +354,7 @@ void CIntroTask::updateLoginOnline()
 	{
 		State = eMenu;
 		CGuiObjectManager::getInstance().objects.clear();
-		CGuiObjectManager::getInstance().objects.push_back(menuFrame);	
+		CGuiObjectManager::getInstance().objects.push_back(menuFrame);
 		return;
 	}
 
@@ -390,14 +390,14 @@ void CIntroTask::updateLoginOnline()
 			serverListView->rows.clear();
 			serverListVBox->elements.push_back(serverListView);
 			serverListView->eventBehaviour = new CGuiLaunchServerEventBehaviour;
-			
+
 			guiSPG<CGuiHBox> header = new CGuiHBox;
 			header->elements.push_back(new CGuiText(string("Server")));
 			header->elements.push_back(new CGuiText(string("Players")));
 			//header->elements.push_back(new CGuiText(string("Ping")));
 			serverListView->rows.push_back(header);
-			
-			
+
+
 			//serverVbox->elements.clear();
 			for(uint i = 0; i < CLoginClientMtp::ShardList.size(); i++)
 			{
@@ -428,7 +428,7 @@ void CIntroTask::updateLoginOnline()
 			guiSPG<CGuiHBox> serverListButtonBox = new CGuiHBox;
 			serverListButtonBox->elements.push_back(serverListConnectButton);
 			serverListButtonBox->elements.push_back(serverListBackButton);
-			
+
 			CGuiSpacer *sp = new CGuiSpacer;
 			sp->minHeight(10);
 			serverListVBox->elements.push_back(sp);
@@ -441,21 +441,21 @@ void CIntroTask::updateLoginOnline()
 		}
 
 	}
-		
+
 }
 
 void CIntroTask::updateLoginOnlan()
 {
 	if(State!=eLoginOnlan) return;
-	
+
 	if(backLanButton1->pressed())
 	{
 		State = eMenu;
 		CGuiObjectManager::getInstance().objects.clear();
-		CGuiObjectManager::getInstance().objects.push_back(menuFrame);	
+		CGuiObjectManager::getInstance().objects.push_back(menuFrame);
 		return;
 	}
-	
+
 	if(loginLanButton->pressed() || _autoLogin)
 	{
 		loginLanText->text = NLMISC::strlwr(loginLanText->text);
@@ -465,11 +465,11 @@ void CIntroTask::updateLoginOnlan()
 		CConfigFileTask::getInstance().configFile().getVar("Password").setAsString(passwordLanText->text);
 		CConfigFileTask::getInstance().configFile().getVar("ServerHost").setAsString(serverLanText->text);
 		CConfigFileTask::getInstance().configFile().save();
-		
+
 		CGuiObjectManager::getInstance().objects.clear();
 		State = eConnectionOnlan;
 	}
-	
+
 }
 
 void CIntroTask::updateServerList()
@@ -491,9 +491,9 @@ void CIntroTask::updateServerList()
 void CIntroTask::updateConnectionOnLine()
 {
 	if(State!=eConnectionOnline) return;
-	
+
 	CGuiObjectManager::getInstance().objects.clear();
-	
+
 	CInetAddress ip;
 	string cookie;
 	nlinfo("CLoginClientMtp::connectToShard(%d)",ServerId);
@@ -525,7 +525,7 @@ void CIntroTask::updateConnectionOnLine()
 	CBackgroundTask::getInstance().stop();
 	// go to the game task
 	CTaskManager::getInstance().add(CGameTask::getInstance(), 60);
-	
+
 	CGuiObjectManager::getInstance().objects.clear();
 	State = eNone;
 }
@@ -534,9 +534,9 @@ void CIntroTask::updateConnectionOnLine()
 void CIntroTask::updateConnectionOnLan()
 {
 	if(State!=eConnectionOnlan) return;
-	
+
 	CGuiObjectManager::getInstance().objects.clear();
-	
+
 	string res = CNetworkTask::getInstance().connect(CInetAddress(CConfigFileTask::getInstance().configFile().getVar("ServerHost").asString()+":"+toString(CConfigFileTask::getInstance().configFile().getVar("TcpPort").asInt())));
 	if(res.empty())
 	{
@@ -548,10 +548,10 @@ void CIntroTask::updateConnectionOnLan()
 		CBackgroundTask::getInstance().stop();
 		// go to the game task
 		CTaskManager::getInstance().add(CGameTask::getInstance(), 60);
-		
+
 		CGuiObjectManager::getInstance().objects.clear();
 		State = eNone;
-		return;		
+		return;
 	}
 	else
 	{
@@ -591,7 +591,7 @@ void CIntroTask::update()
 		CTaskManager::getInstance().exit();
 	}
 
-	
+
 }
 
 void CIntroTask::render()
