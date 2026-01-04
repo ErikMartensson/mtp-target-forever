@@ -70,29 +70,39 @@ jobs:
           Write-Host "Extracting dependencies to C:/external..."
           7z x $output -oC:/external -y
 
-          # List what was extracted
-          Write-Host "Extracted contents:"
+          # List what was extracted (both files and directories)
+          Write-Host "Extracted contents (directories):"
           Get-ChildItem C:/external -Directory | Select-Object Name
+          Write-Host "Extracted contents (files at root):"
+          Get-ChildItem C:/external -File | Select-Object Name
 
-          # Verify key directories exist (lua, libxml2, etc.)
-          $required = @("lua", "libxml2", "zlib")
-          $allFound = $true
-          foreach ($dir in $required) {
-            if (!(Test-Path "C:/external/$dir")) {
-              Write-Warning "Expected directory not found: $dir"
-              $allFound = $false
+          # RyzomCore requires CMakeLists.txt in external directory
+          if (!(Test-Path "C:/external/CMakeLists.txt")) {
+            Write-Warning "CMakeLists.txt not found in C:/external - checking for nested structure..."
+
+            # Check if there's a nested "external" folder from the archive
+            $nested = Get-ChildItem C:/external -Directory | Where-Object {
+              Test-Path "$($_.FullName)/CMakeLists.txt"
+            } | Select-Object -First 1
+
+            if ($nested) {
+              Write-Host "Found CMakeLists.txt in nested folder: $($nested.Name)"
+              Write-Host "Moving contents up one level..."
+              Get-ChildItem $nested.FullName | Move-Item -Destination "C:/external/" -Force
+              Remove-Item $nested.FullName -Recurse -Force -ErrorAction SilentlyContinue
+            } else {
+              Write-Warning "No CMakeLists.txt found in any subdirectory"
+              Write-Host "This external package may not be compatible with RyzomCore"
             }
           }
 
-          # If standard structure not found, check if there's a nested folder
-          if (!$allFound) {
-            Write-Host "Checking for nested folder structure..."
-            $nested = Get-ChildItem C:/external -Directory | Select-Object -First 1
-            if ($nested -and (Test-Path "C:/external/$($nested.Name)/lua")) {
-              Write-Host "Found nested structure in: $($nested.Name)"
-              Write-Host "Moving contents up one level..."
-              Get-ChildItem "C:/external/$($nested.Name)" | Move-Item -Destination "C:/external/" -Force
-              Remove-Item "C:/external/$($nested.Name)" -Recurse -Force -ErrorAction SilentlyContinue
+          # Verify key directories exist (lua, libxml2, etc.)
+          $required = @("lua", "libxml2", "zlib")
+          foreach ($dir in $required) {
+            if (!(Test-Path "C:/external/$dir")) {
+              Write-Warning "Expected directory not found: $dir"
+            } else {
+              Write-Host "Found: $dir"
             }
           }
 
@@ -100,7 +110,8 @@ jobs:
           Remove-Item $output
 
           Write-Host "External dependencies ready at C:/external"
-          Get-ChildItem C:/external -Directory | Select-Object Name
+          Write-Host "Final structure:"
+          Get-ChildItem C:/external | Select-Object Mode, Name
 
       # STEP 2: Build RyzomCore (requires external deps)
       - name: Cache RyzomCore
@@ -108,7 +119,7 @@ jobs:
         uses: actions/cache@v4
         with:
           path: C:/ryzomcore
-          key: ryzomcore-nel-v2
+          key: ryzomcore-nel-v3
           restore-keys: |
             ryzomcore-nel-
 
@@ -124,7 +135,8 @@ jobs:
           mkdir build
           cd build
 
-          # Point to external dependencies
+          # Point to external dependencies via CMAKE_PREFIX_PATH
+          # (Don't use WITH_EXTERNAL as it requires a CMakeLists.txt in external dir)
           cmake .. -G "Visual Studio 17 2022" -A x64 `
             -DWITH_SOUND=ON `
             -DWITH_NEL=ON `
@@ -136,8 +148,26 @@ jobs:
             -DWITH_NELNS=OFF `
             -DWITH_SNOWBALLS=OFF `
             -DWITH_STATIC=ON `
-            -DWITH_EXTERNAL=ON `
-            -DEXTERNAL_PATH=C:/external
+            -DCMAKE_PREFIX_PATH=C:/external `
+            -DLUA_INCLUDE_DIR=C:/external/lua/include `
+            -DLUA_LIBRARIES=C:/external/lua/lib/lua51.lib `
+            -DLIBXML2_INCLUDE_DIR=C:/external/libxml2/include/libxml2 `
+            -DLIBXML2_LIBRARY=C:/external/libxml2/lib/libxml2_a.lib `
+            -DZLIB_ROOT=C:/external/zlib `
+            -DPNG_PNG_INCLUDE_DIR=C:/external/libpng/include `
+            -DPNG_LIBRARY=C:/external/libpng/lib/libpng16.lib `
+            -DJPEG_INCLUDE_DIR=C:/external/libjpeg/include `
+            -DJPEG_LIBRARY=C:/external/libjpeg/lib/jpeg.lib `
+            -DFREETYPE_INCLUDE_DIRS=C:/external/freetype/include `
+            -DFREETYPE_LIBRARY=C:/external/freetype/lib/freetype.lib `
+            -DOPENAL_INCLUDE_DIR=C:/external/openal-soft/include `
+            -DOPENAL_LIBRARY=C:/external/openal-soft/lib/OpenAL32.lib `
+            -DOGG_INCLUDE_DIR=C:/external/ogg/include `
+            -DOGG_LIBRARY=C:/external/ogg/lib/ogg.lib `
+            -DVORBIS_INCLUDE_DIR=C:/external/vorbis/include `
+            -DVORBIS_LIBRARY=C:/external/vorbis/lib/vorbis.lib `
+            -DVORBISFILE_LIBRARY=C:/external/vorbis/lib/vorbisfile.lib `
+            -DBoost_INCLUDE_DIR=C:/external/boost/include
 
           Write-Host "Building RyzomCore..."
           cmake --build . --config Release --parallel 4 --target nelmisc nelnet nel3d nelsound nelsnd_lowlevel nelgeorges nelligo
@@ -192,7 +222,7 @@ jobs:
         uses: actions/cache/restore@v4
         with:
           path: C:/ryzomcore
-          key: ryzomcore-nel-v2
+          key: ryzomcore-nel-v3
           restore-keys: |
             ryzomcore-nel-
 
@@ -325,7 +355,7 @@ jobs:
         uses: actions/cache/restore@v4
         with:
           path: C:/ryzomcore
-          key: ryzomcore-nel-v2
+          key: ryzomcore-nel-v3
           restore-keys: |
             ryzomcore-nel-
 
