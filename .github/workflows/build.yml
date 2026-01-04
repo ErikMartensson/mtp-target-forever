@@ -47,7 +47,7 @@ jobs:
         uses: actions/cache@v4
         with:
           path: C:/external
-          key: ryzom-external-2022q2-v4
+          key: ryzom-external-2022q2-v5
           restore-keys: |
             ryzom-external-2022q2-
 
@@ -116,6 +116,8 @@ jobs:
           $debugLibs = @(
             "C:/external/openssl/lib/VC/libcrypto64MDd.lib",
             "C:/external/openssl/lib/VC/libssl64MDd.lib",
+            "C:/external/openssl/lib/VC/static/libcrypto64MDd.lib",
+            "C:/external/openssl/lib/VC/static/libssl64MDd.lib",
             "C:/external/openssl/lib/libcrypto.lib",
             "C:/external/openssl/lib/libssl.lib",
             "C:/external/luabind/lib/luabindd.lib"
@@ -276,7 +278,7 @@ jobs:
         uses: actions/cache/restore@v4
         with:
           path: C:/external
-          key: ryzom-external-2022q2-v4
+          key: ryzom-external-2022q2-v5
           restore-keys: |
             ryzom-external-2022q2-
 
@@ -409,7 +411,7 @@ jobs:
         uses: actions/cache/restore@v4
         with:
           path: C:/external
-          key: ryzom-external-2022q2-v4
+          key: ryzom-external-2022q2-v5
           restore-keys: |
             ryzom-external-2022q2-
 
