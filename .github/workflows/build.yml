@@ -47,9 +47,9 @@ jobs:
         uses: actions/cache@v4
         with:
           path: C:/ryzomcore
-          key: ryzomcore-windows-${{ hashFiles('CMakeLists.txt') }}-v2
+          key: ryzomcore-nel-v1
           restore-keys: |
-            ryzomcore-windows-
+            ryzomcore-nel-
 
       - name: Build RyzomCore
         if: steps.cache-ryzomcore.outputs.cache-hit != 'true'
@@ -79,29 +79,73 @@ jobs:
           cmake --build . --config Release --parallel 4 --target nelmisc nelnet nel3d nelsound nelsnd_lowlevel nelgeorges nelligo
           cmake --build . --config Release --parallel 2 --target nel_drv_opengl_win nel_drv_openal_win
 
+      - name: Verify RyzomCore Build
+        if: steps.cache-ryzomcore.outputs.cache-hit != 'true'
+        shell: pwsh
+        run: |
+          $required = @(
+            "C:/ryzomcore/build/lib/Release/nelmisc_r.lib",
+            "C:/ryzomcore/build/lib/Release/nel3d_r.lib",
+            "C:/ryzomcore/build/lib/Release/nelnet_r.lib",
+            "C:/ryzomcore/build/lib/Release/nelsound_r.lib",
+            "C:/ryzomcore/build/lib/Release/nelsnd_lowlevel_r.lib",
+            "C:/ryzomcore/build/lib/Release/nelgeorges_r.lib",
+            "C:/ryzomcore/build/lib/Release/nelligo_r.lib",
+            "C:/ryzomcore/build/bin/Release/nel_drv_opengl_win_r.dll",
+            "C:/ryzomcore/build/bin/Release/nel_drv_openal_win_r.dll"
+          )
+          $missing = @()
+          foreach ($file in $required) {
+            if (!(Test-Path $file)) {
+              $missing += $file
+            }
+          }
+          if ($missing.Count -gt 0) {
+            Write-Error "RyzomCore build incomplete. Missing files:"
+            $missing | ForEach-Object { Write-Error "  - $_" }
+            exit 1
+          }
+          Write-Host "RyzomCore build verified successfully - all $($required.Count) files present"
+
       # Cache third-party dependencies
       - name: Cache Dependencies
         id: cache-deps
         uses: actions/cache@v4
         with:
           path: C:/tux_target_deps
-          key: tux-deps-windows-v3
+          key: tux-deps-2022q2-v1
           restore-keys: |
-            tux-deps-windows-
+            tux-deps-2022q2-
 
-      - name: Build Dependencies
+      - name: Download Dependencies
         if: steps.cache-deps.outputs.cache-hit != 'true'
         shell: pwsh
         run: |
-          # This would contain scripts to build ODE, Lua, libxml2, etc.
-          # For now, we assume dependencies are provided or use vcpkg
-          Write-Host "Dependencies should be provided via cache or vcpkg"
-          Write-Host "See docs/BUILDING.md for dependency setup"
+          Write-Host "Downloading Ryzom external dependencies (1.3GB)..."
+          $url = "https://cdn.ryzom.dev/core/2022q2_external_v143_x64.7z"
+          $output = "C:/external.7z"
 
-          # Create directory structure if it doesn't exist
-          if (!(Test-Path "C:/tux_target_deps")) {
-            New-Item -ItemType Directory -Path "C:/tux_target_deps"
+          # Download with progress
+          $ProgressPreference = 'SilentlyContinue'  # Faster download
+          Invoke-WebRequest -Uri $url -OutFile $output -UseBasicParsing
+          $ProgressPreference = 'Continue'
+
+          Write-Host "Extracting dependencies to C:/tux_target_deps..."
+          7z x $output -oC:/tux_target_deps -y
+
+          # Cleanup archive to save space
+          Remove-Item $output
+
+          # Verify key directories exist
+          $dirs = @("lua", "libxml2", "zlib", "curl", "openssl", "freetype", "libpng", "libjpeg", "ogg", "vorbis", "openal-soft", "ode")
+          foreach ($dir in $dirs) {
+            if (!(Test-Path "C:/tux_target_deps/$dir")) {
+              Write-Error "Missing dependency directory: $dir"
+              exit 1
+            }
           }
+
+          Write-Host "Dependencies ready at C:/tux_target_deps"
 
   # ============================================
   # Build Client
@@ -124,19 +168,20 @@ jobs:
         uses: actions/cache/restore@v4
         with:
           path: C:/ryzomcore
-          key: ryzomcore-windows-${{ hashFiles('CMakeLists.txt') }}-v2
+          key: ryzomcore-nel-v1
           restore-keys: |
-            ryzomcore-windows-
+            ryzomcore-nel-
 
       - name: Restore Dependencies Cache
         uses: actions/cache/restore@v4
         with:
           path: C:/tux_target_deps
-          key: tux-deps-windows-v3
+          key: tux-deps-2022q2-v1
           restore-keys: |
-            tux-deps-windows-
+            tux-deps-2022q2-
 
       - name: Configure CMake (Client)
+        shell: pwsh
         run: |
           mkdir build-client
           cd build-client
@@ -146,7 +191,21 @@ jobs:
             -DWITH_STATIC=ON `
             -DWITH_STATIC_LIBXML2=ON `
             -DWITH_STATIC_CURL=ON `
-            -DNEL_PREFIX_PATH=C:/ryzomcore/build
+            -DNEL_PREFIX_PATH=C:/ryzomcore/build `
+            -DCMAKE_PREFIX_PATH=C:/tux_target_deps `
+            -DLUA_INCLUDE_DIR=C:/tux_target_deps/lua/include `
+            -DLUA_LIBRARIES=C:/tux_target_deps/lua/lib/lua.lib `
+            -DLIBXML2_INCLUDE_DIR=C:/tux_target_deps/libxml2/include/libxml2 `
+            -DLIBXML2_LIBRARY=C:/tux_target_deps/libxml2/lib/libxml2.lib `
+            -DZLIB_ROOT=C:/tux_target_deps/zlib `
+            -DCURL_ROOT=C:/tux_target_deps/curl `
+            -DOPENSSL_ROOT_DIR=C:/tux_target_deps/openssl `
+            -DFREETYPE_INCLUDE_DIRS=C:/tux_target_deps/freetype/include `
+            -DFREETYPE_LIBRARY=C:/tux_target_deps/freetype/lib/freetype.lib `
+            -DPNG_PNG_INCLUDE_DIR=C:/tux_target_deps/libpng/include `
+            -DPNG_LIBRARY=C:/tux_target_deps/libpng/lib/libpng16.lib `
+            -DJPEG_INCLUDE_DIR=C:/tux_target_deps/libjpeg/include `
+            -DJPEG_LIBRARY=C:/tux_target_deps/libjpeg/lib/jpeg.lib
 
       - name: Build Client
         run: cmake --build build-client --config ${{ env.BUILD_TYPE }} --parallel 4
@@ -155,8 +214,9 @@ jobs:
         shell: pwsh
         run: |
           $releaseDir = "build-client/bin/${{ env.BUILD_TYPE }}"
+          $depsDir = "C:/tux_target_deps"
 
-          # Copy NeL drivers if they exist
+          # Copy NeL drivers
           if (Test-Path "C:/ryzomcore/build/bin/Release/nel_drv_opengl_win_r.dll") {
             Copy-Item "C:/ryzomcore/build/bin/Release/nel_drv_opengl_win_r.dll" "$releaseDir/"
           }
@@ -164,9 +224,37 @@ jobs:
             Copy-Item "C:/ryzomcore/build/bin/Release/nel_drv_openal_win_r.dll" "$releaseDir/"
           }
 
+          # Copy runtime DLLs from dependencies
+          $dllSources = @(
+            "$depsDir/lua/bin/lua.dll",
+            "$depsDir/libxml2/bin/libxml2.dll",
+            "$depsDir/zlib/bin/zlib.dll",
+            "$depsDir/curl/bin/libcurl.dll",
+            "$depsDir/openssl/bin/libcrypto-1_1-x64.dll",
+            "$depsDir/openssl/bin/libssl-1_1-x64.dll",
+            "$depsDir/freetype/bin/freetype.dll",
+            "$depsDir/libpng/bin/libpng16.dll",
+            "$depsDir/libjpeg/bin/jpeg62.dll",
+            "$depsDir/ogg/bin/ogg.dll",
+            "$depsDir/vorbis/bin/vorbis.dll",
+            "$depsDir/vorbis/bin/vorbisfile.dll",
+            "$depsDir/openal-soft/bin/OpenAL32.dll"
+          )
+          foreach ($dll in $dllSources) {
+            if (Test-Path $dll) {
+              Copy-Item $dll "$releaseDir/" -ErrorAction SilentlyContinue
+              Write-Host "Copied: $dll"
+            } else {
+              Write-Warning "DLL not found: $dll"
+            }
+          }
+
           # Create data directories
           New-Item -ItemType Directory -Force -Path "$releaseDir/data/font"
           New-Item -ItemType Directory -Force -Path "$releaseDir/data/level"
+          New-Item -ItemType Directory -Force -Path "$releaseDir/data/gui"
+          New-Item -ItemType Directory -Force -Path "$releaseDir/data/shape"
+          New-Item -ItemType Directory -Force -Path "$releaseDir/data/texture"
           New-Item -ItemType Directory -Force -Path "$releaseDir/logs"
 
           # Copy level files
@@ -213,26 +301,41 @@ jobs:
         uses: actions/cache/restore@v4
         with:
           path: C:/ryzomcore
-          key: ryzomcore-windows-${{ hashFiles('CMakeLists.txt') }}-v2
+          key: ryzomcore-nel-v1
           restore-keys: |
-            ryzomcore-windows-
+            ryzomcore-nel-
 
       - name: Restore Dependencies Cache
         uses: actions/cache/restore@v4
         with:
           path: C:/tux_target_deps
-          key: tux-deps-windows-v3
+          key: tux-deps-2022q2-v1
           restore-keys: |
-            tux-deps-windows-
+            tux-deps-2022q2-
 
       - name: Configure CMake (Server)
+        shell: pwsh
         run: |
           mkdir build-server
           cd build-server
           cmake .. -G "Visual Studio 17 2022" -A x64 `
             -DBUILD_CLIENT=OFF `
             -DBUILD_SERVER=ON `
-            -DNEL_PREFIX_PATH=C:/ryzomcore/build
+            -DNEL_PREFIX_PATH=C:/ryzomcore/build `
+            -DCMAKE_PREFIX_PATH=C:/tux_target_deps `
+            -DLUA_INCLUDE_DIR=C:/tux_target_deps/lua/include `
+            -DLUA_LIBRARIES=C:/tux_target_deps/lua/lib/lua.lib `
+            -DLIBXML2_INCLUDE_DIR=C:/tux_target_deps/libxml2/include/libxml2 `
+            -DLIBXML2_LIBRARY=C:/tux_target_deps/libxml2/lib/libxml2.lib `
+            -DZLIB_ROOT=C:/tux_target_deps/zlib `
+            -DFREETYPE_INCLUDE_DIRS=C:/tux_target_deps/freetype/include `
+            -DFREETYPE_LIBRARY=C:/tux_target_deps/freetype/lib/freetype.lib `
+            -DPNG_PNG_INCLUDE_DIR=C:/tux_target_deps/libpng/include `
+            -DPNG_LIBRARY=C:/tux_target_deps/libpng/lib/libpng16.lib `
+            -DJPEG_INCLUDE_DIR=C:/tux_target_deps/libjpeg/include `
+            -DJPEG_LIBRARY=C:/tux_target_deps/libjpeg/lib/jpeg.lib `
+            -DODE_INCLUDE_DIR=C:/tux_target_deps/ode/include `
+            -DODE_LIBRARY=C:/tux_target_deps/ode/lib/ode_doubles.lib
 
       - name: Build Server
         run: cmake --build build-server --config ${{ env.BUILD_TYPE }} --parallel 4
@@ -241,10 +344,30 @@ jobs:
         shell: pwsh
         run: |
           $releaseDir = "build-server/bin/${{ env.BUILD_TYPE }}"
+          $depsDir = "C:/tux_target_deps"
+
+          # Copy runtime DLLs from dependencies
+          $dllSources = @(
+            "$depsDir/lua/bin/lua.dll",
+            "$depsDir/zlib/bin/zlib.dll",
+            "$depsDir/freetype/bin/freetype.dll",
+            "$depsDir/libpng/bin/libpng16.dll",
+            "$depsDir/libjpeg/bin/jpeg62.dll",
+            "$depsDir/ode/bin/ode.dll"
+          )
+          foreach ($dll in $dllSources) {
+            if (Test-Path $dll) {
+              Copy-Item $dll "$releaseDir/" -ErrorAction SilentlyContinue
+              Write-Host "Copied: $dll"
+            } else {
+              Write-Warning "DLL not found: $dll"
+            }
+          }
 
           # Create data directories
           New-Item -ItemType Directory -Force -Path "$releaseDir/data/level"
           New-Item -ItemType Directory -Force -Path "$releaseDir/data/lua"
+          New-Item -ItemType Directory -Force -Path "$releaseDir/data/module"
           New-Item -ItemType Directory -Force -Path "$releaseDir/logs"
 
           # Copy level files
@@ -252,9 +375,14 @@ jobs:
             Copy-Item "data/level/*.lua" "$releaseDir/data/level/" -ErrorAction SilentlyContinue
           }
 
-          # Copy Lua server scripts
-          if (Test-Path "mtp-target-src/data/lua") {
-            Copy-Item "mtp-target-src/data/lua/*.lua" "$releaseDir/data/lua/" -ErrorAction SilentlyContinue
+          # Copy Lua server scripts (fixed path from mtp-target-src to data)
+          if (Test-Path "data/lua") {
+            Copy-Item "data/lua/*.lua" "$releaseDir/data/lua/" -ErrorAction SilentlyContinue
+          }
+
+          # Copy module Lua scripts
+          if (Test-Path "data/module") {
+            Copy-Item "data/module/*.lua" "$releaseDir/data/module/" -ErrorAction SilentlyContinue
           }
 
           # Copy config
