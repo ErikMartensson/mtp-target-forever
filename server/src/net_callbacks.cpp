@@ -177,6 +177,18 @@ static void cbCommand(CClient *c, CNetMessage &msgin)
 			CSessionManager::getInstance().reset();
 			CNetwork::getInstance().sendChat(c->name() + " reset the session");
 		}
+		// Block addBot command from clients - causes server crash when used mid-session
+		// The bot system requires replay data and proper session state that may not be
+		// available during gameplay. Use server console to add bots if needed.
+		else if(cmd.substr(0, 6) == "addbot")
+		{
+			CNetwork::getInstance().sendChat(c->id(), "Adding bots via client is disabled (causes server instability)");
+		}
+		// Block kick command for bots - causes server crash similar to addBot
+		else if(cmd.size() >= 4 && cmd.substr(0, 4) == "kick")
+		{
+			CNetwork::getInstance().sendChat(c->id(), "Kick command is disabled (causes server instability)");
+		}
 		// Other commands - check if valid before executing
 		else if(CCommandRegistry::getInstance().isCommand(cmd.substr(0, cmd.find(' '))))
 		{
