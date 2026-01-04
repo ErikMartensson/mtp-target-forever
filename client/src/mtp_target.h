@@ -56,6 +56,8 @@ extern CVector ControlerFreeLookPos;
 extern CMatrix ControlerCamMatrix;
 extern std::string ReplayFile;
 extern sint32 AutoServerId;
+extern std::string AutoLanHost;
+extern std::string AutoLanUser;
 
 
 //

@@ -142,7 +142,16 @@ void CIntroTask::init()
 		AutoServerId = CConfigFileTask::getInstance().configFile().getVar("AutoServerId").asInt();
 	else if(AutoServerId!=-1)
 		_autoLogin = 1; //auto online login
-	
+
+	// Check for LAN auto-connect via command line
+	if(!AutoLanHost.empty())
+	{
+		_autoLogin = 2; // Use 2 for LAN auto-connect
+		CConfigFileTask::getInstance().configFile().getVar("ServerHost").setAsString(AutoLanHost);
+		if(!AutoLanUser.empty())
+			CConfigFileTask::getInstance().configFile().getVar("Login").setAsString(AutoLanUser);
+	}
+
 	reset();
 }
 
@@ -247,13 +256,21 @@ void CIntroTask::updateInit()
 	
 	serverListView = new CGuiListView;
 
-	CGuiObjectManager::getInstance().objects.push_back(menuFrame);
-	State = eMenu;
-
 	if(_autoLogin==1)
+	{
+		CGuiObjectManager::getInstance().objects.push_back(loginFrame);
 		State = eLoginOnline;
+	}
 	else if(_autoLogin==2)
+	{
+		CGuiObjectManager::getInstance().objects.push_back(loginLanFrame);
 		State = eLoginOnlan;
+	}
+	else
+	{
+		CGuiObjectManager::getInstance().objects.push_back(menuFrame);
+		State = eMenu;
+	}
 #endif
 	
 	if(CConfigFileTask::getInstance().configFile().getVar("CustomGui").asInt()>0)

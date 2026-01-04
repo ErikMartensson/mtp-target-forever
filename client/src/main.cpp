@@ -64,6 +64,8 @@ bool DisplayDebug = false;
 bool FollowEntity = false;
 string ReplayFile;
 sint32 AutoServerId = -1;
+string AutoLanHost;
+string AutoLanUser;
 
 string crashcallback()
 {
@@ -114,21 +116,66 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 
 	ReplayFile = "";
 	AutoServerId = -1;
+	AutoLanHost = "";
+	AutoLanUser = "";
+
+	// Parse --autoconnect:<id> for online auto-connect
 	string autoConnectFlag = "--autoconnect:";
-	
-	if (cmd.find ("\"") != string::npos)
-	{
-		// it s a replay, remove ""
-		ReplayFile = cmd.substr(1, cmd.size()-2);
-	}
-	else if(cmd.find(autoConnectFlag) != string::npos)
+	if(cmd.find(autoConnectFlag) != string::npos)
 	{
 		size_t startIndex = cmd.find(autoConnectFlag) + autoConnectFlag.size();
-		string strId = cmd.substr(startIndex,cmd.size()-startIndex);
-		fromString(strId,AutoServerId);
+		size_t endIndex = cmd.find(' ', startIndex);
+		if(endIndex == string::npos) endIndex = cmd.size();
+		string strId = cmd.substr(startIndex, endIndex - startIndex);
+		fromString(strId, AutoServerId);
 	}
-	else
+
+	// Parse --lan <hostname> for LAN auto-connect
+	string lanFlag = "--lan";
+	size_t lanPos = cmd.find(lanFlag);
+	if(lanPos != string::npos)
+	{
+		size_t start = lanPos + lanFlag.size();
+		// Skip '=' or space
+		while(start < cmd.size() && (cmd[start] == '=' || cmd[start] == ' '))
+			start++;
+		// Find end of hostname (next space or next flag or end)
+		size_t end = start;
+		while(end < cmd.size() && cmd[end] != ' ' && cmd[end] != '-')
+			end++;
+		if(end > start)
+			AutoLanHost = cmd.substr(start, end - start);
+	}
+
+	// Parse --user <username> for LAN auto-connect
+	string userFlag = "--user";
+	size_t userPos = cmd.find(userFlag);
+	if(userPos != string::npos)
+	{
+		size_t start = userPos + userFlag.size();
+		while(start < cmd.size() && (cmd[start] == '=' || cmd[start] == ' '))
+			start++;
+		size_t end = start;
+		while(end < cmd.size() && cmd[end] != ' ' && cmd[end] != '-')
+			end++;
+		if(end > start)
+			AutoLanUser = cmd.substr(start, end - start);
+	}
+
+	// Check for replay file (quoted string or plain argument without flags)
+	if (cmd.find("\"") != string::npos)
+	{
+		// it s a replay, remove ""
+		size_t firstQuote = cmd.find("\"");
+		size_t lastQuote = cmd.rfind("\"");
+		if(lastQuote > firstQuote)
+			ReplayFile = cmd.substr(firstQuote + 1, lastQuote - firstQuote - 1);
+	}
+	else if(AutoServerId == -1 && AutoLanHost.empty() && !cmd.empty())
+	{
+		// No flags found, treat as replay file
 		ReplayFile = cmd;
+	}
 
 	if(!IsDebuggerPresent() && !ReplayFile.empty())
 	{
