@@ -47,7 +47,7 @@ jobs:
         uses: actions/cache@v4
         with:
           path: C:/external
-          key: ryzom-external-2022q2-v2
+          key: ryzom-external-2022q2-v3
           restore-keys: |
             ryzom-external-2022q2-
 
@@ -108,6 +108,22 @@ jobs:
 
           # Cleanup archive to save space
           Remove-Item $output
+
+          # Remove debug libraries to prevent CMake from finding them
+          # (FindOpenSSL/FindLuabind return "optimized;release;debug;debug" format
+          # which modern CMake doesn't allow in INTERFACE_LINK_LIBRARIES)
+          Write-Host "`nRemoving debug libraries to avoid CMake compatibility issues..."
+          $debugLibs = @(
+            "C:/external/openssl/lib/VC/libcrypto64MDd.lib",
+            "C:/external/openssl/lib/VC/libssl64MDd.lib",
+            "C:/external/luabind/lib/luabindd.lib"
+          )
+          foreach ($lib in $debugLibs) {
+            if (Test-Path $lib) {
+              Remove-Item $lib -Force
+              Write-Host "Removed: $lib"
+            }
+          }
 
           Write-Host "External dependencies ready at C:/external"
           Write-Host "Final structure:"
@@ -255,7 +271,7 @@ jobs:
         uses: actions/cache/restore@v4
         with:
           path: C:/external
-          key: ryzom-external-2022q2-v2
+          key: ryzom-external-2022q2-v3
           restore-keys: |
             ryzom-external-2022q2-
 
@@ -388,7 +404,7 @@ jobs:
         uses: actions/cache/restore@v4
         with:
           path: C:/external
-          key: ryzom-external-2022q2-v2
+          key: ryzom-external-2022q2-v3
           restore-keys: |
             ryzom-external-2022q2-
 
