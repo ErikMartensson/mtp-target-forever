@@ -147,6 +147,24 @@ jobs:
           Write-Host "`nlibxml2 lib contents:"
           Get-ChildItem "C:/external/libxml2/lib" -ErrorAction SilentlyContinue
 
+      # Verify deps exist (runs even with cache hit for debugging)
+      - name: Verify Dependencies
+        shell: pwsh
+        run: |
+          Write-Host "=== Verifying external dependencies ==="
+          Write-Host "`nlibxml2 lib contents:"
+          Get-ChildItem "C:/external/libxml2/lib" -ErrorAction SilentlyContinue
+          Write-Host "`nChecking for libxml2_a.lib:"
+          if (Test-Path "C:/external/libxml2/lib/libxml2_a.lib") {
+            Write-Host "FOUND: C:/external/libxml2/lib/libxml2_a.lib"
+          } else {
+            Write-Host "NOT FOUND: C:/external/libxml2/lib/libxml2_a.lib"
+            Write-Host "Available libs:"
+            Get-ChildItem "C:/external/libxml2/lib" -Filter "*.lib" -ErrorAction SilentlyContinue
+          }
+          Write-Host "`nOpenSSL lib contents:"
+          Get-ChildItem "C:/external/openssl/lib/VC" -Filter "*.lib" -ErrorAction SilentlyContinue
+
       # STEP 2: Build RyzomCore (requires external deps)
       - name: Cache RyzomCore
         id: cache-ryzomcore
