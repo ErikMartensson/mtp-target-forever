@@ -25,8 +25,11 @@ ELSE(NOT NeL_FIND_COMPONENTS)
 ENDIF(NOT NeL_FIND_COMPONENTS)  
 
 # Find the path to the NeL includes.
-FIND_PATH(NEL_INCLUDE_DIR nel/misc/types_nl.h 
+# Support NEL_PREFIX_PATH for CI builds (points to RyzomCore build dir)
+FIND_PATH(NEL_INCLUDE_DIR nel/misc/types_nl.h
   PATHS
+  ${NEL_PREFIX_PATH}/../code/nel/include
+  ${NEL_PREFIX_PATH}/include
   [HKEY_LOCAL_MACHINE\\SOFTWARE\\NeL\\NeL;]/include
   $ENV{ProgramFiles}/NeL/include
   $ENV{NEL_DIR}/include
@@ -43,22 +46,25 @@ IF(NOT NEL_INCLUDE_DIR)
 ENDIF(NOT NEL_INCLUDE_DIR)
 
 # A utility macro to wrap NeL finds...
-MACRO(FIND_NEL_LIBRARY MYLIBRARY)   
+# Support NEL_PREFIX_PATH for CI builds (points to RyzomCore build dir)
+MACRO(FIND_NEL_LIBRARY MYLIBRARY)
   FIND_LIBRARY(${MYLIBRARY}
                NAMES ${ARGN}
-               PATHS 
-				[HKEY_LOCAL_MACHINE\\SOFTWARE\\NeL\\NeL;]/lib
-				$ENV{ProgramFiles}/NeL/lib
-				$ENV{NEL_DIR}/lib
-				/usr/local/lib
-				/usr/lib
-				/usr/local/X11R6/lib
-				/usr/X11R6/lib
-				/sw/lib
-				/opt/local/lib
-				/opt/csw/lib
-				/opt/lib
-				/usr/freeware/lib64)               
+               PATHS
+                ${NEL_PREFIX_PATH}/lib/Release
+                ${NEL_PREFIX_PATH}/lib
+                [HKEY_LOCAL_MACHINE\\SOFTWARE\\NeL\\NeL;]/lib
+                $ENV{ProgramFiles}/NeL/lib
+                $ENV{NEL_DIR}/lib
+                /usr/local/lib
+                /usr/lib
+                /usr/local/X11R6/lib
+                /usr/X11R6/lib
+                /sw/lib
+                /opt/local/lib
+                /opt/csw/lib
+                /opt/lib
+                /usr/freeware/lib64)
 ENDMACRO(FIND_NEL_LIBRARY MYLIBRARY)
 
 
