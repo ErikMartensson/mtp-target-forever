@@ -89,6 +89,9 @@ private:
 	float AltimeterMaxValue;
 	float AltimeterValue;
 
+	float SmoothedSpeed;   // Fast EMA for display (~3 frame response)
+	float BaselineSpeed;   // Slow EMA for acceleration detection (~20 frame response)
+
 	bool pressControlMessageAdded;
 	bool landClosedMessageAdded;
 	bool landClosedMessageAdded2;

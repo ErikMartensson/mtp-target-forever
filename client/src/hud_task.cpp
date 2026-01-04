@@ -58,11 +58,13 @@ using namespace NLMISC;
 //
 // Functions
 //
-	
+
 void CHudTask::init()
 {
 	AltimeterMinValue = CConfigFileTask::getInstance().configFile().getVar("AltimeterMinValue").asFloat();
 	AltimeterMaxValue = CConfigFileTask::getInstance().configFile().getVar("AltimeterMaxValue").asFloat();
+	SmoothedSpeed = 0.0f;
+	BaselineSpeed = 0.0f;
 	pressControlMessageAdded = false;
 	landClosedMessageAdded = false;
 	landClosedMessageAdded2 = false;
@@ -75,21 +77,26 @@ void CHudTask::update()
 	AltimeterValue = ((eid != 255) ? CEntityManager::getInstance()[eid].interpolator().currentPosition().z : AltimeterMinValue);
 	AltimeterValue = min(AltimeterValue, AltimeterMaxValue);
 	AltimeterValue = max(AltimeterValue, AltimeterMinValue);
+
+	// update speed values using exponential moving averages
+	float rawSpeed = ((eid != 255) ? CEntityManager::getInstance()[eid].interpolator().currentSpeed().norm() : 0.0f);
+	SmoothedSpeed = SmoothedSpeed * 0.7f + rawSpeed * 0.3f;   // Fast EMA (~3 frame response)
+	BaselineSpeed = BaselineSpeed * 0.95f + rawSpeed * 0.05f; // Slow EMA (~20 frame response)
 }
 
 void CHudTask::render()
 {
 	C3DTask::getInstance().driver().setFrustum(CFrustum(0, (float)C3DTask::getInstance().screenWidth(), 0, (float)C3DTask::getInstance().screenHeight(), -1, 1, false));
-	
+
 	string str;
 
 	float ptdt = 1.0f;
 	bool displaySessionInfo = false;
 	float partTime = CMtpTarget::getInstance().timeBeforeSessionStart();
 	static uint32 oldPartTime = 0;
-	
+
 	if(CMtpTarget::getInstance().State == CMtpTarget::eStartSession)
-	{		
+	{
 		str = "Waiting for other players";
 		ptdt = 1.0f;
 	}
@@ -153,19 +160,19 @@ void CHudTask::render()
 		}
 		else
 		{
-			CFontManager::getInstance().printf(it->col,it->scale * it->x * CFontManager::getInstance().fontWidth(),it->scale * it->y * CFontManager::getInstance().fontHeight(),it->scale, it->message.c_str());			
+			CFontManager::getInstance().printf(it->col,it->scale * it->x * CFontManager::getInstance().fontWidth(),it->scale * it->y * CFontManager::getInstance().fontHeight(),it->scale, it->message.c_str());
 			it++;
 		}
 	}
-	
-	
+
+
 		if (displaySessionInfo)
 		{
 			float fontWidth  = (float )CFontManager::getInstance().fontWidth();
 			float fontHeight = (float )CFontManager::getInstance().fontHeight();
 			string str;
 			uint32 len;
-			
+
 			if(CLevelManager::getInstance().levelPresent())
 				str = "Title: " + CLevelManager::getInstance().currentLevel().name();
 			else
@@ -186,38 +193,38 @@ void CHudTask::render()
 
 			CFontManager::getInstance().printf(CRGBA(245, 238, 141, 255), 1 * fontWidth, 16.0f * fontHeight,1, CMtpTarget::getInstance().String1.c_str());
 			CFontManager::getInstance().printf(CRGBA(253, 207, 85, 255), 1 * fontWidth, 18.0f * fontHeight,1, CMtpTarget::getInstance().String2.c_str());
-			
+
 			/*
 			CFontManager::getInstance().printf(CRGBA(245, 238, 141, 255), 1 * fontWidth, 14 * fontHeight,1, "Best score:");
 			CFontManager::getInstance().printf(CRGBA(253, 207, 85, 255), 3 * fontWidth, 15 * fontHeight,1, string1.c_str());
-			
+
 			CFontManager::getInstance().printf(CRGBA(245, 238, 141, 255), 1 * fontWidth, 16 * fontHeight,1, "Best time:");
 			CFontManager::getInstance().printf(CRGBA(253, 207, 85, 255), 3 * fontWidth, 17 * fontHeight,1, string2.c_str());
 			*/
 		}
 
 	// ace todo put HUD in a task
-	
+
 	float baseY = float(C3DTask::getInstance().screenHeight()) - 300.0f;
 	float height = 244.0f;
 	height = (1-(AltimeterValue - AltimeterMinValue) / (AltimeterMaxValue - AltimeterMinValue)) * height;
 	float x1 = float(C3DTask::getInstance().screenWidth() - 40), y1 = baseY, tx1 = 15, ty1 = 8, tw1 = 34-15, th1 = 253-8;
-	float x2 = float(C3DTask::getInstance().screenWidth() - 60), y2 = baseY - 18 + height, tx2 = 46, ty2 = 10, tw2 = 78-46, th2 = 43-10;	
+	float x2 = float(C3DTask::getInstance().screenWidth() - 60), y2 = baseY - 18 + height, tx2 = 46, ty2 = 10, tw2 = 78-46, th2 = 43-10;
 
 	C3DTask::getInstance().driver().setFrustum(CFrustum(0, (float)C3DTask::getInstance().screenWidth(), 0, (float)C3DTask::getInstance().screenHeight(), -1, 1, false));
 	CFontManager::getInstance().material().setColor(CRGBA(255, 255, 255, 255));
-	
+
 	CQuadUV		quad;
 	quad.V0.set(x1,C3DTask::getInstance().screenHeight()-y1,0);
 	quad.V1.set(x1,C3DTask::getInstance().screenHeight()-y1-th1,0);
 	quad.V2.set(x1+tw1,C3DTask::getInstance().screenHeight()-y1-th1,0);
 	quad.V3.set(x1+tw1,C3DTask::getInstance().screenHeight()-y1,0);
-	
+
 	int rx1 = (int)tx1;
 	int ry1 = (int)ty1;
 	int rx2 = (int)tx1+(int)tw1;
 	int ry2 = (int)ty1+(int)th1;
-	
+
 	quad.Uv0.U= rx1/256.0f;
 	quad.Uv0.V= ry1/256.0f;
 	quad.Uv1.U= rx1/256.0f;
@@ -226,19 +233,19 @@ void CHudTask::render()
 	quad.Uv2.V= ry2/256.0f;
 	quad.Uv3.U= rx2/256.0f;
 	quad.Uv3.V= ry1/256.0f;
-	
+
 	C3DTask::getInstance().driver().drawQuad (quad, CFontManager::getInstance().material());
-	
+
 	quad.V0.set(x2,C3DTask::getInstance().screenHeight()-y2,0);
 	quad.V1.set(x2,C3DTask::getInstance().screenHeight()-y2-th2,0);
 	quad.V2.set(x2+tw2,C3DTask::getInstance().screenHeight()-y2-th2,0);
 	quad.V3.set(x2+tw2,C3DTask::getInstance().screenHeight()-y2,0);
-	
+
 	rx1 = (int)tx2;
 	ry1 = (int)ty2;
 	rx2 = (int)tx2+(int)tw2;
 	ry2 = (int)ty2+(int)th2;
-	
+
 	quad.Uv0.U= rx1/256.0f;
 	quad.Uv0.V= ry1/256.0f;
 	quad.Uv1.U= rx1/256.0f;
@@ -247,20 +254,36 @@ void CHudTask::render()
 	quad.Uv2.V= ry2/256.0f;
 	quad.Uv3.U= rx2/256.0f;
 	quad.Uv3.V= ry1/256.0f;
-	
-	C3DTask::getInstance().driver().drawQuad (quad, CFontManager::getInstance().material());	
-	
+
+	C3DTask::getInstance().driver().drawQuad (quad, CFontManager::getInstance().material());
+
 	uint8 eid = CMtpTarget::getInstance().controler().Camera.getFollowedEntity();
 	if (eid != 255)
 	{
 		// display our score (bottom right)
 		string totalScoreStr = toString("score %d",CEntityManager::getInstance()[eid].totalScore());
 		CFontManager::getInstance().printf(CRGBA(245, 238, 141, 255), (float) (C3DTask::getInstance().screenWidth() - totalScoreStr.size() * CFontManager::getInstance().fontWidth() - 10), float(C3DTask::getInstance().screenHeight() - 1 * CFontManager::getInstance().fontHeight()), 1, totalScoreStr.c_str());
-		
+
+		// display speed with acceleration color coding (above score)
+		string speedStr = toString("speed %d", (int)(SmoothedSpeed * 100.0f));
+		CRGBA speedColor;
+		float speedDelta = SmoothedSpeed - BaselineSpeed;
+		if (speedDelta > 0.005f) {
+			speedColor = CRGBA(0, 255, 0, 255);    // Green - accelerating
+		} else if (speedDelta < -0.005f) {
+			speedColor = CRGBA(255, 0, 0, 255);    // Red - decelerating
+		} else {
+			speedColor = CRGBA(255, 255, 255, 255); // White - stable
+		}
+		// Use fixed width (10 chars for "speed 99.9") to prevent text shifting
+		float speedX = (float)(C3DTask::getInstance().screenWidth() - 10 * CFontManager::getInstance().fontWidth() - 10);
+		float speedY = (float)(C3DTask::getInstance().screenHeight() - 2 * CFontManager::getInstance().fontHeight());
+		CFontManager::getInstance().printf(speedColor, speedX, speedY, 1, speedStr.c_str());
+
 		if (CEntityManager::getInstance()[eid].interpolator().outOfKey())
 			CFontManager::getInstance().printf(CRGBA(255, 0, 0, 255), float(C3DTask::getInstance().screenWidth() / 2 - 70), 100.0f,1, "NET LAG");
 	}
-	
+
 
 	double TimeBeforeTimeout = CMtpTarget::getInstance().timeBeforeTimeout();
 	if (TimeBeforeTimeout < 0)
@@ -272,7 +295,7 @@ void CHudTask::render()
 		string pressPauseToRestart = "Press pause key to restart replay";
 		CFontManager::getInstance().printf(CRGBA(245, 238, 141, 255), 10.0f, (float)(C3DTask::getInstance().screenHeight() - 60),1,pressPauseToRestart.c_str() );
 	}
-	
+
 	CFontManager::getInstance().printf(CRGBA(255,255,255,255),(C3DTask::getInstance().screenWidth() - _viewedName.size() * CFontManager::getInstance().fontWidth()) / 2.0f,float(C3DTask::getInstance().screenHeight() - 2 * CFontManager::getInstance().fontHeight()),1,_viewedName.c_str());
 
 	if(CMtpTarget::getInstance().State == CMtpTarget::eGame && CMtpTarget::getInstance().displayTutorialInfo())
@@ -293,15 +316,15 @@ void CHudTask::render()
 			addMessage(CHudMessage(0,15,1,string("don't touch anything when you fly"),CRGBA(255,255,0,255),5));
 		}
 	}
-	
+
 	/*
 	//updateChat();
-	
+
 	bool displayScoreForced = (displaySelected != eDisplayEndSession) && C3DTask::getInstance().kbDown(KeyTAB);
 	if (displaySelected == eDisplayEndSession || displayScoreForced)
 	{
 		C3DTask::getInstance().driver().drawQuad(0.0f, 0.0f, C3DTask::getInstance().screenWidth() , C3DTask::getInstance().screenHeight(), CRGBA (0, 0, 0, 200));
-		
+
 		// display all players score
 		float x1 = 15.0f;
 		float x2 = 250.0f;
@@ -313,10 +336,10 @@ void CHudTask::render()
 		CFontManager::getInstance().printf(CRGBA(245, 238, 141), x3, y, 1, "total");
 		CFontManager::getInstance().printf(CRGBA(245, 238, 141), x4, y, 1, "ping");
 		y += fontHeight+10;
-		
+
 		vector<uint8> eids;
 		CEntityManager::getInstance().getEIdSortedByScore(eids);
-		
+
 		for(uint i = 0; i < eids.size(); i++, y += fontHeight)
 		{
 			CFontManager::getInstance().printf(CEntityManager::getInstance()[i].color(), x1, y, 1, "%s%s", CEntityManager::getInstance()[i].name().c_str(), (CEntityManager::getInstance()[i].spectator()?" :spec:":""));
@@ -325,7 +348,7 @@ void CHudTask::render()
 			CFontManager::getInstance().printf(CEntityManager::getInstance()[i].color(), x3, y, 1, "%u", CEntityManager::getInstance()[i].totalScore());
 			CFontManager::getInstance().printf(CEntityManager::getInstance()[i].color(), x4, y, 1, "%u", CEntityManager::getInstance()[i].ping());
 		}
-	}	
+	}
 	*/
 }
 

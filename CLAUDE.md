@@ -99,6 +99,7 @@ LevelPlaylist = { };                   # Empty = normal rotation
 
 ### Client
 - `client/src/chat_task.cpp` - Chat toggle mode (Enter key)
+- `client/src/hud_task.cpp` - HUD rendering (speed display, altimeter, score)
 - `client/src/interpolator.cpp` - Client-side position smoothing
 
 ### Lua Scripts
