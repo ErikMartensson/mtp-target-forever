@@ -47,7 +47,7 @@ jobs:
         uses: actions/cache@v4
         with:
           path: C:/external
-          key: ryzom-external-2022q2-v7
+          key: ryzom-external-2022q2-v8
           restore-keys: |
             ryzom-external-2022q2-
 
@@ -133,6 +133,12 @@ jobs:
             Write-Host "Removed: C:/external/luabind/lib/luabindd.lib"
           }
 
+          # Remove libxml2 debug lib
+          if (Test-Path "C:/external/libxml2/lib/libxml2d.lib") {
+            Remove-Item "C:/external/libxml2/lib/libxml2d.lib" -Force
+            Write-Host "Removed: C:/external/libxml2/lib/libxml2d.lib"
+          }
+
           Write-Host "External dependencies ready at C:/external"
           Write-Host "Final structure:"
           Get-ChildItem C:/external | Select-Object Mode, Name
@@ -153,17 +159,11 @@ jobs:
         run: |
           Write-Host "=== Verifying external dependencies ==="
           Write-Host "`nlibxml2 lib contents:"
-          Get-ChildItem "C:/external/libxml2/lib" -ErrorAction SilentlyContinue
-          Write-Host "`nChecking for libxml2_a.lib:"
-          if (Test-Path "C:/external/libxml2/lib/libxml2_a.lib") {
-            Write-Host "FOUND: C:/external/libxml2/lib/libxml2_a.lib"
-          } else {
-            Write-Host "NOT FOUND: C:/external/libxml2/lib/libxml2_a.lib"
-            Write-Host "Available libs:"
-            Get-ChildItem "C:/external/libxml2/lib" -Filter "*.lib" -ErrorAction SilentlyContinue
-          }
+          Get-ChildItem "C:/external/libxml2/lib" -Filter "*.lib" -ErrorAction SilentlyContinue
           Write-Host "`nOpenSSL lib contents:"
           Get-ChildItem "C:/external/openssl/lib/VC" -Filter "*.lib" -ErrorAction SilentlyContinue
+          Write-Host "`nLuabind lib contents:"
+          Get-ChildItem "C:/external/luabind/lib" -Filter "*.lib" -ErrorAction SilentlyContinue
 
       # STEP 2: Build RyzomCore (requires external deps)
       - name: Cache RyzomCore
@@ -171,7 +171,7 @@ jobs:
         uses: actions/cache@v4
         with:
           path: C:/ryzomcore
-          key: ryzomcore-nel-v5
+          key: ryzomcore-nel-v6
           restore-keys: |
             ryzomcore-nel-
 
@@ -206,8 +206,6 @@ jobs:
             -DWITH_SNOWBALLS=OFF `
             -DWITH_STATIC=ON `
             -DWITH_STATIC_LIBXML2=ON `
-            -DICONV_INCLUDE_DIR=C:/external/libxml2/include `
-            -DICONV_LIBRARY=C:/external/libxml2/lib/iconv_a.lib `
             "-DCMAKE_PREFIX_PATH=$cmakePrefixPath" `
             -DLUA_INCLUDE_DIR=C:/external/lua/include `
             -DLUA_LIBRARIES=C:/external/lua/lib/lua51.lib `
@@ -215,7 +213,7 @@ jobs:
             -DLUABIND_LIBRARY=C:/external/luabind/lib/luabind.lib `
             -DLUABIND_LIBRARIES=C:/external/luabind/lib/luabind.lib `
             -DLIBXML2_INCLUDE_DIR=C:/external/libxml2/include/libxml2 `
-            -DLIBXML2_LIBRARY=C:/external/libxml2/lib/libxml2_a.lib `
+            -DLIBXML2_LIBRARY=C:/external/libxml2/lib/libxml2.lib `
             -DZLIB_INCLUDE_DIR=C:/external/zlib/include `
             -DZLIB_LIBRARY=C:/external/zlib/lib/zlib.lib `
             -DPNG_PNG_INCLUDE_DIR=C:/external/libpng/include `
@@ -291,7 +289,7 @@ jobs:
         uses: actions/cache/restore@v4
         with:
           path: C:/ryzomcore
-          key: ryzomcore-nel-v5
+          key: ryzomcore-nel-v6
           restore-keys: |
             ryzomcore-nel-
 
@@ -299,7 +297,7 @@ jobs:
         uses: actions/cache/restore@v4
         with:
           path: C:/external
-          key: ryzom-external-2022q2-v7
+          key: ryzom-external-2022q2-v8
           restore-keys: |
             ryzom-external-2022q2-
 
@@ -424,7 +422,7 @@ jobs:
         uses: actions/cache/restore@v4
         with:
           path: C:/ryzomcore
-          key: ryzomcore-nel-v5
+          key: ryzomcore-nel-v6
           restore-keys: |
             ryzomcore-nel-
 
@@ -432,7 +430,7 @@ jobs:
         uses: actions/cache/restore@v4
         with:
           path: C:/external
-          key: ryzom-external-2022q2-v7
+          key: ryzom-external-2022q2-v8
           restore-keys: |
             ryzom-external-2022q2-
 
