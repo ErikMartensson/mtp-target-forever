@@ -28,7 +28,7 @@ ENDIF(NOT NeL_FIND_COMPONENTS)
 # Support NEL_PREFIX_PATH for CI builds (points to RyzomCore build dir)
 FIND_PATH(NEL_INCLUDE_DIR nel/misc/types_nl.h
   PATHS
-  ${NEL_PREFIX_PATH}/../code/nel/include
+  ${NEL_PREFIX_PATH}/../nel/include
   ${NEL_PREFIX_PATH}/include
   [HKEY_LOCAL_MACHINE\\SOFTWARE\\NeL\\NeL;]/include
   $ENV{ProgramFiles}/NeL/include
