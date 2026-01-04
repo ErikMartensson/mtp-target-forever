@@ -113,13 +113,23 @@ jobs:
           Write-Host "Final structure:"
           Get-ChildItem C:/external | Select-Object Mode, Name
 
+          # Show Ryzom's recommended CMake prefix path
+          if (Test-Path "C:/external/cmake_prefix_path_ryz.txt") {
+            Write-Host "`nRyzom CMAKE_PREFIX_PATH recommendation:"
+            Get-Content "C:/external/cmake_prefix_path_ryz.txt"
+          }
+
+          # Check libxml2 structure for iconv
+          Write-Host "`nlibxml2 lib contents:"
+          Get-ChildItem "C:/external/libxml2/lib" -ErrorAction SilentlyContinue
+
       # STEP 2: Build RyzomCore (requires external deps)
       - name: Cache RyzomCore
         id: cache-ryzomcore
         uses: actions/cache@v4
         with:
           path: C:/ryzomcore
-          key: ryzomcore-nel-v3
+          key: ryzomcore-nel-v4
           restore-keys: |
             ryzomcore-nel-
 
@@ -137,6 +147,10 @@ jobs:
 
           # Point to external dependencies via CMAKE_PREFIX_PATH
           # (Don't use WITH_EXTERNAL as it requires a CMakeLists.txt in external dir)
+          #
+          # Read recommended paths from the external package
+          $cmakePrefixPath = "C:/external/zlib;C:/external/libpng;C:/external/libjpeg;C:/external/freetype;C:/external/openal-soft;C:/external/ogg;C:/external/vorbis;C:/external/boost;C:/external/lua;C:/external/libxml2;C:/external/curl;C:/external/openssl"
+
           cmake .. -G "Visual Studio 17 2022" -A x64 `
             -DWITH_SOUND=ON `
             -DWITH_NEL=ON `
@@ -148,12 +162,17 @@ jobs:
             -DWITH_NELNS=OFF `
             -DWITH_SNOWBALLS=OFF `
             -DWITH_STATIC=ON `
-            -DCMAKE_PREFIX_PATH=C:/external `
+            -DWITH_STATIC_LIBXML2=ON `
+            -DLIBXML2_WITH_ICONV=OFF `
+            -DICONV_INCLUDE_DIR=C:/external/libxml2/include `
+            -DICONV_LIBRARIES=C:/external/libxml2/lib/iconv.lib `
+            "-DCMAKE_PREFIX_PATH=$cmakePrefixPath" `
             -DLUA_INCLUDE_DIR=C:/external/lua/include `
             -DLUA_LIBRARIES=C:/external/lua/lib/lua51.lib `
             -DLIBXML2_INCLUDE_DIR=C:/external/libxml2/include/libxml2 `
             -DLIBXML2_LIBRARY=C:/external/libxml2/lib/libxml2_a.lib `
-            -DZLIB_ROOT=C:/external/zlib `
+            -DZLIB_INCLUDE_DIR=C:/external/zlib/include `
+            -DZLIB_LIBRARY=C:/external/zlib/lib/zlib.lib `
             -DPNG_PNG_INCLUDE_DIR=C:/external/libpng/include `
             -DPNG_LIBRARY=C:/external/libpng/lib/libpng16.lib `
             -DJPEG_INCLUDE_DIR=C:/external/libjpeg/include `
@@ -222,7 +241,7 @@ jobs:
         uses: actions/cache/restore@v4
         with:
           path: C:/ryzomcore
-          key: ryzomcore-nel-v3
+          key: ryzomcore-nel-v4
           restore-keys: |
             ryzomcore-nel-
 
@@ -355,7 +374,7 @@ jobs:
         uses: actions/cache/restore@v4
         with:
           path: C:/ryzomcore
-          key: ryzomcore-nel-v3
+          key: ryzomcore-nel-v4
           restore-keys: |
             ryzomcore-nel-
 
