@@ -344,46 +344,81 @@ REM ============================================
 REM Copy dependency DLLs (Required for both client and server)
 echo %STEP%. Copying dependency DLLs...
 
-REM Determine source directory for dependency DLLs
-set DEPS_DIR=
-if exist "%TUXDEPS_PREFIX_PATH%\bin" (
-    set DEPS_DIR=%TUXDEPS_PREFIX_PATH%\bin
-) else if exist "C:\tux_target_deps\bin" (
-    set DEPS_DIR=C:\tux_target_deps\bin
-) else if exist "%PROJECT_DIR%\build\bin\Release" (
-    set DEPS_DIR=%PROJECT_DIR%\build\bin\Release
-) else (
-    echo    ! Warning: Dependency DLL directory not found
+REM Determine base deps directory
+set DEPS_BASE=
+if defined TUXDEPS_PREFIX_PATH (
+    if exist "%TUXDEPS_PREFIX_PATH%" set DEPS_BASE=%TUXDEPS_PREFIX_PATH%
+)
+if "%DEPS_BASE%"=="" (
+    if exist "C:\tux_target_deps" set DEPS_BASE=C:\tux_target_deps
+)
+
+if "%DEPS_BASE%"=="" (
+    echo    ! Warning: Dependency directory not found
+    echo      Set TUXDEPS_PREFIX_PATH or ensure C:\tux_target_deps exists
     echo.
     set /a STEP+=1
     goto skip_deps_copy
 )
 
-echo    Using DLL source: !DEPS_DIR!
+echo    Using deps base: !DEPS_BASE!
 
+REM Copy DLLs from individual library subdirectories
 REM Core dependencies (needed by both client and server)
-for %%D in (lua.dll zlib.dll freetype.dll libpng16.dll jpeg62.dll) do (
-    if exist "!DEPS_DIR!\%%D" (
-        copy /Y "!DEPS_DIR!\%%D" "%RELEASE_DIR%\" >nul
-        echo    + Copied: %%D
-    )
+if exist "!DEPS_BASE!\lua\bin\lua.dll" (
+    copy /Y "!DEPS_BASE!\lua\bin\lua.dll" "%RELEASE_DIR%\" >nul
+    echo    + Copied: lua.dll
+)
+if exist "!DEPS_BASE!\zlib\bin\zlib.dll" (
+    copy /Y "!DEPS_BASE!\zlib\bin\zlib.dll" "%RELEASE_DIR%\" >nul
+    echo    + Copied: zlib.dll
+)
+if exist "!DEPS_BASE!\freetype\bin\freetype.dll" (
+    copy /Y "!DEPS_BASE!\freetype\bin\freetype.dll" "%RELEASE_DIR%\" >nul
+    echo    + Copied: freetype.dll
+)
+if exist "!DEPS_BASE!\libpng\bin\libpng16.dll" (
+    copy /Y "!DEPS_BASE!\libpng\bin\libpng16.dll" "%RELEASE_DIR%\" >nul
+    echo    + Copied: libpng16.dll
+)
+if exist "!DEPS_BASE!\libjpeg\bin\jpeg62.dll" (
+    copy /Y "!DEPS_BASE!\libjpeg\bin\jpeg62.dll" "%RELEASE_DIR%\" >nul
+    echo    + Copied: jpeg62.dll
 )
 
-REM Client-specific dependencies (graphics and audio libraries)
+REM Client-specific dependencies (graphics, audio, networking libraries)
 if %SERVER_ONLY%==0 (
-    for %%D in (libxml2.dll libcurl.dll vorbisfile.dll vorbis.dll ogg.dll OpenAL32.dll libcrypto-1_1-x64.dll libssl-1_1-x64.dll) do (
-        if exist "!DEPS_DIR!\%%D" (
-            copy /Y "!DEPS_DIR!\%%D" "%RELEASE_DIR%\" >nul
-            echo    + Copied: %%D
-        )
+    if exist "!DEPS_BASE!\libxml2\bin\libxml2.dll" (
+        copy /Y "!DEPS_BASE!\libxml2\bin\libxml2.dll" "%RELEASE_DIR%\" >nul
+        echo    + Copied: libxml2.dll
     )
-)
-
-REM Visual C++ Runtime DLLs (if available in deps directory)
-for %%D in (msvcp140.dll vcruntime140.dll vcruntime140_1.dll concrt140.dll) do (
-    if exist "!DEPS_DIR!\%%D" (
-        copy /Y "!DEPS_DIR!\%%D" "%RELEASE_DIR%\" >nul
-        echo    + Copied: %%D
+    if exist "!DEPS_BASE!\curl\bin\libcurl.dll" (
+        copy /Y "!DEPS_BASE!\curl\bin\libcurl.dll" "%RELEASE_DIR%\" >nul
+        echo    + Copied: libcurl.dll
+    )
+    if exist "!DEPS_BASE!\vorbis\bin\vorbisfile.dll" (
+        copy /Y "!DEPS_BASE!\vorbis\bin\vorbisfile.dll" "%RELEASE_DIR%\" >nul
+        echo    + Copied: vorbisfile.dll
+    )
+    if exist "!DEPS_BASE!\vorbis\bin\vorbis.dll" (
+        copy /Y "!DEPS_BASE!\vorbis\bin\vorbis.dll" "%RELEASE_DIR%\" >nul
+        echo    + Copied: vorbis.dll
+    )
+    if exist "!DEPS_BASE!\ogg\bin\ogg.dll" (
+        copy /Y "!DEPS_BASE!\ogg\bin\ogg.dll" "%RELEASE_DIR%\" >nul
+        echo    + Copied: ogg.dll
+    )
+    if exist "!DEPS_BASE!\openal-soft\bin\OpenAL32.dll" (
+        copy /Y "!DEPS_BASE!\openal-soft\bin\OpenAL32.dll" "%RELEASE_DIR%\" >nul
+        echo    + Copied: OpenAL32.dll
+    )
+    if exist "!DEPS_BASE!\openssl\bin\libcrypto-1_1-x64.dll" (
+        copy /Y "!DEPS_BASE!\openssl\bin\libcrypto-1_1-x64.dll" "%RELEASE_DIR%\" >nul
+        echo    + Copied: libcrypto-1_1-x64.dll
+    )
+    if exist "!DEPS_BASE!\openssl\bin\libssl-1_1-x64.dll" (
+        copy /Y "!DEPS_BASE!\openssl\bin\libssl-1_1-x64.dll" "%RELEASE_DIR%\" >nul
+        echo    + Copied: libssl-1_1-x64.dll
     )
 )
 

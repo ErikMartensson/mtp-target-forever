@@ -4,7 +4,10 @@ REM
 REM This script starts the game client and rotates log files on startup
 REM to prevent infinite log growth.
 REM
-REM Usage: scripts\run-client.bat
+REM Usage: scripts\run-client.bat [options]
+REM Options:
+REM   --lan <hostname>  Auto-connect to LAN server
+REM   --user <username> Set username for auto-connect
 
 setlocal enabledelayedexpansion
 
@@ -70,7 +73,7 @@ echo   - Enter: Open chat
 echo.
 
 cd /d "%CLIENT_DIR%"
-tux-target.exe
+tux-target.exe %*
 
 echo.
 echo Client exited.

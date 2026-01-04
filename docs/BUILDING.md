@@ -380,10 +380,15 @@ First build takes longer; subsequent builds use cached dependencies.
 
 ### Runtime Errors
 
+**Missing DLL errors (zlib.dll, lua.dll, etc.)**
+- Run post-build script: `.\scripts\post-build.bat --client-only` or `--server-only`
+- The script copies DLLs from `C:\tux_target_deps\<library>\bin\`
+- See [Runtime DLLs](#runtime-dlls) section below for the complete list
+
 **"nel_drv_opengl_win_r.dll not found"**
 - Run post_build script: `./scripts/post_build.sh --client-only`
 - Or manually copy from `C:\ryzomcore\build\bin\Release\nel_drv_opengl_win_r.dll`
-- Also need: `nel_drv_openal_win_r.dll`, `nel_drv_dsound_win_r.dll`
+- Also need: `nel_drv_openal_win_r.dll`
 
 **"data not found" warnings**
 - Run from the correct directory (where `data/` exists)
@@ -404,6 +409,40 @@ Logs are stored in `logs/` subdirectory:
 - `nel_debug.dmp` - Crash dumps
 
 Old logs are numbered: `log.log.1`, `log.log.2`, etc.
+
+### Runtime DLLs
+
+The post-build script (`scripts/post-build.bat`) copies these DLLs from `C:\tux_target_deps`.
+
+**Server DLLs** (required for `tux-target-srv.exe`):
+
+| DLL | Source Path | Library |
+|-----|-------------|---------|
+| `lua.dll` | `lua/bin/` | Lua 5.1 scripting |
+| `zlib.dll` | `zlib/bin/` | Compression |
+| `freetype.dll` | `freetype/bin/` | Font rendering |
+| `libpng16.dll` | `libpng/bin/` | PNG image loading |
+| `jpeg62.dll` | `libjpeg/bin/` | JPEG image loading |
+
+**Client DLLs** (all server DLLs plus these):
+
+| DLL | Source Path | Library |
+|-----|-------------|---------|
+| `libxml2.dll` | `libxml2/bin/` | XML parsing |
+| `libcurl.dll` | `curl/bin/` | HTTP client |
+| `libcrypto-1_1-x64.dll` | `openssl/bin/` | OpenSSL crypto |
+| `libssl-1_1-x64.dll` | `openssl/bin/` | OpenSSL SSL/TLS |
+| `ogg.dll` | `ogg/bin/` | Ogg container |
+| `vorbis.dll` | `vorbis/bin/` | Vorbis audio codec |
+| `vorbisfile.dll` | `vorbis/bin/` | Vorbis file I/O |
+| `OpenAL32.dll` | `openal-soft/bin/` | 3D audio |
+
+**NeL Driver DLLs** (from `C:\ryzomcore\build\bin\Release\`):
+
+| DLL | Purpose |
+|-----|---------|
+| `nel_drv_opengl_win_r.dll` | OpenGL graphics driver |
+| `nel_drv_openal_win_r.dll` | OpenAL sound driver |
 
 ---
 

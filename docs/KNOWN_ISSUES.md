@@ -4,18 +4,22 @@ This document tracks known issues and planned improvements for the Tux Target ga
 
 ## High Priority
 
-### 1. Missing Maps
-**Status:** Not Started
-**Description:** Not all maps are available anymore. Maps like Classic, Classic Fight, and others were removed due to v1.5.19 Lua API incompatibility.
+### 1. ~~Missing Maps~~ (MOSTLY FIXED)
+**Status:** ✅ 32 of 32 playable levels working
+**Description:** All snow-theme levels have been ported and tested. Remaining levels require space/sun/city theme assets.
 
-**Affected Maps:**
-- Classic, Classic Easy, Classic Fight, Classic Flat
-- City Darts, City Destroy, City Easy, City Paint, City Precision
-- Space Asteroids, Space Atomium, Space Fleet, etc.
-- Sun Cross, Sun Extra Ball, Sun Paint, Sun Shrinker, Sun Target
-- And many more (64 total removed)
+**Working Levels (32):**
+All playable levels (ReleaseLevel 1-5) have been tested and verified working. See [docs/LEVELS.md](LEVELS.md) for the complete list.
 
-**Solution:** Implement a Lua API compatibility layer that translates v1.5.19 `CLevel:method()` calls to v1.2.2a declarative table format, or port each level manually.
+**Unavailable Levels (30):**
+These require missing theme assets (space, sun, city) or gate mechanics:
+- Space: `level_space_*` (12 levels)
+- Sun: `level_sun_*` (7 levels)
+- City: `level_city_*` (6 levels)
+- Gates: `level_gates_*` (4 levels)
+- Other: `level_bowls1` (1 level)
+
+**Solution:** Import missing assets from original game data or create replacements.
 
 ---
 
@@ -106,22 +110,51 @@ Changed contact surface mode from `dContactMu2` to `dContactApprox1` in `server/
 
 ---
 
-### 6. Darts Map Spawn Position
-**Status:** Not Started
-**Description:** On the "Darts" map, all penguins spawn too far back from the launch pad. This map has a long flat straight black surface that accelerates players toward a vertical dart board.
+### 6. ~~Darts Map Spawn Position~~ (FIXED)
+**Status:** ✅ FIXED
+**Description:** level_darts is now working correctly with proper acceleration, visibility, and scoring.
 
-**Note:** This issue was observed before build process updates and needs re-testing.
+---
 
-**Details:**
-- Map: `level_darts.lua` (currently removed)
-- Start points may be incorrectly positioned
-- Need to verify spawn positions match level design
+### 7. ~~Team Mirror Level Scoring~~ (FIXED)
+**Status:** ✅ FIXED
+**Description:** Team levels now work correctly with original scoring logic restored.
+
+**Fix Applied:**
+Restored original scoring behavior in `level_team_server.lua`:
+- Landing on your own team's target gives positive points
+- Landing on enemy team's target gives negative points (subtracted from team score)
+
+The level layout is correct - targets are on opposite sides of Y=0 (red team at negative Y, blue team at positive Y), not overlapping.
+
+**Files Modified:**
+- `data/lua/level_team_server.lua` - Restored original negative scoring for enemy targets
+
+---
+
+## Technical Notes
+
+### Level Geometry and Z-Offset Collision Behavior
+**Category:** Documentation / Quirk
+
+When creating stacked target zones (like in `level_snow_pyramid`), the collision boxes can use very small Z offsets (0.01 units) to create proper collision separation, even when this seems mathematically impossible given the Z scale (0.5 units).
+
+**Example from level_snow_pyramid:**
+```lua
+{ Position = CVector(0, -15, 3),    Scale = CVector(14, 14, 0.5), Score = 50 }
+{ Position = CVector(0, -15, 3.01), Scale = CVector(7, 7, 0.5),   Score = 100 }
+{ Position = CVector(0, -15, 3.02), Scale = CVector(3, 3, 0.5),   Score = 300 }
+```
+
+Despite boxes extending 0.5 units in Z (from Z to Z+0.5), they behave as distinct collision surfaces. The ODE physics engine appears to handle contact detection in a way that the first contact "wins" even when shapes technically overlap. This behavior is correct and should be preserved.
+
+**Takeaway:** When porting levels, preserve the original small Z offsets - they work correctly in-game even if they appear overlapping on paper.
 
 ---
 
 ## Low Priority / Nice to Have
 
-### 7. Water Rendering Disabled
+### 8. Water Rendering Disabled
 **Status:** Workaround Applied
 **Description:** Water rendering is currently disabled because the required water textures or shaders are missing.
 
@@ -129,7 +162,7 @@ Changed contact surface mode from `dContactMu2` to `dContactApprox1` in `server/
 
 ---
 
-### 8. Version Compatibility
+### 9. Version Compatibility
 **Status:** Ongoing
 **Description:** The current build uses v1.2.2a source code. Some features from v1.5.19 are not available.
 
@@ -149,6 +182,10 @@ Changed contact surface mode from `dContactMu2` to `dContactApprox1` in `server/
 - [x] Add build automation scripts
 - [x] Consolidate game assets in data/ directory
 - [x] **Fix momentum loss on ramp transitions** (January 2, 2026) - Changed ODE contact mode to dContactApprox1
+- [x] **Fix team level scoring** (January 4, 2026) - Restored original negative enemy scoring in level_team_server.lua
+- [x] **Fix level_team_mirror** (January 4, 2026) - Fixed camera direction and added fallback team detection from module names
+- [x] **Port level_team_classic** (January 4, 2026) - Replaced broken level_team with proper level_team_classic from original sources
+- [x] **All 32 playable levels tested** (January 4, 2026) - Every level verified working with scoring, friction, and slope steering fixes applied
 
 ---
 
