@@ -80,6 +80,7 @@ public:
 	bool	RightButtonDown;
 	bool	Pressed;
 	bool	Clicked;
+	bool	RightClicked;
 	double  LastClickedTime;
 	bool	DoubleClicked;
 	float	MouseX, MouseY;
@@ -93,7 +94,8 @@ private:
 	/// Internal use
 	virtual void operator ()(const NLMISC::CEvent& event);
 private:
-	bool    LastButtonDown;   
+	bool    LastButtonDown;
+	bool    LastRightButtonDown;
 	bool    _captureCursor;
 	bool    _cursorCaptured;
 	

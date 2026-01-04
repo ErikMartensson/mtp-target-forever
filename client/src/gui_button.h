@@ -74,13 +74,14 @@ public:
 	static CGuiObject *Create();
 	virtual void init(CGuiXml *xml,xmlNodePtr node);
 	bool pressed();
+	bool rightPressed();
 
 	guiSPG<CGuiButtonEventBehaviour> eventBehaviour;
 private:
 
 	void _init();
 	void _onPressed();
-	
+
 	NL3D::UMaterial _prelightBitmap;
 	NL3D::UMaterial _insensitiveBitmap;
 	NL3D::UMaterial _normalBitmap;
@@ -88,6 +89,7 @@ private:
 
 	bool _stretched;
 	bool _pressed;
+	bool _rightPressed;
 	std::string _onClickScript;
 };
 

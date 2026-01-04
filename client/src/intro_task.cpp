@@ -25,6 +25,12 @@
 
 #include "stdpch.h"
 
+#ifdef NL_OS_WINDOWS
+#	define NOMINMAX
+#	include <windows.h>
+#endif
+
+#include <set>
 #include <nel/net/callback_client.h>
 
 #include "3d_task.h"
@@ -222,6 +228,7 @@ void CIntroTask::updateInit()
 	howToPlay = (CGuiButton *)xml->get("bHowToPlay");
 	playOnLineButton = (CGuiButton *)xml->get("bPlayOnline");
 	playOnLanButton = (CGuiButton *)xml->get("bPlayOnlan");
+	optionsButton = (CGuiButton *)xml->get("bOptions");
 	exitButton3 = (CGuiButton *)xml->get("bExit");
 	exitButton3->eventBehaviour = new CGuiExitButtonEventBehaviour();
 	
@@ -249,7 +256,24 @@ void CIntroTask::updateInit()
 	serverListFrame = (CGuiFrame *)xml->get("serverListFrame");
 	serverVbox = (CGuiVBox *)xml->get("serverVbox");
 	backButton2 = (CGuiButton *)xml->get("bBack");
-	
+
+	xml = CGuiXmlManager::getInstance().Load("options.xml");
+	optionsFrame = (CGuiFrame *)xml->get("optionsFrame");
+	resolutionButton = (CGuiButton *)xml->get("bResolution");
+	resolutionText = (CGuiText *)xml->get("txtResolution");
+	fullscreenButton = (CGuiButton *)xml->get("bFullscreen");
+	fullscreenText = (CGuiText *)xml->get("txtFullscreen");
+	vsyncButton = (CGuiButton *)xml->get("bVSync");
+	vsyncText = (CGuiText *)xml->get("txtVSync");
+	applyButton = (CGuiButton *)xml->get("bApply");
+	optionsBackButton = (CGuiButton *)xml->get("bOptionsBack");
+	pendingFullscreen = false;
+	pendingVSync = false;
+	selectedResolutionIndex = 0;
+	originalResolutionIndex = 0;
+	originalFullscreen = false;
+	originalVSync = false;
+
 	serverListBackButton	= new CGuiButton();
 	serverListBackButton->element(new CGuiText("Back"));
 	serverListBackButton->minWidth(80);
@@ -298,7 +322,28 @@ void CIntroTask::updateMenu()
 		CGuiObjectManager::getInstance().objects.push_back(loginLanFrame);
 		State = eLoginOnlan;
 	}
-	
+	if(optionsButton->pressed())
+	{
+		CGuiObjectManager::getInstance().objects.clear();
+		populateResolutions();
+
+		// Load current fullscreen/vsync state from config
+		pendingFullscreen = CConfigFileTask::getInstance().configFile().getVar("Fullscreen").asInt() == 1;
+		pendingVSync = CConfigFileTask::getInstance().configFile().getVar("VSync").asInt() == 1;
+
+		// Store original settings to detect changes
+		originalResolutionIndex = selectedResolutionIndex;
+		originalFullscreen = pendingFullscreen;
+		originalVSync = pendingVSync;
+
+		// Update button text to show current state
+		fullscreenText->text = pendingFullscreen ? "ON" : "OFF";
+		vsyncText->text = pendingVSync ? "ON" : "OFF";
+
+		CGuiObjectManager::getInstance().objects.push_back(optionsFrame);
+		State = eOptions;
+	}
+
 }
 
 void CIntroTask::updateLoginOnline()
@@ -538,7 +583,8 @@ void CIntroTask::update()
 	updateServerList();
 	updateConnectionOnLine();
 	updateConnectionOnLan();
-	
+	updateOptions();
+
 	if(C3DTask::getInstance().kbPressed(KeyESCAPE))
 	{
 		// want to quit
@@ -551,6 +597,148 @@ void CIntroTask::update()
 void CIntroTask::render()
 {
 	CFontManager::getInstance().littlePrintf(0.0f, 0.0f, toString("v%s %s",MTPT_RELEASE_VERSION_NUMBER,MTPT_RELEASE_VERSION_NAME).c_str());
+}
+
+void CIntroTask::populateResolutions()
+{
+	std::vector<NL3D::UDriver::CMode> availableModes;
+	C3DTask::getInstance().driver().getModes(availableModes);
+
+	// Get current resolution from config
+	int currentWidth = CConfigFileTask::getInstance().configFile().getVar("ScreenWidth").asInt();
+	int currentHeight = CConfigFileTask::getInstance().configFile().getVar("ScreenHeight").asInt();
+	selectedResolutionIndex = 0;
+
+	// Build list of unique resolutions
+	uniqueResolutions.clear();
+	std::set<std::pair<int, int>> addedResolutions;
+
+	for(uint i = 0; i < availableModes.size(); i++)
+	{
+		NL3D::UDriver::CMode &mode = availableModes[i];
+
+		// Skip duplicates (same width/height, different frequency)
+		std::pair<int, int> resPair = std::make_pair(mode.Width, mode.Height);
+		if(addedResolutions.find(resPair) != addedResolutions.end())
+			continue;
+		addedResolutions.insert(resPair);
+
+		uniqueResolutions.push_back(resPair);
+
+		// Find current resolution index
+		if(mode.Width == currentWidth && mode.Height == currentHeight)
+		{
+			selectedResolutionIndex = (int)uniqueResolutions.size() - 1;
+		}
+	}
+
+	// Update the resolution text to show current selection
+	if(selectedResolutionIndex >= 0 && selectedResolutionIndex < (int)uniqueResolutions.size())
+	{
+		resolutionText->text = toString("%dx%d",
+			uniqueResolutions[selectedResolutionIndex].first,
+			uniqueResolutions[selectedResolutionIndex].second);
+	}
+}
+
+void CIntroTask::updateOptions()
+{
+	if(State != eOptions) return;
+
+	// Handle Back button
+	if(optionsBackButton->pressed())
+	{
+		State = eMenu;
+		CGuiObjectManager::getInstance().objects.clear();
+		CGuiObjectManager::getInstance().objects.push_back(menuFrame);
+		return;
+	}
+
+	// Handle Resolution button - left-click cycles forward, right-click cycles backward
+	if(resolutionButton->pressed())
+	{
+		if(!uniqueResolutions.empty())
+		{
+			selectedResolutionIndex = (selectedResolutionIndex + 1) % (int)uniqueResolutions.size();
+			resolutionText->text = toString("%dx%d",
+				uniqueResolutions[selectedResolutionIndex].first,
+				uniqueResolutions[selectedResolutionIndex].second);
+		}
+	}
+	if(resolutionButton->rightPressed())
+	{
+		if(!uniqueResolutions.empty())
+		{
+			selectedResolutionIndex = (selectedResolutionIndex - 1 + (int)uniqueResolutions.size()) % (int)uniqueResolutions.size();
+			resolutionText->text = toString("%dx%d",
+				uniqueResolutions[selectedResolutionIndex].first,
+				uniqueResolutions[selectedResolutionIndex].second);
+		}
+	}
+
+	// Handle Fullscreen toggle
+	if(fullscreenButton->pressed())
+	{
+		pendingFullscreen = !pendingFullscreen;
+		fullscreenText->text = pendingFullscreen ? "ON" : "OFF";
+	}
+
+	// Handle VSync toggle
+	if(vsyncButton->pressed())
+	{
+		pendingVSync = !pendingVSync;
+		vsyncText->text = pendingVSync ? "ON" : "OFF";
+	}
+
+	// Handle Apply button - only works if settings have changed
+	if(applyButton->pressed())
+	{
+		// Check if any settings have changed
+		bool settingsChanged = (selectedResolutionIndex != originalResolutionIndex) ||
+		                       (pendingFullscreen != originalFullscreen) ||
+		                       (pendingVSync != originalVSync);
+
+		if(settingsChanged)
+		{
+			// Save selected resolution
+			if(selectedResolutionIndex >= 0 && selectedResolutionIndex < (int)uniqueResolutions.size())
+			{
+				CConfigFileTask::getInstance().configFile().getVar("ScreenWidth").setAsInt(uniqueResolutions[selectedResolutionIndex].first);
+				CConfigFileTask::getInstance().configFile().getVar("ScreenHeight").setAsInt(uniqueResolutions[selectedResolutionIndex].second);
+			}
+
+			// Save fullscreen and vsync
+			CConfigFileTask::getInstance().configFile().getVar("Fullscreen").setAsInt(pendingFullscreen ? 1 : 0);
+			CConfigFileTask::getInstance().configFile().getVar("VSync").setAsInt(pendingVSync ? 1 : 0);
+
+			// Save config file
+			CConfigFileTask::getInstance().configFile().save();
+
+			nlinfo("Video settings saved. Restarting game...");
+
+#ifdef NL_OS_WINDOWS
+			// Get the current executable path
+			char exePath[MAX_PATH];
+			GetModuleFileNameA(NULL, exePath, MAX_PATH);
+
+			// Launch a new instance
+			STARTUPINFOA si;
+			PROCESS_INFORMATION pi;
+			ZeroMemory(&si, sizeof(si));
+			si.cb = sizeof(si);
+			ZeroMemory(&pi, sizeof(pi));
+
+			if(CreateProcessA(exePath, NULL, NULL, NULL, FALSE, 0, NULL, NULL, &si, &pi))
+			{
+				CloseHandle(pi.hProcess);
+				CloseHandle(pi.hThread);
+			}
+#endif
+
+			// Exit the current instance
+			CTaskManager::getInstance().exit();
+		}
+	}
 }
 
 void CIntroTask::release()

@@ -250,7 +250,8 @@ void C3DTask::init()
 	}
 
 	//Scene->getCam()->setFrustum(0.26f, 0.2f, 0.1f, 40.0f);
-	Scene->getCam().setPerspective(degToRad(CConfigFileTask::instance().configFile().getVar("Fov").asFloat()), 1.33f, 1.0f*GScale, 30000.0f*GScale);
+	float aspectRatio = (float)ScreenWidth / (float)ScreenHeight;
+	Scene->getCam().setPerspective(degToRad(CConfigFileTask::instance().configFile().getVar("Fov").asFloat()), aspectRatio, 1.0f*GScale, 30000.0f*GScale);
 	Scene->getCam().setTransformMode(UTransformable::DirectMatrix);
 
 	MouseListener = new C3dMouseListener();

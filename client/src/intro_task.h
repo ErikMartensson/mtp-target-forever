@@ -32,6 +32,8 @@
 //
 
 #include "gui.h"
+#include <nel/3d/u_driver.h>
+#include <vector>
 
 
 //
@@ -57,7 +59,9 @@ public:
 	void updateServerList();
 	void updateConnectionOnLine();
 	void updateConnectionOnLan();
-	
+	void updateOptions();
+	void populateResolutions();
+
 	virtual std::string name() const { return "CIntroTask"; }
 		
 	void doConnectionOnLine(uint32 serverId);
@@ -65,7 +69,7 @@ public:
 
 private:
 
-	enum TState { eMenu, eInit, eLoginOnline, eLoginOnlan, eServerList, eConnectionOnline, eConnectionOnlan, eNone };
+	enum TState { eMenu, eInit, eLoginOnline, eLoginOnlan, eServerList, eConnectionOnline, eConnectionOnlan, eOptions, eNone };
 	
 	TState State;
 
@@ -102,6 +106,25 @@ private:
 	guiSPG<CGuiFrame> _errorServerFrame;
 	uint32 _autoLogin;
 
+	// Options menu
+	guiSPG<CGuiFrame> optionsFrame;
+	guiSPG<CGuiButton> optionsButton;
+	guiSPG<CGuiButton> resolutionButton;
+	guiSPG<CGuiText> resolutionText;
+	guiSPG<CGuiButton> fullscreenButton;
+	guiSPG<CGuiButton> vsyncButton;
+	guiSPG<CGuiButton> applyButton;
+	guiSPG<CGuiButton> optionsBackButton;
+	guiSPG<CGuiText> fullscreenText;
+	guiSPG<CGuiText> vsyncText;
+	std::vector<std::pair<int, int>> uniqueResolutions;  // Width, Height pairs
+	bool pendingFullscreen;
+	bool pendingVSync;
+	int selectedResolutionIndex;
+	// Original settings to detect changes
+	int originalResolutionIndex;
+	bool originalFullscreen;
+	bool originalVSync;
 
 };
 

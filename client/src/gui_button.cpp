@@ -122,6 +122,7 @@ NL3D::UMaterial CGuiButtonManager::material(TButtonMaterialId id)
 void CGuiButton::_init()
 {
 	_pressed = false;
+	_rightPressed = false;
 	eventBehaviour = 0;
 }
 
@@ -213,12 +214,13 @@ void CGuiButton::_render(const CVector &pos, CVector &maxSize)
 	quad.stretched(_stretched);	
 	
 	_pressed = false;
+	_rightPressed = false;
 	CVector mousePos = CGuiObjectManager::getInstance().mouseListener().position();
 
 	if(isIn(mousePos,pos,maxSize))
 	{
 		CVector mousePressedPos = CGuiObjectManager::getInstance().mouseListener().pressedPosition();
-		
+
 		if(CGuiObjectManager::getInstance().mouseListener().ButtonDown)
 		{
 			if(isIn(mousePressedPos,pos,maxSize))
@@ -226,13 +228,19 @@ void CGuiButton::_render(const CVector &pos, CVector &maxSize)
 		}
 		else
 			buttonState = CGuiButtonManager::ePrelight;
-			
+
 		if(CGuiObjectManager::getInstance().mouseListener().Clicked && isIn(mousePressedPos,pos,maxSize))
 		{
 			_onPressed();
 			_pressed = true;
 		}
-		
+
+		// Detect right-click
+		if(CGuiObjectManager::getInstance().mouseListener().RightClicked)
+		{
+			_rightPressed = true;
+		}
+
 	}
 	else
 		buttonState = CGuiButtonManager::eNormal;
@@ -284,6 +292,13 @@ bool CGuiButton::pressed()
 {
 	bool res = _pressed;
 	_pressed = false;
+	return res;
+}
+
+bool CGuiButton::rightPressed()
+{
+	bool res = _rightPressed;
+	_rightPressed = false;
 	return res;
 }
 

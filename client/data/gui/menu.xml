@@ -33,6 +33,14 @@
 							</object>
 						</element>
 					</object>
+					<object class="CGuiButton" name="bOptions">
+						<minSize>150,0</minSize>
+						<element>
+							<object class="CGuiText" name="txtOptions">
+								<string> Options </string>
+							</object>
+						</element>
+					</object>
 					<!--
 					<object class="CGuiButton" name="bPlayOnline">
 						<minSize>150,0</minSize>

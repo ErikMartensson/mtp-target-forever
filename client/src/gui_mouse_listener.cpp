@@ -69,9 +69,11 @@ CGuiMouseListener::CGuiMouseListener()
 	ButtonDown = false;
 	RightButtonDown = false;
 	Clicked = false;
+	RightClicked = false;
 	LastClickedTime = CTimeTask::getInstance().time();
 	DoubleClicked = false;
-	LastButtonDown = false;   
+	LastButtonDown = false;
+	LastRightButtonDown = false;
 	_captureCursor = false;
 	_cursorCaptured = _captureCursor;
 }
@@ -88,12 +90,14 @@ void CGuiMouseListener::update()
 {
 	Pressed = ButtonDown && !LastButtonDown;
 	Clicked = !ButtonDown && LastButtonDown;
+	RightClicked = !RightButtonDown && LastRightButtonDown;
 	double dtime = CTimeTask::getInstance().time()-LastClickedTime ;
 	DoubleClicked = Clicked && dtime<0.3f;
 	if(Clicked)
 		LastClickedTime = CTimeTask::getInstance().time();
-	
+
 	LastButtonDown = ButtonDown;
+	LastRightButtonDown = RightButtonDown;
 	
 	bool shouldCaptureCursor = CGuiObjectManager::getInstance().objects.size()==0 && _captureCursor;
 	if(shouldCaptureCursor != _cursorCaptured)

@@ -93,7 +93,8 @@ void CSkyTask::init()
 {
 	nelSkyScene = C3DTask::getInstance().driver().createScene(false);
 
-	nelSkyScene->getCam().setPerspective(degToRad(CConfigFileTask::getInstance().configFile().getVar("Fov").asFloat()), 1.33f, 0.15f, 3000.0f);
+	float aspectRatio = (float)C3DTask::getInstance().screenWidth() / (float)C3DTask::getInstance().screenHeight();
+	nelSkyScene->getCam().setPerspective(degToRad(CConfigFileTask::getInstance().configFile().getVar("Fov").asFloat()), aspectRatio, 0.15f, 3000.0f);
 	nelSkyScene->getCam().setTransformMode (UTransformable::DirectMatrix);
 
 	string res = CResourceManager::getInstance().get(shapeName());

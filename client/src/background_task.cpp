@@ -87,28 +87,48 @@ void CBackgroundTask::update()
 
 void CBackgroundTask::render()
 {
-	const float LogoScale = 1.5f;
-	const float BackSize = 64.0f;
+	// Get actual screen dimensions
+	float screenWidth = (float)C3DTask::getInstance().screenWidth();
+	float screenHeight = (float)C3DTask::getInstance().screenHeight();
+
+	// Scale factor relative to original 640x480 design
+	float scaleX = screenWidth / 640.0f;
+	float scaleY = screenHeight / 480.0f;
+	float scale = (scaleX < scaleY) ? scaleX : scaleY; // Use minimum to maintain aspect ratio
+
+	const float LogoScale = 1.5f * scale;
+	const float BackSize = 64.0f * scale;
 
 	C3DTask::getInstance().driver().setMatrixMode2D11 ();
-	C3DTask::getInstance().driver().setMatrixMode2D (CFrustum(0,640,0,480,-1,1,false));
+	C3DTask::getInstance().driver().setMatrixMode2D (CFrustum(0, screenWidth, 0, screenHeight, -1, 1, false));
 
-	for (uint32 j=0;j<10;j++)
+	// Calculate number of tiles needed to cover screen
+	int tilesX = (int)(screenWidth / BackSize) + 3;
+	int tilesY = (int)(screenHeight / BackSize) + 3;
+
+	for (int j = 0; j < tilesY; j++)
 	{
-		float y = -0.5f + j * BackSize + _dy1;
-		for (uint32 i=0;i<15;i++)
+		float y = -0.5f + j * BackSize + _dy1 * scale;
+		for (int i = 0; i < tilesX; i++)
 		{
-			float x = -0.5f + i * BackSize + _dx1;
+			float x = -0.5f + i * BackSize + _dx1 * scale;
 			C3DTask::getInstance().driver().drawBitmap (x, y, BackSize, BackSize, *(UTexture*)Background);
 		}
 	}
-	
-	C3DTask::getInstance().driver().drawBitmap (20+250+_dx2,480-206+_dy2-20, LogoScale*256.0f, LogoScale*256.0f, *(UTexture*)Target, true, CRGBA(0,0,0,100));
-	C3DTask::getInstance().driver().drawBitmap (250+_dx2,480-206+_dy2, LogoScale*256.0f, LogoScale*256.0f, *(UTexture*)Target);
-	C3DTask::getInstance().driver().drawBitmap (20+150, 480-300-20, LogoScale*256, LogoScale*256, *(UTexture*)Logo, true, CRGBA(0,0,0,100));
-	C3DTask::getInstance().driver().drawBitmap (150, 480-300, LogoScale*256, LogoScale*256, *(UTexture*)Logo, true, CRGBA(255,255,255,230));
 
-	C3DTask::getInstance().driver().drawBitmap (0, 0, 1, 1, *(UTexture*)Background);//FAKE drawbitmap (no alpha in texture)to restore soem flag on gfx card (ati bug)
+	// Scale and center the logo and target positions
+	float targetX = (250.0f + _dx2) * scaleX;
+	float targetY = (480.0f - 206.0f + _dy2) * scaleY;
+	float logoX = 150.0f * scaleX;
+	float logoY = (480.0f - 300.0f) * scaleY;
+	float logoSize = LogoScale * 256.0f;
+
+	C3DTask::getInstance().driver().drawBitmap (20*scale + targetX, targetY - 20*scale, logoSize, logoSize, *(UTexture*)Target, true, CRGBA(0,0,0,100));
+	C3DTask::getInstance().driver().drawBitmap (targetX, targetY, logoSize, logoSize, *(UTexture*)Target);
+	C3DTask::getInstance().driver().drawBitmap (20*scale + logoX, logoY - 20*scale, logoSize, logoSize, *(UTexture*)Logo, true, CRGBA(0,0,0,100));
+	C3DTask::getInstance().driver().drawBitmap (logoX, logoY, logoSize, logoSize, *(UTexture*)Logo, true, CRGBA(255,255,255,230));
+
+	C3DTask::getInstance().driver().drawBitmap (0, 0, 1, 1, *(UTexture*)Background);//FAKE drawbitmap (no alpha in texture)to restore some flag on gfx card (ati bug)
 }
 
 void CBackgroundTask::release()
