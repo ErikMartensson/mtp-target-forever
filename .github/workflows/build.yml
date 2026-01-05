@@ -571,24 +571,50 @@ jobs:
             }
           }
 
-          # Create data directories
-          New-Item -ItemType Directory -Force -Path "$releaseDir/data/font"
-          New-Item -ItemType Directory -Force -Path "$releaseDir/data/level"
-          New-Item -ItemType Directory -Force -Path "$releaseDir/data/gui"
-          New-Item -ItemType Directory -Force -Path "$releaseDir/data/shape"
-          New-Item -ItemType Directory -Force -Path "$releaseDir/data/texture"
-          New-Item -ItemType Directory -Force -Path "$releaseDir/logs"
-
-          # Copy level files
-          if (Test-Path "data/level") {
-            Copy-Item "data/level/*.lua" "$releaseDir/data/level/" -ErrorAction SilentlyContinue
+          # Copy ALL game data (fonts, textures, shapes, levels, etc.)
+          Write-Host "Copying game data..."
+          if (Test-Path "data") {
+            Copy-Item -Recurse -Force "data/*" "$releaseDir/data/"
+            Write-Host "Copied data directory"
           }
+
+          # Copy fonts from RyzomCore samples (required for client)
+          $ryzomFontDir = "C:/ryzomcore/nel/samples/3d"
+          if (Test-Path "$ryzomFontDir/cegui/datafiles/n019003l.pfb") {
+            Copy-Item "$ryzomFontDir/cegui/datafiles/n019003l.pfb" "$releaseDir/data/font/"
+            Write-Host "Copied: n019003l.pfb"
+          }
+          if (Test-Path "$ryzomFontDir/font/beteckna.ttf") {
+            Copy-Item "$ryzomFontDir/font/beteckna.ttf" "$releaseDir/data/font/bigfont.ttf"
+            Write-Host "Copied: bigfont.ttf"
+          }
+
+          # Copy GUI from client/data/gui if exists
+          if (Test-Path "client/data/gui") {
+            New-Item -ItemType Directory -Force -Path "$releaseDir/data/gui" | Out-Null
+            Copy-Item -Recurse -Force "client/data/gui/*" "$releaseDir/data/gui/"
+            Write-Host "Copied GUI files"
+          }
+
+          # Create additional directories
+          New-Item -ItemType Directory -Force -Path "$releaseDir/cache" | Out-Null
+          New-Item -ItemType Directory -Force -Path "$releaseDir/replay" | Out-Null
+          New-Item -ItemType Directory -Force -Path "$releaseDir/logs" | Out-Null
 
           # Copy config
           if (Test-Path "data/config/mtp_target_default.cfg") {
             Copy-Item "data/config/mtp_target_default.cfg" "$releaseDir/"
           } elseif (Test-Path "client/mtp_target_default.cfg") {
             Copy-Item "client/mtp_target_default.cfg" "$releaseDir/"
+          }
+
+          # Create tux-target.cfg wrapper
+          if (!(Test-Path "$releaseDir/tux-target.cfg")) {
+            @"
+// This file tells the client where to find the main config
+RootConfigFilename = "mtp_target_default.cfg";
+"@ | Set-Content "$releaseDir/tux-target.cfg"
+            Write-Host "Created: tux-target.cfg"
           }
 
       - name: Upload Client Artifact
@@ -748,30 +774,26 @@ jobs:
             }
           }
 
-          # Create data directories
-          New-Item -ItemType Directory -Force -Path "$releaseDir/data/level"
-          New-Item -ItemType Directory -Force -Path "$releaseDir/data/lua"
-          New-Item -ItemType Directory -Force -Path "$releaseDir/data/module"
-          New-Item -ItemType Directory -Force -Path "$releaseDir/logs"
-
-          # Copy level files
-          if (Test-Path "data/level") {
-            Copy-Item "data/level/*.lua" "$releaseDir/data/level/" -ErrorAction SilentlyContinue
+          # Copy ALL game data (shapes, textures, levels, etc.) - server serves these to clients
+          Write-Host "Copying game data..."
+          if (Test-Path "data") {
+            Copy-Item -Recurse -Force "data/*" "$releaseDir/data/"
+            Write-Host "Copied data directory"
           }
 
-          # Copy Lua server scripts (fixed path from mtp-target-src to data)
-          if (Test-Path "data/lua") {
-            Copy-Item "data/lua/*.lua" "$releaseDir/data/lua/" -ErrorAction SilentlyContinue
+          # Copy helpers.lua (required for include() function in level scripts)
+          if (Test-Path "server/data/misc/helpers.lua") {
+            Copy-Item "server/data/misc/helpers.lua" "$releaseDir/data/"
+            Write-Host "Copied: helpers.lua"
           }
 
-          # Copy module Lua scripts
-          if (Test-Path "data/module") {
-            Copy-Item "data/module/*.lua" "$releaseDir/data/module/" -ErrorAction SilentlyContinue
-          }
+          # Create additional directories
+          New-Item -ItemType Directory -Force -Path "$releaseDir/logs" | Out-Null
 
           # Copy config
           if (Test-Path "server/mtp_target_service_default.cfg") {
             Copy-Item "server/mtp_target_service_default.cfg" "$releaseDir/mtp_target_service.cfg"
+            Write-Host "Copied: mtp_target_service.cfg"
           }
 
       - name: Upload Server Artifact
