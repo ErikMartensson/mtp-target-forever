@@ -258,11 +258,14 @@ jobs:
           $cmakePrefixPath = "C:/external/zlib;C:/external/libpng;C:/external/libjpeg;C:/external/curl;C:/external/openssl;C:/external/freetype;C:/external/ogg;C:/external/vorbis;C:/external/openal-soft;C:/external/boost;C:/external/lua;C:/external/luabind;C:/external/libxml2"
 
           # Use Ninja generator - it respects compile flags better than VS generator
-          # Explicitly set CMAKE_MAKE_PROGRAM since Ninja discovery can fail
+          # Explicitly set paths since the PowerShell environment may not inherit MSVC paths correctly
           $ninjaPath = "C:/Program Files/Microsoft Visual Studio/2022/Enterprise/Common7/IDE/CommonExtensions/Microsoft/CMake/Ninja/ninja.exe"
+          $clPath = "cl"  # Should be in PATH from ilammy/msvc-dev-cmd
 
           cmake .. -G Ninja `
             -DCMAKE_MAKE_PROGRAM="$ninjaPath" `
+            -DCMAKE_C_COMPILER="$clPath" `
+            -DCMAKE_CXX_COMPILER="$clPath" `
             -DCMAKE_BUILD_TYPE=Release `
             -DCMAKE_C_FLAGS="/DLIBXML_STATIC" `
             -DCMAKE_CXX_FLAGS="/DLIBXML_STATIC" `
