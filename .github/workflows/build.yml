@@ -360,7 +360,7 @@ jobs:
 
           # Check CMake cache for LIBXML2_DEFINITIONS and CMAKE_CXX_FLAGS
           Write-Host "`n=== CMake Cache Debug ==="
-          Get-Conterent CMakeCache.txt | Select-String -Pattern "LIBXML|CMAKE_CXX_FLAGS|CMAKE_C_FLAGS" | Select-Object -First 20
+          Get-Content CMakeCache.txt | Select-String -Pattern "LIBXML|CMAKE_CXX_FLAGS|CMAKE_C_FLAGS" | Select-Object -First 20
 
           # Check compile_commands.json for actual flags if it exists
           if (Test-Path "compile_commands.json") {
