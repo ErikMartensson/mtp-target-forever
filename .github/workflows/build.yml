@@ -227,7 +227,7 @@ jobs:
         uses: actions/cache@v4
         with:
           path: C:/ryzomcore
-          key: ryzomcore-nel-v11
+          key: ryzomcore-nel-v12
           # No restore-keys fallback - we want exact match only to avoid stale caches
 
       - name: Build RyzomCore
@@ -246,6 +246,11 @@ jobs:
           cd C:/ryzomcore
           mkdir build
           cd build
+
+          # Set LIBXML_STATIC via environment variables (more reliable than CMAKE_C_FLAGS)
+          # This ensures the define is used during compilation
+          $env:CFLAGS = "/DLIBXML_STATIC"
+          $env:CXXFLAGS = "/DLIBXML_STATIC"
 
           # Point to external dependencies via CMAKE_PREFIX_PATH
           # (Don't use WITH_EXTERNAL as it requires a CMakeLists.txt in external dir)
@@ -266,8 +271,7 @@ jobs:
             -DWITH_SNOWBALLS=OFF `
             -DWITH_STATIC=ON `
             -DWITH_STATIC_LIBXML2=ON `
-            "-DCMAKE_C_FLAGS=/DLIBXML_STATIC" `
-            "-DCMAKE_CXX_FLAGS=/DLIBXML_STATIC" `
+            -DLIBXML2_DEFINITIONS=-DLIBXML_STATIC `
             "-DCMAKE_PREFIX_PATH=$cmakePrefixPath" `
             -DLUA_INCLUDE_DIR=C:/external/lua/include `
             -DLUA_LIBRARIES=C:/external/lua/lib/lua51.lib `
@@ -353,7 +357,7 @@ jobs:
         uses: actions/cache/restore@v4
         with:
           path: C:/ryzomcore
-          key: ryzomcore-nel-v11
+          key: ryzomcore-nel-v12
           fail-on-cache-miss: true
 
       - name: Restore Dependencies Cache
@@ -510,7 +514,7 @@ jobs:
         uses: actions/cache/restore@v4
         with:
           path: C:/ryzomcore
-          key: ryzomcore-nel-v11
+          key: ryzomcore-nel-v12
           fail-on-cache-miss: true
 
       - name: Restore Dependencies Cache
