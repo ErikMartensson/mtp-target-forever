@@ -290,7 +290,7 @@ jobs:
         uses: actions/cache@v4
         with:
           path: C:/ryzomcore
-          key: ryzomcore-nel-v20
+          key: ryzomcore-nel-v21
           # No restore-keys fallback - we want exact match only to avoid stale caches
 
       - name: Build RyzomCore
@@ -335,6 +335,17 @@ jobs:
           # The import library (libxml2.lib) contains __imp_xmlFree, so we must NOT use LIBXML_STATIC.
           Write-Host "Using DLL linkage for libxml2 (no LIBXML_STATIC)"
 
+          # Search for where RyzomCore sets LIBXML_STATIC
+          Write-Host "`n=== Searching for LIBXML_STATIC in RyzomCore CMake files ==="
+          Get-ChildItem -Path "C:/ryzomcore" -Recurse -Include "*.cmake","CMakeLists.txt" -ErrorAction SilentlyContinue |
+            ForEach-Object {
+              $content = Get-Content $_.FullName -Raw -ErrorAction SilentlyContinue
+              if ($content -match "LIBXML_STATIC|LIBXML2_DEFINITIONS") {
+                Write-Host "`nFound in: $($_.FullName)"
+                $content | Select-String -Pattern "LIBXML_STATIC|LIBXML2_DEFINITIONS" -Context 2,2 | ForEach-Object { Write-Host $_ }
+              }
+            }
+
           cmake .. -G Ninja `
             -DCMAKE_MAKE_PROGRAM="$ninjaPath" `
             -DCMAKE_C_COMPILER="$clPath" `
@@ -352,6 +363,8 @@ jobs:
             -DWITH_NELNS=OFF `
             -DWITH_SNOWBALLS=OFF `
             -DWITH_STATIC=ON `
+            -DWITH_STATIC_LIBXML2=OFF `
+            -DLIBXML2_DEFINITIONS="" `
             "-DCMAKE_PREFIX_PATH=$cmakePrefixPath" `
             -DLUA_INCLUDE_DIR=C:/external/lua/include `
             -DLUA_LIBRARIES=C:/external/lua/lib/lua51.lib `
@@ -383,6 +396,22 @@ jobs:
             -DOPENSSL_SSL_LIBRARY=C:/external/openssl/lib/VC/libssl64MD.lib `
             -DOPENSSL_LIBRARIES="C:/external/openssl/lib/VC/libcrypto64MD.lib;C:/external/openssl/lib/VC/libssl64MD.lib" `
             -DCMAKE_FIND_USE_SYSTEM_ENVIRONMENT_PATH=FALSE
+
+          # Debug: Check CMake cache for LIBXML settings
+          Write-Host "`n=== CMake Cache LIBXML settings ==="
+          Get-Content CMakeCache.txt | Select-String -Pattern "LIBXML" | ForEach-Object { Write-Host $_ }
+
+          # Debug: Check compile_commands.json for LIBXML_STATIC
+          if (Test-Path "compile_commands.json") {
+            Write-Host "`n=== Checking compile_commands.json for LIBXML_STATIC ==="
+            $compileCommands = Get-Content "compile_commands.json" -Raw
+            if ($compileCommands -match "LIBXML_STATIC") {
+              Write-Host "WARNING: LIBXML_STATIC found in compile commands!"
+              $compileCommands | Select-String -Pattern "LIBXML_STATIC" | Select-Object -First 3 | ForEach-Object { Write-Host $_ }
+            } else {
+              Write-Host "OK: LIBXML_STATIC NOT found in compile commands"
+            }
+          }
 
           Write-Host "`nBuilding RyzomCore..."
           cmake --build . --parallel 4 --target nelmisc nelnet nel3d nelsound nelsnd_lowlevel nelgeorges nelligo
@@ -438,7 +467,7 @@ jobs:
         uses: actions/cache/restore@v4
         with:
           path: C:/ryzomcore
-          key: ryzomcore-nel-v20
+          key: ryzomcore-nel-v21
           fail-on-cache-miss: true
 
       - name: Restore Dependencies Cache
@@ -594,7 +623,7 @@ jobs:
         uses: actions/cache/restore@v4
         with:
           path: C:/ryzomcore
-          key: ryzomcore-nel-v20
+          key: ryzomcore-nel-v21
           fail-on-cache-miss: true
 
       - name: Restore Dependencies Cache
