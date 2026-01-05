@@ -151,21 +151,37 @@ jobs:
             Get-Content "C:/external/cmake_prefix_path_ryz.txt"
           }
 
-          # Check libxml2 structure for iconv
+          # Check libxml2 structure
           Write-Host "`nlibxml2 lib contents:"
           Get-ChildItem "C:/external/libxml2/lib" -ErrorAction SilentlyContinue
 
-          # Check what symbols libxml2.lib exports (is xmlFree there?)
-          Write-Host "`nChecking libxml2.lib symbols for xmlFree..."
-          $dumpbin = "dumpbin.exe"
-          & $dumpbin /exports "C:/external/libxml2/lib/libxml2.lib" 2>&1 | Select-String -Pattern "xmlFree|xmlMalloc" | Select-Object -First 10
-          Write-Host "`nChecking if libxml2.lib is an import library or static library..."
-          & $dumpbin /headers "C:/external/libxml2/lib/libxml2.lib" 2>&1 | Select-String -Pattern "DLL|Import" | Select-Object -First 5
+          # CRITICAL: Check if libxml2.dll exports xmlFree
+          Write-Host "`n=== Checking libxml2.dll exports for xmlFree ==="
+          if (Test-Path "C:/external/libxml2/bin/libxml2.dll") {
+            $exports = dumpbin /exports "C:/external/libxml2/bin/libxml2.dll" 2>&1 | Out-String
+            if ($exports -match "xmlFree") {
+              Write-Host "FOUND: xmlFree is exported by libxml2.dll"
+              $exports | Select-String -Pattern "xmlFree|xmlMalloc|xmlRealloc|xmlMemStrdup"
+            } else {
+              Write-Host "WARNING: xmlFree NOT exported by libxml2.dll!"
+              Write-Host "Checking for alternative memory functions..."
+              $exports | Select-String -Pattern "Mem|alloc|free" -CaseSensitive:$false | Select-Object -First 10
+            }
+          } else {
+            Write-Host "ERROR: libxml2.dll not found at C:/external/libxml2/bin/"
+            Get-ChildItem "C:/external/libxml2" -Recurse -Filter "*.dll" | Select-Object FullName
+          }
 
-          # Check libxml2 header for XMLPUBVAR definition
-          Write-Host "`nChecking libxml2 xmlexports.h..."
+          # Check libxml2.lib import symbols
+          Write-Host "`n=== Checking libxml2.lib for xmlFree import ==="
+          dumpbin /all "C:/external/libxml2/lib/libxml2.lib" 2>&1 | Select-String -Pattern "xmlFree" | Select-Object -First 5
+
+          # Print the FULL xmlexports.h to understand how symbols are declared
+          Write-Host "`n=== Full xmlexports.h content ==="
           if (Test-Path "C:/external/libxml2/include/libxml2/libxml/xmlexports.h") {
-            Get-Content "C:/external/libxml2/include/libxml2/libxml/xmlexports.h" | Select-String -Pattern "XMLPUBVAR|LIBXML_STATIC|dllimport|dllexport" | Select-Object -First 20
+            Get-Content "C:/external/libxml2/include/libxml2/libxml/xmlexports.h"
+          } else {
+            Write-Host "xmlexports.h not found!"
           }
 
       # Install ODE physics library (not in Ryzom external package)
@@ -243,7 +259,7 @@ jobs:
         uses: actions/cache@v4
         with:
           path: C:/ryzomcore
-          key: ryzomcore-nel-v18
+          key: ryzomcore-nel-v19
           # No restore-keys fallback - we want exact match only to avoid stale caches
 
       - name: Build RyzomCore
@@ -344,7 +360,7 @@ jobs:
 
           # Check CMake cache for LIBXML2_DEFINITIONS and CMAKE_CXX_FLAGS
           Write-Host "`n=== CMake Cache Debug ==="
-          Get-Content CMakeCache.txt | Select-String -Pattern "LIBXML|CMAKE_CXX_FLAGS|CMAKE_C_FLAGS" | Select-Object -First 20
+          Get-Conterent CMakeCache.txt | Select-String -Pattern "LIBXML|CMAKE_CXX_FLAGS|CMAKE_C_FLAGS" | Select-Object -First 20
 
           # Check compile_commands.json for actual flags if it exists
           if (Test-Path "compile_commands.json") {
@@ -407,7 +423,7 @@ jobs:
         uses: actions/cache/restore@v4
         with:
           path: C:/ryzomcore
-          key: ryzomcore-nel-v18
+          key: ryzomcore-nel-v19
           fail-on-cache-miss: true
 
       - name: Restore Dependencies Cache
@@ -564,7 +580,7 @@ jobs:
         uses: actions/cache/restore@v4
         with:
           path: C:/ryzomcore
-          key: ryzomcore-nel-v18
+          key: ryzomcore-nel-v19
           fail-on-cache-miss: true
 
       - name: Restore Dependencies Cache
