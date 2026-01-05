@@ -230,7 +230,7 @@ jobs:
         uses: actions/cache@v4
         with:
           path: C:/ryzomcore
-          key: ryzomcore-nel-v14
+          key: ryzomcore-nel-v15
           # No restore-keys fallback - we want exact match only to avoid stale caches
 
       - name: Build RyzomCore
@@ -281,6 +281,8 @@ jobs:
             -DWITH_SOUND=ON `
             -DWITH_NEL=ON `
             -DWITH_NEL_TOOLS=OFF `
+            -DWITH_NEL_TESTS=OFF `
+            -DWITH_NEL_SAMPLES=OFF `
             -DWITH_RYZOM=OFF `
             -DWITH_RYZOM_CLIENT=OFF `
             -DWITH_RYZOM_SERVER=OFF `
@@ -377,7 +379,7 @@ jobs:
         uses: actions/cache/restore@v4
         with:
           path: C:/ryzomcore
-          key: ryzomcore-nel-v14
+          key: ryzomcore-nel-v15
           fail-on-cache-miss: true
 
       - name: Restore Dependencies Cache
@@ -534,7 +536,7 @@ jobs:
         uses: actions/cache/restore@v4
         with:
           path: C:/ryzomcore
-          key: ryzomcore-nel-v14
+          key: ryzomcore-nel-v15
           fail-on-cache-miss: true
 
       - name: Restore Dependencies Cache
