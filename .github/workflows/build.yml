@@ -230,7 +230,7 @@ jobs:
         uses: actions/cache@v4
         with:
           path: C:/ryzomcore
-          key: ryzomcore-nel-v13
+          key: ryzomcore-nel-v14
           # No restore-keys fallback - we want exact match only to avoid stale caches
 
       - name: Build RyzomCore
@@ -258,9 +258,18 @@ jobs:
           $cmakePrefixPath = "C:/external/zlib;C:/external/libpng;C:/external/libjpeg;C:/external/curl;C:/external/openssl;C:/external/freetype;C:/external/ogg;C:/external/vorbis;C:/external/openal-soft;C:/external/boost;C:/external/lua;C:/external/luabind;C:/external/libxml2"
 
           # Use Ninja generator - it respects compile flags better than VS generator
-          # Explicitly set paths since the PowerShell environment may not inherit MSVC paths correctly
+          # Find cl.exe using where.exe (more reliable than relying on PATH in cmake)
           $ninjaPath = "C:/Program Files/Microsoft Visual Studio/2022/Enterprise/Common7/IDE/CommonExtensions/Microsoft/CMake/Ninja/ninja.exe"
-          $clPath = "cl"  # Should be in PATH from ilammy/msvc-dev-cmd
+          $clPath = (Get-Command cl.exe -ErrorAction SilentlyContinue).Source
+          if (-not $clPath) {
+            # Fallback: use where.exe
+            $clPath = (where.exe cl.exe 2>$null | Select-Object -First 1)
+          }
+          if (-not $clPath) {
+            Write-Error "Could not find cl.exe! MSVC environment may not be set up correctly."
+            exit 1
+          }
+          Write-Host "Found cl.exe at: $clPath"
 
           cmake .. -G Ninja `
             -DCMAKE_MAKE_PROGRAM="$ninjaPath" `
@@ -368,7 +377,7 @@ jobs:
         uses: actions/cache/restore@v4
         with:
           path: C:/ryzomcore
-          key: ryzomcore-nel-v13
+          key: ryzomcore-nel-v14
           fail-on-cache-miss: true
 
       - name: Restore Dependencies Cache
@@ -525,7 +534,7 @@ jobs:
         uses: actions/cache/restore@v4
         with:
           path: C:/ryzomcore
-          key: ryzomcore-nel-v13
+          key: ryzomcore-nel-v14
           fail-on-cache-miss: true
 
       - name: Restore Dependencies Cache
