@@ -155,6 +155,19 @@ jobs:
           Write-Host "`nlibxml2 lib contents:"
           Get-ChildItem "C:/external/libxml2/lib" -ErrorAction SilentlyContinue
 
+          # Check what symbols libxml2.lib exports (is xmlFree there?)
+          Write-Host "`nChecking libxml2.lib symbols for xmlFree..."
+          $dumpbin = "dumpbin.exe"
+          & $dumpbin /exports "C:/external/libxml2/lib/libxml2.lib" 2>&1 | Select-String -Pattern "xmlFree|xmlMalloc" | Select-Object -First 10
+          Write-Host "`nChecking if libxml2.lib is an import library or static library..."
+          & $dumpbin /headers "C:/external/libxml2/lib/libxml2.lib" 2>&1 | Select-String -Pattern "DLL|Import" | Select-Object -First 5
+
+          # Check libxml2 header for XMLPUBVAR definition
+          Write-Host "`nChecking libxml2 xmlexports.h..."
+          if (Test-Path "C:/external/libxml2/include/libxml2/libxml/xmlexports.h") {
+            Get-Content "C:/external/libxml2/include/libxml2/libxml/xmlexports.h" | Select-String -Pattern "XMLPUBVAR|LIBXML_STATIC|dllimport|dllexport" | Select-Object -First 20
+          }
+
       # Install ODE physics library (not in Ryzom external package)
       - name: Install ODE
         shell: pwsh
@@ -230,7 +243,7 @@ jobs:
         uses: actions/cache@v4
         with:
           path: C:/ryzomcore
-          key: ryzomcore-nel-v16
+          key: ryzomcore-nel-v17
           # No restore-keys fallback - we want exact match only to avoid stale caches
 
       - name: Build RyzomCore
@@ -329,9 +342,23 @@ jobs:
             -DOPENSSL_LIBRARIES="C:/external/openssl/lib/VC/libcrypto64MD.lib;C:/external/openssl/lib/VC/libssl64MD.lib" `
             -DCMAKE_FIND_USE_SYSTEM_ENVIRONMENT_PATH=FALSE
 
-          Write-Host "Building RyzomCore..."
-          # Ninja doesn't need --config, build type is set at configure time
-          cmake --build . --parallel 4 --target nelmisc nelnet nel3d nelsound nelsnd_lowlevel nelgeorges nelligo
+          # Check CMake cache for LIBXML2_DEFINITIONS and CMAKE_CXX_FLAGS
+          Write-Host "`n=== CMake Cache Debug ==="
+          Get-Content CMakeCache.txt | Select-String -Pattern "LIBXML|CMAKE_CXX_FLAGS|CMAKE_C_FLAGS" | Select-Object -First 20
+
+          # Check compile_commands.json for actual flags if it exists
+          if (Test-Path "compile_commands.json") {
+            Write-Host "`n=== Compile flags for i_xml.cpp ==="
+            Get-Content compile_commands.json | Select-String -Pattern "i_xml" -Context 0,2
+          }
+
+          Write-Host "`nBuilding RyzomCore..."
+          # Build with verbose output for first target to see actual compile flags
+          cmake --build . --parallel 1 --target nelmisc -- -v 2>&1 | Select-Object -First 50
+          Write-Host "`n... (truncated verbose output) ..."
+
+          # Continue building remaining targets normally
+          cmake --build . --parallel 4 --target nelnet nel3d nelsound nelsnd_lowlevel nelgeorges nelligo
           cmake --build . --parallel 2 --target nel_drv_opengl_win nel_drv_openal_win
 
       - name: Verify RyzomCore Build
@@ -384,7 +411,7 @@ jobs:
         uses: actions/cache/restore@v4
         with:
           path: C:/ryzomcore
-          key: ryzomcore-nel-v16
+          key: ryzomcore-nel-v17
           fail-on-cache-miss: true
 
       - name: Restore Dependencies Cache
@@ -541,7 +568,7 @@ jobs:
         uses: actions/cache/restore@v4
         with:
           path: C:/ryzomcore
-          key: ryzomcore-nel-v16
+          key: ryzomcore-nel-v17
           fail-on-cache-miss: true
 
       - name: Restore Dependencies Cache
