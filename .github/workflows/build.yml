@@ -41,6 +41,9 @@ jobs:
         with:
           arch: x64
 
+      - name: Install Ninja
+        run: choco install ninja -y
+
       # STEP 1: Download external dependencies FIRST (RyzomCore needs these to build)
       # NOTE: No restore-keys - we need exact cache match to ensure ODE triplet is correct
       - name: Cache Dependencies
