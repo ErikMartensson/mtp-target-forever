@@ -51,7 +51,7 @@ jobs:
         uses: actions/cache@v4
         with:
           path: C:/external
-          key: ryzom-external-2022q2-v11
+          key: ryzom-external-2022q2-v12
 
       - name: Download External Dependencies
         if: steps.cache-deps.outputs.cache-hit != 'true'
@@ -140,6 +140,62 @@ jobs:
             Remove-Item "C:/external/libxml2/lib/libxml2d.lib" -Force
             Write-Host "Removed: C:/external/libxml2/lib/libxml2d.lib"
           }
+
+          # === AGGRESSIVE CLEANUP to reduce cache size ===
+          Write-Host "`n=== Aggressive cleanup to reduce cache size ==="
+          $beforeSize = (Get-ChildItem "C:/external" -Recurse | Measure-Object -Property Length -Sum).Sum / 1MB
+          Write-Host "Size before cleanup: $([math]::Round($beforeSize, 2)) MB"
+
+          # Remove all debug symbol files (.pdb)
+          Write-Host "`nRemoving .pdb debug symbols..."
+          Get-ChildItem "C:/external" -Recurse -Filter "*.pdb" -ErrorAction SilentlyContinue |
+            Remove-Item -Force -ErrorAction SilentlyContinue
+
+          # Remove documentation, samples, tests, examples directories
+          Write-Host "Removing docs, samples, tests, examples..."
+          Get-ChildItem "C:/external" -Recurse -Directory -ErrorAction SilentlyContinue |
+            Where-Object { $_.Name -match "^(doc|docs|documentation|sample|samples|test|tests|example|examples|man|manual|tutorial|tutorials|demo|demos)$" } |
+            Remove-Item -Recurse -Force -ErrorAction SilentlyContinue
+
+          # Remove all debug libraries (*d.lib, *_d.lib, *_debug.lib)
+          Write-Host "Removing debug libraries..."
+          Get-ChildItem "C:/external" -Recurse -Filter "*.lib" -ErrorAction SilentlyContinue |
+            Where-Object { $_.Name -match "d\.lib$|_d\.lib$|_debug\.lib$|Debug\.lib$" } |
+            ForEach-Object {
+              Remove-Item $_.FullName -Force -ErrorAction SilentlyContinue
+              Write-Host "Removed debug lib: $($_.Name)"
+            }
+
+          # Remove CMake package config files (not needed at runtime)
+          Write-Host "Removing CMake config files..."
+          Get-ChildItem "C:/external" -Recurse -Directory -ErrorAction SilentlyContinue |
+            Where-Object { $_.Name -eq "cmake" -or $_.Name -eq "pkgconfig" } |
+            Remove-Item -Recurse -Force -ErrorAction SilentlyContinue
+
+          # Remove .exe tools we don't need (xml tools, curl.exe, etc.)
+          Write-Host "Removing unnecessary executables..."
+          $keepExes = @("lua.exe", "luac.exe")  # Keep Lua interpreter
+          Get-ChildItem "C:/external" -Recurse -Filter "*.exe" -ErrorAction SilentlyContinue |
+            Where-Object { $keepExes -notcontains $_.Name } |
+            Remove-Item -Force -ErrorAction SilentlyContinue
+
+          # Remove static libraries for things we link dynamically
+          # (We use DLL versions of these, so static .lib import libs are fine but full static libs waste space)
+          Write-Host "Removing unnecessary static libraries..."
+          $staticLibsToRemove = @(
+            "C:/external/curl/lib/libcurl.lib",      # We use libcurl_imp.lib (DLL import)
+            "C:/external/zlib/lib/zlibstatic.lib"    # We use zlib.lib (DLL import)
+          )
+          foreach ($lib in $staticLibsToRemove) {
+            if (Test-Path $lib) {
+              Remove-Item $lib -Force -ErrorAction SilentlyContinue
+              Write-Host "Removed: $lib"
+            }
+          }
+
+          $afterSize = (Get-ChildItem "C:/external" -Recurse | Measure-Object -Property Length -Sum).Sum / 1MB
+          Write-Host "`nSize after cleanup: $([math]::Round($afterSize, 2)) MB"
+          Write-Host "Saved: $([math]::Round($beforeSize - $afterSize, 2)) MB"
 
           Write-Host "External dependencies ready at C:/external"
           Write-Host "Final structure:"
@@ -474,7 +530,7 @@ jobs:
         uses: actions/cache/restore@v4
         with:
           path: C:/external
-          key: ryzom-external-2022q2-v11
+          key: ryzom-external-2022q2-v12
           restore-keys: |
             ryzom-external-2022q2-
 
@@ -655,7 +711,7 @@ jobs:
         uses: actions/cache/restore@v4
         with:
           path: C:/external
-          key: ryzom-external-2022q2-v11
+          key: ryzom-external-2022q2-v12
           restore-keys: |
             ryzom-external-2022q2-
 
@@ -756,13 +812,13 @@ jobs:
           $depsDir = "C:/external"
 
           # Copy runtime DLLs from dependencies
+          # Note: ODE is statically linked (x64-windows-static-md), no DLL needed
           $dllSources = @(
             "$depsDir/lua/bin/lua.dll",
             "$depsDir/zlib/bin/zlib.dll",
             "$depsDir/freetype/bin/freetype.dll",
             "$depsDir/libpng/bin/libpng16.dll",
-            "$depsDir/libjpeg/bin/jpeg62.dll",
-            "$depsDir/ode/bin/ode.dll"
+            "$depsDir/libjpeg/bin/jpeg62.dll"
           )
           foreach ($dll in $dllSources) {
             if (Test-Path $dll) {
