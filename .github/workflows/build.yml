@@ -177,7 +177,7 @@ jobs:
         uses: actions/cache@v4
         with:
           path: C:/ryzomcore
-          key: ryzomcore-nel-v8
+          key: ryzomcore-nel-v9
           # No restore-keys fallback - we want exact match only to avoid stale caches
 
       - name: Build RyzomCore
@@ -301,7 +301,7 @@ jobs:
         uses: actions/cache/restore@v4
         with:
           path: C:/ryzomcore
-          key: ryzomcore-nel-v8
+          key: ryzomcore-nel-v9
           fail-on-cache-miss: true
 
       - name: Restore Dependencies Cache
@@ -433,7 +433,7 @@ jobs:
         uses: actions/cache/restore@v4
         with:
           path: C:/ryzomcore
-          key: ryzomcore-nel-v8
+          key: ryzomcore-nel-v9
           fail-on-cache-miss: true
 
       - name: Restore Dependencies Cache
@@ -443,6 +443,37 @@ jobs:
           key: ryzom-external-2022q2-v8
           restore-keys: |
             ryzom-external-2022q2-
+
+      - name: Verify ODE Headers
+        shell: pwsh
+        run: |
+          Write-Host "=== Checking ODE directory structure ==="
+          if (Test-Path "C:/external/ode") {
+            Write-Host "ODE directory exists"
+            Write-Host "`nODE include structure:"
+            Get-ChildItem "C:/external/ode/include" -Recurse -ErrorAction SilentlyContinue |
+              Select-Object FullName |
+              ForEach-Object { Write-Host $_.FullName }
+
+            Write-Host "`nODE lib structure:"
+            Get-ChildItem "C:/external/ode/lib" -Recurse -Filter "*.lib" -ErrorAction SilentlyContinue |
+              Select-Object FullName |
+              ForEach-Object { Write-Host $_.FullName }
+
+            # Check specifically for ode/ode.h
+            if (Test-Path "C:/external/ode/include/ode/ode.h") {
+              Write-Host "`n[OK] Found: C:/external/ode/include/ode/ode.h"
+            } else {
+              Write-Host "`n[MISSING] C:/external/ode/include/ode/ode.h"
+              # Try to find ode.h anywhere in ODE directory
+              Write-Host "Searching for ode.h..."
+              Get-ChildItem "C:/external/ode" -Recurse -Filter "ode.h" -ErrorAction SilentlyContinue |
+                Select-Object FullName |
+                ForEach-Object { Write-Host "Found: $($_.FullName)" }
+            }
+          } else {
+            Write-Error "ODE directory not found at C:/external/ode"
+          }
 
       - name: Configure CMake (Server)
         shell: pwsh
@@ -467,6 +498,27 @@ jobs:
             -DJPEG_LIBRARY=C:/external/libjpeg/lib/jpeg.lib `
             -DODE_INCLUDE_DIR=C:/external/ode/include `
             -DODE_LIBRARY=C:/external/ode/lib/ode_doubles.lib
+
+      - name: Verify CMake Server Config
+        shell: pwsh
+        run: |
+          Write-Host "=== Checking generated build files ==="
+          # Check if the include path is in the vcxproj
+          $vcxproj = "build-server/server/src/tux-target-srv.vcxproj"
+          if (Test-Path $vcxproj) {
+            Write-Host "`nAdditionalIncludeDirectories from vcxproj:"
+            Select-String -Path $vcxproj -Pattern "AdditionalIncludeDirectories" |
+              ForEach-Object { Write-Host $_.Line }
+
+            Write-Host "`nODE paths in vcxproj:"
+            Select-String -Path $vcxproj -Pattern "ode" -CaseSensitive:$false |
+              ForEach-Object { Write-Host $_.Line }
+          } else {
+            Write-Host "vcxproj not found at expected path"
+            Get-ChildItem "build-server" -Recurse -Filter "*.vcxproj" |
+              Select-Object FullName |
+              ForEach-Object { Write-Host "Found: $($_.FullName)" }
+          }
 
       - name: Build Server
         run: cmake --build build-server --config ${{ env.BUILD_TYPE }} --parallel 4
