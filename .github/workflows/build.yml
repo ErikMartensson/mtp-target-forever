@@ -610,10 +610,8 @@ jobs:
 
           # Create tux-target.cfg wrapper
           if (!(Test-Path "$releaseDir/tux-target.cfg")) {
-            @"
-// This file tells the client where to find the main config
-RootConfigFilename = "mtp_target_default.cfg";
-"@ | Set-Content "$releaseDir/tux-target.cfg"
+            '// This file tells the client where to find the main config' | Set-Content "$releaseDir/tux-target.cfg"
+            'RootConfigFilename = "mtp_target_default.cfg";' | Add-Content "$releaseDir/tux-target.cfg"
             Write-Host "Created: tux-target.cfg"
           }
 
