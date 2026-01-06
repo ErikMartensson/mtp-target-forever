@@ -402,8 +402,6 @@ jobs:
             -DOPENSSL_LIBRARIES="C:/external/openssl/lib/VC/libcrypto64MD.lib;C:/external/openssl/lib/VC/libssl64MD.lib" `
             -DCMAKE_FIND_USE_SYSTEM_ENVIRONMENT_PATH=FALSE
 
-          }
-
           Write-Host "`nBuilding RyzomCore..."
           cmake --build . --parallel 4 --target nelmisc nelnet nel3d nelsound nelsnd_lowlevel nelgeorges nelligo
           cmake --build . --parallel 2 --target nel_drv_opengl_win nel_drv_openal_win
