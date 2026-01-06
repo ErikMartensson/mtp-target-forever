@@ -8,10 +8,20 @@
 
 **Status:** 🎮 Playable - Version 1.2.2a client and server working with 32 of 62 levels
 
+### Download Latest Build
+
+| Component | Download |
+|-----------|----------|
+| **Game Client** | [MTP-Target-Client-win64.zip](https://nightly.link/ErikMartensson/tux_target/workflows/build/main/MTP-Target-Client-win64.zip) |
+| **Game Server** | [MTP-Target-Server-win64.zip](https://nightly.link/ErikMartensson/tux_target/workflows/build/main/MTP-Target-Server-win64.zip) |
+
+*Built automatically from the latest `main` branch commit.*
+
 ---
 
 ## Table of Contents
 
+- [Download Latest Build](#download-latest-build)
 - [About This Project](#about-this-project)
 - [Current Status](#current-status)
 - [Quick Start (Windows)](#quick-start-windows)

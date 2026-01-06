@@ -44,14 +44,14 @@ jobs:
       - name: Install Ninja
         run: choco install ninja -y
 
-      # STEP 1: Download external dependencies FIRST (RyzomCore needs these to build)
-      # NOTE: No restore-keys - we need exact cache match to ensure ODE triplet is correct
+      # Download external dependencies (RyzomCore needs these)
+
       - name: Cache Dependencies
         id: cache-deps
         uses: actions/cache@v4
         with:
           path: C:/external
-          key: ryzom-external-2022q2-v17
+          key: deps-v1
 
       - name: Download External Dependencies
         if: steps.cache-deps.outputs.cache-hit != 'true'
@@ -249,45 +249,6 @@ jobs:
           Write-Host "Final structure:"
           Get-ChildItem C:/external | Select-Object Mode, Name
 
-          # Show Ryzom's recommended CMake prefix path
-          if (Test-Path "C:/external/cmake_prefix_path_ryz.txt") {
-            Write-Host "`nRyzom CMAKE_PREFIX_PATH recommendation:"
-            Get-Content "C:/external/cmake_prefix_path_ryz.txt"
-          }
-
-          # Check libxml2 structure
-          Write-Host "`nlibxml2 lib contents:"
-          Get-ChildItem "C:/external/libxml2/lib" -ErrorAction SilentlyContinue
-
-          # CRITICAL: Check if libxml2.dll exports xmlFree
-          Write-Host "`n=== Checking libxml2.dll exports for xmlFree ==="
-          if (Test-Path "C:/external/libxml2/bin/libxml2.dll") {
-            $exports = dumpbin /exports "C:/external/libxml2/bin/libxml2.dll" 2>&1 | Out-String
-            if ($exports -match "xmlFree") {
-              Write-Host "FOUND: xmlFree is exported by libxml2.dll"
-              $exports | Select-String -Pattern "xmlFree|xmlMalloc|xmlRealloc|xmlMemStrdup"
-            } else {
-              Write-Host "WARNING: xmlFree NOT exported by libxml2.dll!"
-              Write-Host "Checking for alternative memory functions..."
-              $exports | Select-String -Pattern "Mem|alloc|free" -CaseSensitive:$false | Select-Object -First 10
-            }
-          } else {
-            Write-Host "ERROR: libxml2.dll not found at C:/external/libxml2/bin/"
-            Get-ChildItem "C:/external/libxml2" -Recurse -Filter "*.dll" | Select-Object FullName
-          }
-
-          # Check libxml2.lib import symbols
-          Write-Host "`n=== Checking libxml2.lib for xmlFree import ==="
-          dumpbin /all "C:/external/libxml2/lib/libxml2.lib" 2>&1 | Select-String -Pattern "xmlFree" | Select-Object -First 5
-
-          # Print the FULL xmlexports.h to understand how symbols are declared
-          Write-Host "`n=== Full xmlexports.h content ==="
-          if (Test-Path "C:/external/libxml2/include/libxml2/libxml/xmlexports.h") {
-            Get-Content "C:/external/libxml2/include/libxml2/libxml/xmlexports.h"
-          } else {
-            Write-Host "xmlexports.h not found!"
-          }
-
       # Install ODE physics library (not in Ryzom external package)
       - name: Install ODE
         shell: pwsh
@@ -338,64 +299,14 @@ jobs:
           } else {
             Write-Error "vcpkg install directory not found: $installedDir"
           }
-
-      # Verify deps exist (runs even with cache hit for debugging)
-      - name: Verify Dependencies
-        shell: pwsh
-        run: |
-          Write-Host "=== Verifying external dependencies ==="
-          Write-Host "`nlibxml2 lib contents:"
-          Get-ChildItem "C:/external/libxml2/lib" -Filter "*.lib" -ErrorAction SilentlyContinue
-
-          # CRITICAL: Check if libxml2.dll exports xmlFree
-          Write-Host "`n=== CRITICAL: Checking libxml2.dll exports for xmlFree ==="
-          if (Test-Path "C:/external/libxml2/bin/libxml2.dll") {
-            Write-Host "Running dumpbin /exports on libxml2.dll..."
-            $exports = dumpbin /exports "C:/external/libxml2/bin/libxml2.dll" 2>&1 | Out-String
-            if ($exports -match "xmlFree") {
-              Write-Host "FOUND: xmlFree is exported by libxml2.dll"
-              echo $exports | Select-String -Pattern "xmlFree|xmlMalloc|xmlRealloc|xmlMemStrdup"
-            } else {
-              Write-Host "WARNING: xmlFree NOT exported by libxml2.dll!"
-              Write-Host "Searching for any memory-related exports..."
-              echo $exports | Select-String -Pattern "Mem|alloc|free" -CaseSensitive:$false | Select-Object -First 15
-            }
-          } else {
-            Write-Host "ERROR: libxml2.dll not found at C:/external/libxml2/bin/"
-            Get-ChildItem "C:/external/libxml2" -Recurse -Filter "*.dll" | Select-Object FullName
-          }
-
-          # Check libxml2.lib for xmlFree symbol
-          Write-Host "`n=== Checking libxml2.lib for xmlFree symbol ==="
-          dumpbin /all "C:/external/libxml2/lib/libxml2.lib" 2>&1 | Select-String -Pattern "xmlFree" | Select-Object -First 10
-
-          # Print xmlexports.h to understand XMLPUBVAR definition
-          Write-Host "`n=== libxml2 xmlexports.h content ==="
-          if (Test-Path "C:/external/libxml2/include/libxml2/libxml/xmlexports.h") {
-            Get-Content "C:/external/libxml2/include/libxml2/libxml/xmlexports.h"
-          } else {
-            Write-Host "xmlexports.h not found!"
-          }
-
-          Write-Host "`nOpenSSL lib contents:"
-          Get-ChildItem "C:/external/openssl/lib/VC" -Filter "*.lib" -ErrorAction SilentlyContinue
-          Write-Host "`nLuabind lib contents:"
-          Get-ChildItem "C:/external/luabind/lib" -Filter "*.lib" -ErrorAction SilentlyContinue
-          Write-Host "`nODE structure:"
-          if (Test-Path "C:/external/ode") {
-            Get-ChildItem "C:/external/ode" -Recurse -Include "*.h","*.lib" | Select-Object FullName
-          } else {
-            Write-Host "ODE directory not found!"
-          }
-
-      # STEP 2: Build RyzomCore (requires external deps)
+      # Build RyzomCore
       - name: Cache RyzomCore
         id: cache-ryzomcore
         uses: actions/cache@v4
         with:
           path: C:/ryzomcore
-          key: ryzomcore-nel-v21
-          # No restore-keys fallback - we want exact match only to avoid stale caches
+          key: ryzomcore-v1
+
 
       - name: Build RyzomCore
         if: steps.cache-ryzomcore.outputs.cache-hit != 'true'
@@ -439,16 +350,6 @@ jobs:
           # The import library (libxml2.lib) contains __imp_xmlFree, so we must NOT use LIBXML_STATIC.
           Write-Host "Using DLL linkage for libxml2 (no LIBXML_STATIC)"
 
-          # Search for where RyzomCore sets LIBXML_STATIC
-          Write-Host "`n=== Searching for LIBXML_STATIC in RyzomCore CMake files ==="
-          Get-ChildItem -Path "C:/ryzomcore" -Recurse -Include "*.cmake","CMakeLists.txt" -ErrorAction SilentlyContinue |
-            ForEach-Object {
-              $content = Get-Content $_.FullName -Raw -ErrorAction SilentlyContinue
-              if ($content -match "LIBXML_STATIC|LIBXML2_DEFINITIONS") {
-                Write-Host "`nFound in: $($_.FullName)"
-                $content | Select-String -Pattern "LIBXML_STATIC|LIBXML2_DEFINITIONS" -Context 2,2 | ForEach-Object { Write-Host $_ }
-              }
-            }
 
           cmake .. -G Ninja `
             -DCMAKE_MAKE_PROGRAM="$ninjaPath" `
@@ -501,20 +402,6 @@ jobs:
             -DOPENSSL_LIBRARIES="C:/external/openssl/lib/VC/libcrypto64MD.lib;C:/external/openssl/lib/VC/libssl64MD.lib" `
             -DCMAKE_FIND_USE_SYSTEM_ENVIRONMENT_PATH=FALSE
 
-          # Debug: Check CMake cache for LIBXML settings
-          Write-Host "`n=== CMake Cache LIBXML settings ==="
-          Get-Content CMakeCache.txt | Select-String -Pattern "LIBXML" | ForEach-Object { Write-Host $_ }
-
-          # Debug: Check compile_commands.json for LIBXML_STATIC
-          if (Test-Path "compile_commands.json") {
-            Write-Host "`n=== Checking compile_commands.json for LIBXML_STATIC ==="
-            $compileCommands = Get-Content "compile_commands.json" -Raw
-            if ($compileCommands -match "LIBXML_STATIC") {
-              Write-Host "WARNING: LIBXML_STATIC found in compile commands!"
-              $compileCommands | Select-String -Pattern "LIBXML_STATIC" | Select-Object -First 3 | ForEach-Object { Write-Host $_ }
-            } else {
-              Write-Host "OK: LIBXML_STATIC NOT found in compile commands"
-            }
           }
 
           Write-Host "`nBuilding RyzomCore..."
@@ -574,16 +461,14 @@ jobs:
         uses: actions/cache/restore@v4
         with:
           path: C:/ryzomcore
-          key: ryzomcore-nel-v21
+          key: ryzomcore-v1
           fail-on-cache-miss: true
 
       - name: Restore Dependencies Cache
         uses: actions/cache/restore@v4
         with:
           path: C:/external
-          key: ryzom-external-2022q2-v17
-          restore-keys: |
-            ryzom-external-2022q2-
+          key: deps-v1
 
       - name: Verify Required Files
         shell: pwsh
@@ -621,7 +506,7 @@ jobs:
       - name: Upload Client Artifact
         uses: actions/upload-artifact@v4
         with:
-          name: tux-target-client-windows-${{ env.BUILD_TYPE }}
+          name: MTP-Target-Client-win64
           path: |
             build-client/bin/tux-target.exe
             build-client/bin/*.dll
@@ -653,58 +538,27 @@ jobs:
         uses: actions/cache/restore@v4
         with:
           path: C:/ryzomcore
-          key: ryzomcore-nel-v21
+          key: ryzomcore-v1
           fail-on-cache-miss: true
 
       - name: Restore Dependencies Cache
         uses: actions/cache/restore@v4
         with:
           path: C:/external
-          key: ryzom-external-2022q2-v17
-          restore-keys: |
-            ryzom-external-2022q2-
+          key: deps-v1
 
       - name: Verify ODE Installation
         shell: pwsh
         run: |
-          Write-Host "=== Checking ODE directory structure ==="
-          if (Test-Path "C:/external/ode") {
-            Write-Host "ODE directory exists"
-            Write-Host "`nODE include structure:"
-            Get-ChildItem "C:/external/ode/include" -Recurse -ErrorAction SilentlyContinue |
-              Select-Object FullName |
-              ForEach-Object { Write-Host $_.FullName }
-
-            Write-Host "`nODE lib structure:"
-            Get-ChildItem "C:/external/ode/lib" -Recurse -Filter "*.lib" -ErrorAction SilentlyContinue |
-              Select-Object FullName |
-              ForEach-Object { Write-Host $_.FullName }
-
-            # Check specifically for ode/ode.h
-            if (Test-Path "C:/external/ode/include/ode/ode.h") {
-              Write-Host "`n[OK] Found: C:/external/ode/include/ode/ode.h"
-            } else {
-              Write-Host "`n[MISSING] C:/external/ode/include/ode/ode.h"
-              # Try to find ode.h anywhere in ODE directory
-              Write-Host "Searching for ode.h..."
-              Get-ChildItem "C:/external/ode" -Recurse -Filter "ode.h" -ErrorAction SilentlyContinue |
-                Select-Object FullName |
-                ForEach-Object { Write-Host "Found: $($_.FullName)" }
-            }
-
-            # Check for ODE library and determine correct name
-            Write-Host "`nLooking for ODE library..."
-            $odeLib = Get-ChildItem "C:/external/ode/lib" -Filter "ode*.lib" -ErrorAction SilentlyContinue | Select-Object -First 1
-            if ($odeLib) {
-              Write-Host "[OK] Found ODE library: $($odeLib.Name)"
-              # Set environment variable for CMake
-              echo "ODE_LIBRARY_NAME=$($odeLib.Name)" >> $env:GITHUB_ENV
-            } else {
-              Write-Error "[MISSING] No ODE library found in C:/external/ode/lib"
-            }
-          } else {
-            Write-Error "ODE directory not found at C:/external/ode"
+          if (!(Test-Path "C:/external/ode/include/ode/ode.h")) {
+            Write-Error "ODE header not found"
+            exit 1
           }
+          if (!(Test-Path "C:/external/ode/lib/ode_doubles.lib")) {
+            Write-Error "ODE library not found"
+            exit 1
+          }
+          Write-Host "ODE installation verified"
 
       - name: Configure CMake (Server)
         shell: pwsh
@@ -734,7 +588,7 @@ jobs:
       - name: Upload Server Artifact
         uses: actions/upload-artifact@v4
         with:
-          name: tux-target-server-windows-${{ env.BUILD_TYPE }}
+          name: MTP-Target-Server-win64
           path: |
             build-server/bin/tux-target-srv.exe
             build-server/bin/*.dll
