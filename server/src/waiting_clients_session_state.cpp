@@ -66,6 +66,10 @@ void CWaitingClientsSessionState::update()
 		CLevelManager::getInstance().newLevel(string1, string2);
 		string CurrentLevel = CLevelManager::getInstance().currentLevel().fileName();
 
+		// Announce level to chat
+		string levelMsg = "Now playing: " + CLevelManager::getInstance().levelName() + " (" + CurrentLevel + ")";
+		CNetwork::getInstance().sendChat(levelMsg);
+
 //ace		string luaCodeFilename = CPath::lookup(CurrentLevel+".lua", false);
 //		CLuaEngine::loadLevelCode(luaCodeFilename);
 

@@ -97,6 +97,10 @@ Sound features:
 - `LevelPlaylist` config option for testing specific levels
 - Network tick rate increased from 25Hz to 50Hz
 
+### Level Announcements
+- Chat message broadcast when each level starts: `Now playing: <DisplayName> (<filename.lua>)`
+- Helps identify levels for debugging and provides history in chat log
+
 ## Build System
 
 ### Windows Build
