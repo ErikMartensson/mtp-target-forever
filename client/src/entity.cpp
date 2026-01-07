@@ -239,14 +239,14 @@ void CEntity::update()
 
 	for(std::list<EntitySource*>::iterator it = Channels.begin(); it != Channels.end(); )
 	{
-		if((*it)->source->isPlaying() || (*it)->start)
+		if((*it)->isPlaying() || (*it)->start)
 		{
-			(*it)->source->setPos(interpolator().getMatrix().getPos() /*/ GScale*/);
+			(*it)->setPos(interpolator().getMatrix().getPos() /*/ GScale*/);
 
 			if((*it)->start)
 			{
 				(*it)->start=false;
-				(*it)->source->play();
+				(*it)->play();
 			}
 			it++;
 		}

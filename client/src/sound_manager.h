@@ -35,6 +35,9 @@
 #include <nel/misc/singleton.h>
 #include <nel/sound/u_audio_mixer.h>
 #include <nel/sound/u_source.h>
+#include <nel/sound/driver/sound_driver.h>
+#include <nel/sound/driver/buffer.h>
+#include <nel/sound/driver/source.h>
 
 //
 // Classes
@@ -42,20 +45,58 @@
 
 struct EntitySource
 {
+	// Constructor for high-level USource
 	EntitySource(NLSOUND::USource *newsource)
 	{
 		source = newsource;
+		lowLevelSource = NULL;
 		start = true;
-		nlinfo("-----------vytvarim zvuk %d", (long int)newsource);
+	}
+
+	// Constructor for low-level ISource
+	EntitySource(NLSOUND::ISource *newLowLevelSource)
+	{
+		source = NULL;
+		lowLevelSource = newLowLevelSource;
+		start = true;
 	}
 
 	~EntitySource()
 	{
-		nlinfo("-----------uvolnuju zvuk %d", (long int)source);
-		delete source;
+		if(source)
+			delete source;
+		if(lowLevelSource)
+			delete lowLevelSource;
 	}
 
-	NLSOUND::USource *source;
+	// Unified interface methods
+	void setPos(const NLMISC::CVector &pos)
+	{
+		if(source)
+			source->setPos(pos);
+		else if(lowLevelSource)
+			lowLevelSource->setPos(pos);
+	}
+
+	void play()
+	{
+		if(source)
+			source->play();
+		else if(lowLevelSource)
+			lowLevelSource->play();
+	}
+
+	bool isPlaying() const
+	{
+		if(source)
+			return source->isPlaying();
+		else if(lowLevelSource)
+			return lowLevelSource->isPlaying();
+		return false;
+	}
+
+	NLSOUND::USource *source;        // High-level source (NULL if using low-level)
+	NLSOUND::ISource *lowLevelSource; // Low-level source (NULL if using high-level)
 	bool start;
 };
 
@@ -96,7 +137,11 @@ public:
 	CSoundManager();
 
 private:
+	// Load sound effects from WAV files using low-level driver API
+	void loadSoundEffects();
+
 	NLSOUND::UAudioMixer *AudioMixer;
+	NLSOUND::ISoundDriver *SoundDriver;
 	bool PlaySound;
 	bool useM3U; // classic music or m3u playlist
 	std::vector<std::string> m3uVector; // for holding playlist at runtime
@@ -105,6 +150,9 @@ private:
 	float MusicVolume;
 	float SoundVolume;
 	bool isInit;
+
+	// Cached sound effect buffers (loaded from WAV files)
+	NLSOUND::IBuffer *SoundBuffers[SoundCount];
 };
 
 #endif
