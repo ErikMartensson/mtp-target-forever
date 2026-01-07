@@ -35,8 +35,17 @@ These modifications enable compilation on modern systems without changing game f
 | [login_service/connection_ws.cpp](#6-login-service-64-bit-fixes) | 1 | uintptr_t |
 | [common/lua_utility.cpp](#7-lua-error-logging-enhancement) | 8 | Error messages |
 | [14 Lua server scripts](#8-lua-5x-table-declarations) | 1-3 each | Lua 5.x compat |
+| [client/src/options_menu.h](#10-pause-menu-and-options-refactoring) | NEW | Options menu class |
+| [client/src/options_menu.cpp](#10-pause-menu-and-options-refactoring) | NEW | Options menu impl |
+| [client/src/game_task.h](#10-pause-menu-and-options-refactoring) | ~30 | Pause menu |
+| [client/src/game_task.cpp](#10-pause-menu-and-options-refactoring) | ~80 | Pause menu impl |
+| [client/src/intro_task.h](#10-pause-menu-and-options-refactoring) | ~25 | Options callback |
+| [client/src/intro_task.cpp](#10-pause-menu-and-options-refactoring) | ~150 | Options refactor |
+| [client/src/mtp_target.cpp](#11-disconnectreconnect-flow-fix) | ~20 | Disconnect fix |
+| [client/src/entity_manager.h](#11-disconnectreconnect-flow-fix) | +1 | removeAll decl |
+| [client/src/entity_manager.cpp](#11-disconnectreconnect-flow-fix) | +15 | removeAll impl |
 
-**Total:** 25 files, ~110 lines changed
+**Total:** 35+ files, ~250+ lines changed
 
 ---
 
@@ -520,6 +529,116 @@ else
 
 ### Debug Logging (Optional)
 Added `PhysicsDebugLog` flag and `[COLLISION]`, `[VEL-ZERO]`, `[VELOCITY]` logging for future physics debugging. Disabled by default.
+
+---
+
+## 10. Pause Menu and Options Refactoring
+
+**Files:**
+- [client/src/options_menu.h](../client/src/options_menu.h) (NEW)
+- [client/src/options_menu.cpp](../client/src/options_menu.cpp) (NEW)
+- [client/src/game_task.h](../client/src/game_task.h)
+- [client/src/game_task.cpp](../client/src/game_task.cpp)
+- [client/src/intro_task.h](../client/src/intro_task.h)
+- [client/src/intro_task.cpp](../client/src/intro_task.cpp)
+- [client/data/gui/pause_menu.xml](../client/data/gui/pause_menu.xml) (NEW)
+
+### Problem
+The original game had no pause menu - pressing ESC immediately quit to desktop. Options were only accessible from the main menu. Additionally, options menu code was duplicated between intro_task and game_task after adding pause menu options.
+
+### Changes
+
+#### New COptionsMenu Class
+Created a shared `COptionsMenu` singleton class with callback interface:
+```cpp
+class IOptionsMenuCallback
+{
+public:
+    virtual void onOptionsBack() = 0;
+    virtual void onOptionsApply() = 0;
+};
+
+class COptionsMenu : public NLMISC::CSingleton<COptionsMenu>
+{
+public:
+    void load();
+    void show(IOptionsMenuCallback *callback);
+    void hide();
+    bool isActive() const;
+    bool update();
+    // ...
+};
+```
+
+#### Pause Menu (game_task.cpp)
+Added pause menu accessible via ESC key during gameplay:
+- Resume - return to game
+- Options - access video/audio settings
+- Disconnect - clean disconnect and return to main menu
+- Quit Game - exit application
+
+#### Callback Behavior
+- `CIntroTask::onOptionsApply()` - Restarts game to apply video settings (safe in main menu)
+- `CGameTask::onOptionsApply()` - Only saves settings, no restart (would disconnect player)
+
+### Why This Matters
+- Players can now pause the game and adjust settings mid-session
+- Volume can be changed without disconnecting from server
+- Clean disconnect flow prevents crashes when reconnecting
+- Code deduplication reduces maintenance burden (~350 lines removed)
+
+---
+
+## 11. Disconnect/Reconnect Flow Fix
+
+**File:** [client/src/mtp_target.cpp](../client/src/mtp_target.cpp)
+
+### Problem
+Disconnecting from a server and reconnecting would crash the client due to:
+1. Task manager assertion failures (tasks already registered)
+2. Entity manager assertion failures (entities still existed)
+3. Error flag not being reset (level wouldn't load)
+
+### Changes
+
+#### Task Cleanup (_error() function)
+```cpp
+void CMtpTarget::_error()
+{
+    nlinfo("error occurred : stop all and reset");
+    reset();
+    // Clear all entities so they can be re-added when reconnecting
+    CEntityManager::getInstance().removeAll();
+    // Immediately remove CGameTask and its child tasks
+    CTaskManager::getInstance().remove(CLevelManager::instance());
+    CTaskManager::getInstance().remove(CHudTask::instance());
+    CTaskManager::getInstance().remove(CScoreTask::instance());
+    CTaskManager::getInstance().remove(CChatTask::instance());
+    CTaskManager::getInstance().remove(CGameTask::instance());
+    // ... rest of cleanup
+    DoError = false;
+    Error = false;  // Reset error flag so reconnection can work
+}
+```
+
+#### Entity Manager (entity_manager.cpp)
+Added `removeAll()` method:
+```cpp
+void CEntityManager::removeAll()
+{
+    CMtpTarget::getInstance().controler().Camera.setFollowedEntity(255);
+    for(uint i = 0; i < 255; i++)
+    {
+        if(entities()[i]->Type != CEntity::Unknown)
+            entities()[i]->reset();
+    }
+}
+```
+
+### Why This Matters
+- Players can now disconnect and reconnect without restarting the game
+- Server errors display properly and can be dismissed
+- Clean state transitions prevent memory leaks and crashes
 
 ---
 

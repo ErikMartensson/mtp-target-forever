@@ -5,11 +5,27 @@ All notable improvements and changes from the original MTP Target v1.2.2a.
 ## Client Improvements
 
 ### Options Menu (New)
-In-game video options accessible from the main menu:
+In-game options accessible from both main menu and pause menu:
 - **Resolution selection** - Cycle through available display modes (left-click forward, right-click backward)
 - **Fullscreen toggle** - Switch between windowed and fullscreen modes
 - **VSync toggle** - Enable/disable vertical sync
-- Settings are saved to config file and game restarts automatically when Apply is clicked
+- **Music volume slider** - Adjust background music volume (0-100%)
+- **Sound volume slider** - Adjust sound effects volume (0-100%)
+- Volume changes apply immediately without restart
+- Video settings from main menu auto-restart the game when Apply is clicked
+- Video settings from pause menu require manual restart (to avoid disconnecting from server)
+
+### Pause Menu (New)
+Press **Escape** during gameplay to access the pause menu:
+- **Resume** - Return to gameplay
+- **Options** - Access video and audio settings mid-game
+- **Disconnect** - Return to main menu (cleanly disconnects from server)
+- **Quit Game** - Exit the application
+
+### Disconnect/Reconnect Flow (Fixed)
+- Fixed crashes when disconnecting and reconnecting to servers
+- Proper cleanup of game tasks, entities, and GUI elements
+- Error dialogs now have OK button and can be dismissed with Escape key
 
 ### Aspect Ratio Fix
 - Fixed stretched display on widescreen monitors (16:9, 21:9, etc.)
@@ -87,12 +103,17 @@ In-game video options accessible from the main menu:
 
 ### New Files
 - `client/data/gui/options.xml` - Options menu layout
+- `client/data/gui/pause_menu.xml` - Pause menu layout
+- `client/src/options_menu.cpp/h` - Shared options menu class (used by intro and game tasks)
 - `docs/CHANGELOG.md` - This file
 - `common/lua_compat.h` - Lua compatibility macros
 - `scripts/*.bat` - Build and run scripts
 
 ### Client Source
-- `client/src/intro_task.cpp/h` - Options menu implementation
+- `client/src/intro_task.cpp/h` - Main menu, options integration via IOptionsMenuCallback
+- `client/src/game_task.cpp/h` - Pause menu, options integration via IOptionsMenuCallback
+- `client/src/mtp_target.cpp` - Disconnect/reconnect flow fixes
+- `client/src/entity_manager.cpp/h` - Added removeAll() for clean reconnection
 - `client/src/hud_task.cpp/h` - Speed display
 - `client/src/chat_task.cpp/h` - Chat toggle mode
 - `client/src/3d_task.cpp` - Aspect ratio fix
@@ -100,6 +121,7 @@ In-game video options accessible from the main menu:
 - `client/src/background_task.cpp` - Menu background scaling
 - `client/src/gui_button.cpp/h` - Right-click support
 - `client/src/gui_mouse_listener.cpp/h` - Right-click detection
+- `client/src/sound_manager.cpp/h` - Volume control methods
 
 ### Server Source
 - `server/src/physics.cpp` - Momentum preservation fix
