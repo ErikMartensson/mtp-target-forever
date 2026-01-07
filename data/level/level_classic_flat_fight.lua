@@ -61,9 +61,9 @@ Modules =
 	{ Position = CVector(10, -25, 3.5), Scale = CVector(1, 1, 1), Rotation = CAngleAxis(1,0,0,0), Lua = "snow_island", Shape="snow_island", Friction = 0 },
 	{ Position = CVector(6, -14, 1.8), Scale = CVector(1, 1, 1), Rotation = CAngleAxis(1,0,0,0), Lua = "snow_island2", Shape="snow_island2", Friction = 0 },
 	{ Position = CVector(-3.8, -17, 2), Scale = CVector(1, 1, 1), Rotation = CAngleAxis(1,0,0,0), Lua = "snow_island3", Shape="snow_island3", Friction = 0 },
-	{ Position = CVector(-0.1, -15.3, 1), Scale = CVector(1, 1, 1), Rotation = CAngleAxis(1,0,0,0), Lua = "snow_target_50_flat", Shape="snow_target_50_flat", Score = 50, Friction = 25 },
-	{ Position = CVector(-0.1, -15.35, 2.55), Scale = CVector(1, 1, 1), Rotation = CAngleAxis(1,0,0,0), Lua = "snow_target_100_flat", Shape="snow_target_100_flat", Score = 100, Friction = 10 },
-	{ Position = CVector(-0.1, -15.33, 2.8), Scale = CVector(1, 1, 1), Rotation = CAngleAxis(1,0,0,0), Lua = "snow_target_300_flat", Shape="snow_target_300_flat", Score = 300, Friction = 10 }
+	{ Position = CVector(-0.1, -15.3, 1), Scale = CVector(1, 1, 1), Rotation = CAngleAxis(1,0,0,0), Lua = "snow_target_50_flat", Shape="snow_target_50_flat", Score = 50, Friction = 25, Accel = 0.0001 },
+	{ Position = CVector(-0.1, -15.35, 2.55), Scale = CVector(1, 1, 1), Rotation = CAngleAxis(1,0,0,0), Lua = "snow_target_100_flat", Shape="snow_target_100_flat", Score = 100, Friction = 10, Accel = 0.0001 },
+	{ Position = CVector(-0.1, -15.33, 2.8), Scale = CVector(1, 1, 1), Rotation = CAngleAxis(1,0,0,0), Lua = "snow_target_300_flat", Shape="snow_target_300_flat", Score = 300, Friction = 10, Accel = 0.0001 }
 }
 
 Particles =

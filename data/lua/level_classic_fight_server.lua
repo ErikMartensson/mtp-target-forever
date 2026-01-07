@@ -33,7 +33,11 @@ end
 function Module:collide( entity )
   if(entity:getIsOpen()==0) then
     entity:setCurrentScore(self:getScore());
-   end
+    -- Allow movement on targets in fight mode
+    if(self:getScore() > 0) then
+      entity:setDefaultAccel(0.0001);
+    end
+  end
 end
 
 

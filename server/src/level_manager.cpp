@@ -79,7 +79,7 @@ using namespace NLNET;
 
 CLevelManager::CLevelManager()
 {
-	NextLevelId = 0;
+	NextLevelId = (uint8)-1;  // Start at -1 so first nextLevel() call gives index 0
 	CurrentLevel = 0;
 	LevelSessionCount = 0;
 	MaxLevelSessionCount = 0;

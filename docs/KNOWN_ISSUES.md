@@ -23,7 +23,30 @@ These require missing theme assets (space, sun, city) or gate mechanics:
 
 ---
 
-### 2. Bot AI Not Working on All Maps
+### 2. Team Level Scoring Inconsistencies
+**Status:** Partially Fixed
+**Description:** Team level scoring can be unreliable in certain situations. Points may not always be counted correctly, especially with negative scores (landing on enemy targets).
+
+**Symptoms:**
+- Score display in top-left corner may show 0 when players stop actively colliding with targets
+- Score display may persist into the next non-team level
+- Negative scores (from landing on enemy targets) may not subtract correctly in some cases
+
+**Root Cause:**
+The team scoring system resets `currentTeamRedScore`/`currentTeamBlueScore` to 0 every frame, then accumulates scores from active collisions. When players stop colliding (ball stops on target), the frame score is 0, which can overwrite the accumulated total.
+
+**Partial Fixes Applied:**
+- Added nil-safety checks in `Module:collide()` for `entity:parent()` and `self:getScore()`
+- Added text clearing in `levelEndSession()` to reduce persistence to next level
+- Fixed `level_team_all_on_one` to use shared `level_team_server.lua` script
+
+**Files Affected:**
+- `data/lua/level_team_server.lua` - Main team scoring logic
+- `data/lua/level_team_all_on_one_server.lua` - Unused (level now uses level_team_server.lua)
+
+---
+
+### 3. Bot AI Not Working on All Maps
 **Status:** Not Started
 **Description:** Bots aren't deploying (playing) correctly on all maps. This appears to be a per-map issue where bot behavior may depend on level-specific scripting.
 
@@ -38,7 +61,7 @@ These require missing theme assets (space, sun, city) or gate mechanics:
 
 ## Medium Priority
 
-### 3. High Ping on Local Server
+### 4. High Ping on Local Server
 **Status:** Not Started
 **Description:** Playing on a locally-hosted server results in 17-19ms ping. Modern games typically have near-zero ping for local connections.
 
@@ -56,7 +79,7 @@ These require missing theme assets (space, sun, city) or gate mechanics:
 
 ---
 
-### 4. Input Delay / Steering Lag
+### 5. Input Delay / Steering Lag
 **Status:** Not Started
 **Description:** There's a noticeable delay between steering inputs and the penguin actually changing direction. This may be related to the high ping issue.
 
@@ -78,7 +101,7 @@ These require missing theme assets (space, sun, city) or gate mechanics:
 
 ---
 
-### 5. ~~Momentum Loss on Ramp Transition~~ (FIXED)
+### 6. ~~Momentum Loss on Ramp Transition~~ (FIXED)
 **Status:** ✅ FIXED (January 2, 2026)
 **Description:** Players would lose momentum at slope-to-ramp transitions, stopping abruptly at angle changes.
 
@@ -110,13 +133,13 @@ Changed contact surface mode from `dContactMu2` to `dContactApprox1` in `server/
 
 ---
 
-### 6. ~~Darts Map Spawn Position~~ (FIXED)
+### 7. ~~Darts Map Spawn Position~~ (FIXED)
 **Status:** ✅ FIXED
 **Description:** level_darts is now working correctly with proper acceleration, visibility, and scoring.
 
 ---
 
-### 7. ~~Team Mirror Level Scoring~~ (FIXED)
+### 8. ~~Team Mirror Level Scoring~~ (FIXED)
 **Status:** ✅ FIXED
 **Description:** Team levels now work correctly with original scoring logic restored.
 
@@ -154,7 +177,7 @@ Despite boxes extending 0.5 units in Z (from Z to Z+0.5), they behave as distinc
 
 ## Low Priority / Nice to Have
 
-### 8. /reset Command Broken
+### 9. /reset Command Broken
 **Status:** Not Started
 **Description:** The `/reset` command (Ctrl+F6) behaves identically to `/forceend` (Ctrl+F5) - it advances to the next level instead of restarting the current session.
 
@@ -168,7 +191,7 @@ Despite boxes extending 0.5 units in Z (from Z to Z+0.5), they behave as distinc
 
 ---
 
-### 9. Non-functional Debug Keys
+### 10. Non-functional Debug Keys
 **Status:** Not Started
 **Description:** Several client debug keys don't work as expected.
 
@@ -185,7 +208,7 @@ Despite boxes extending 0.5 units in Z (from Z to Z+0.5), they behave as distinc
 
 ---
 
-### 10. Bot Commands Cause Server Crashes
+### 11. Bot Commands Cause Server Crashes
 **Status:** Workaround Applied
 **Description:** The F5 (addBot) and F6 (kick bot) commands cause the server to crash when executed during gameplay.
 
@@ -198,7 +221,7 @@ Despite boxes extending 0.5 units in Z (from Z to Z+0.5), they behave as distinc
 
 ---
 
-### 11. Water Rendering Disabled
+### 12. Water Rendering Disabled
 **Status:** Workaround Applied
 **Description:** Water rendering is currently disabled because the required water textures or shaders are missing.
 
@@ -206,7 +229,7 @@ Despite boxes extending 0.5 units in Z (from Z to Z+0.5), they behave as distinc
 
 ---
 
-### 12. Version Compatibility
+### 13. Version Compatibility
 **Status:** Ongoing
 **Description:** The current build uses v1.2.2a source code. Some features from v1.5.19 are not available.
 

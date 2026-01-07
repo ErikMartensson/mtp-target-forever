@@ -40,43 +40,20 @@ function CEntity:getTeam()
 end
 
 function CEntity:setTeamScore( score )
-  --print("setTeamScore");
-  --print(self.base:getCurrentScore());
-  --print(score);
   if(score==0) then
     self.bonusTime = 0;
   end
   if(self.base:getCurrentScore() and score==0) then
     self.bonusTime = 0;
-    --self.base:displayText(0,5,1,255,255,0,"bonus time left : 0",15);
   end
-  
-  if(self.base:getCurrentScore()==0 and score~=0) then
-    --self.bonusTime = getTimeRemaining() * 5;
-    --local bonus_string = "bonus time left : " .. self.bonusTime;
-    --self.base:displayText(0,4,1,255,255,0,bonus_string,15);
-  end
-  
-  --if(self.base:getCurrentScore()==score) then
-  --  return;
-  --end
-  
+
   if(self.team==0) then
-    --if(currentTeamRedScore>=score) then
-    --  return;
-    --end
-    --currentTeamRedScore = score;
     currentTeamRedScore = currentTeamRedScore + score;
     self.base:setCurrentScore(score);
   else
-    --if(currentTeamBlueScore>=score) then
-    --  return;
-    --end
-    --currentTeamBlueScore = score;
     currentTeamBlueScore = currentTeamBlueScore + score;
     self.base:setCurrentScore(score);
   end
-  --end    
 end
 
 function CEntity:setFinalScore()
@@ -85,7 +62,7 @@ function CEntity:setFinalScore()
   else
     self.base:setCurrentScore(teamBlueScore + self.bonusTime);
   end
-    
+
 end
 
 function CEntity:setTeam( t )
@@ -100,11 +77,8 @@ function Entity:init()
   local parent = CEntity:new(self);
   self:setCurrentScore(0);
   self:setUserData(parent);
-  --clientId = self:getEid();
-  --print("clientId");
-  --print(clientId);
-  --local t = math.mod(clientId,2);
   local t = self:getTeam(2);
+
   if(t==0) then
     self:setStartPointId(teamACount*2+getSessionId()*2);
     teamACount = teamACount+1;
@@ -115,18 +89,16 @@ function Entity:init()
 
   self:displayText(0,5,1,255,255,255,"warning : Team share the score",10);
   if(t==0) then
-  execLuaOnAllClient("getEntityByName(\""..self:getName().."\"):setColor(255,0,0,255);");
-  	self:displayText(0,6,1,255,0,0,"You are in RED team",15);
-  	self:displayText(0,7,1,255,0,0,"Land on RED target !",20);
+    execLuaOnAllClient("getEntityByName(\""..self:getName().."\"):setColor(255,0,0,255);");
+    self:displayText(0,6,1,255,0,0,"You are in RED team",15);
+    self:displayText(0,7,1,255,0,0,"Land on RED target !",20);
   else
-  execLuaOnAllClient("getEntityByName(\""..self:getName().."\"):setColor(0,0,255,255);");
-  	self:displayText(0,6,1,100,100,255,"You are in BLUE team",15);
-  	self:displayText(0,7,1,100,100,255,"Land on BLUE target !",20);
+    execLuaOnAllClient("getEntityByName(\""..self:getName().."\"):setColor(0,0,255,255);");
+    self:displayText(0,6,1,100,100,255,"You are in BLUE team",15);
+    self:displayText(0,7,1,100,100,255,"Land on BLUE target !",20);
   end
 
   parent:setTeam(t);
-  print(self:getName());
-  parent:printTeam();
   clientId = clientId + 1;
 end
 
@@ -202,28 +174,36 @@ function Module:getModuleTeam()
 end
 
 function Module:collide( entity )
-  if(entity:getIsOpen()==1) then
+  local isOpen = entity:getIsOpen()
+  local parent = entity:parent()
+
+  if(isOpen==1) then
     entity:setCurrentScore(0)
   else
+    if not parent then
+      return
+    end
+
     local moduleTeam = self:getModuleTeam()
-    local playerTeam = entity:parent():getTeam()
+    local playerTeam = parent:getTeam()
+    local score = self:getScore()
 
     if moduleTeam >= 0 then
       -- Team target: positive for own team, negative for enemy
       if moduleTeam == playerTeam then
-        entity:parent():setTeamScore(self:getScore())
+        parent:setTeamScore(score)
       else
-        entity:parent():setTeamScore(-self:getScore())
+        parent:setTeamScore(-score)
       end
-    elseif self:getScore() > 0 then
-      -- Unknown team module with score: give positive points (fallback)
-      entity:parent():setTeamScore(self:getScore())
+    elseif score and score > 0 then
+      -- Shared/neutral target: give positive points to any team
+      parent:setTeamScore(score)
     end
   end
   --print(entity:getName());
   --print(entity:parent():getTeam());
   --entity:setCurrentScore(self:getScore());
-  
+
   --self:parent():disable();
 end
 
@@ -236,19 +216,15 @@ function levelInit()
   clientId = 0;
   teamACount = 0;
   teamBCount = 0;
-  print("levelinit");
-
 end
 
 function levelPreUpdate()
-
+  -- Reset current frame scores (will be accumulated via collisions)
   currentTeamRedScore = 0;
   currentTeamBlueScore = 0;
-
 end
 
 function levelPostUpdate()
-
   if(currentTeamRedScore~=teamRedScore) then
     displayTextToAll(0,7,1,255,0,0,currentTeamRedScore,40);
     teamRedScore = currentTeamRedScore;
@@ -258,7 +234,6 @@ function levelPostUpdate()
     displayTextToAll(0,8,1,100,100,255,currentTeamBlueScore,40);
     teamBlueScore = currentTeamBlueScore;
   end
-
 end
 
 
@@ -271,5 +246,8 @@ function levelEndSession()
     execLuaOnAllClient("getEntityByName(\""..entity:getName().."\"):setColor(255,255,255,255);");
   end
 
+  -- Clear team score display text so it doesn't persist into the next level
+  displayTextToAll(0,7,1,255,255,255,"",1);
+  displayTextToAll(0,8,1,255,255,255,"",1);
 end
 

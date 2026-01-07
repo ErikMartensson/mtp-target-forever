@@ -1,4 +1,4 @@
-Name = "Snow funnel"
+Name = "Snow dual ramp"
 Author = "Ace"
 ServerLua = "data/lua/level_snow_dual_ramp_server.lua"
 ReleaseLevel = 2

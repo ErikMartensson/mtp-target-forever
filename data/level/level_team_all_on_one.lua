@@ -1,6 +1,6 @@
 Name = "Team All on one"
 Author = "Skeet"
-ServerLua = "data/lua/level_team_all_on_one_server.lua"
+ServerLua = "data/lua/level_team_server.lua"
 ReleaseLevel = 2
 
 skyShapeFileName = "sky.shape";

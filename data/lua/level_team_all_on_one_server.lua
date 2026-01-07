@@ -142,10 +142,14 @@ end
 
 
 function Module:collide( entity )
-  if(entity:getIsOpen()==1 or self:getScore()<=0) then
+  if(entity:getIsOpen()==1) then
     entity:setCurrentScore(0)
   else
-      entity:parent():setTeamScore(100)
+    -- Shared target: both teams get points for landing
+    local score = self:getScore()
+    if(score and score > 0) then
+      entity:parent():setTeamScore(score)
+    end
   end
 end
 
