@@ -686,17 +686,26 @@ static void cbCollideWhenFly(CNetMessage &msgin)
 	nlinfo("NET: cbCollideWhenFly eid=%hu, pos=(%f,%f,%f)", (uint16)eid, pos.x, pos.y, pos.z);
 
 	// check if the player exists
+	nlinfo("NET: cbCollideWhenFly checking exist...");
 	if(!CEntityManager::getInstance().exist(eid)) { nlwarning("The eid doesn't exist"); return; }
+	nlinfo("NET: cbCollideWhenFly exist check passed");
 
+	nlinfo("NET: cbCollideWhenFly checking local...");
 	if(CMtpTarget::getInstance().controler().getControledEntity()==eid)
 	{
 		// it's my collide when fly
+		nlinfo("NET: cbCollideWhenFly setting EnableExternalCamera");
 		C3DTask::getInstance().EnableExternalCamera = true;
 	}
+	nlinfo("NET: cbCollideWhenFly local check done");
 
+	nlinfo("NET: cbCollideWhenFly setting addCrashEventKey...");
 	CEntityManager::getInstance()[eid].addCrashEventKey = CCrashEvent(true,pos);
-	if(SessionFile) 
+	nlinfo("NET: cbCollideWhenFly addCrashEventKey set");
+
+	if(SessionFile)
 		fprintf(SessionFile, "%hu CE %f %f %f\n", (uint16)eid,pos.x,pos.y,pos.z);
+	nlinfo("NET: cbCollideWhenFly done");
 }
 
 static void cbTimeArrival(CNetMessage &msgin)
