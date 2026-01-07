@@ -194,6 +194,11 @@ void CChatTask::update()
 		{
 		}
 	}
+	if (C3DTask::getInstance().kbPressed(KeyEND))
+	{
+		// Jump to bottom and resume auto-scroll
+		CurrentChatLine = ChatText.rbegin();
+	}
 }
 
 void CChatTask::render()

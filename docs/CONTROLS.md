@@ -57,6 +57,7 @@ Hold down the left mouse button and move the mouse to look around. Release to re
 | **Enter** | Open chat input / Send message |
 | **Page Up** | Scroll chat history up |
 | **Page Down** | Scroll chat history down |
+| **End** | Jump to bottom and resume auto-scroll |
 | **Escape** | Cancel chat input |
 
 When chat is open, arrow keys type in the chat box. Press Enter to send or Escape to cancel.

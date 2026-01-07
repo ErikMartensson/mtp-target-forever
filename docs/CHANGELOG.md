@@ -62,6 +62,9 @@ Sound features:
   - Type message and press **Enter** to send
   - Arrow keys now properly control penguin steering during gameplay
 
+### Chat Scrolling
+- **End** key - Jump to bottom and resume auto-scroll for new messages
+
 ### Command-Line Arguments
 - `--lan <host>` - Auto-connect to a LAN server
 - `--user <name>` - Set player name for auto-connect
