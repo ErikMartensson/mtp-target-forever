@@ -2,13 +2,13 @@
   "$schema": "http://json-schema.org/draft-07/schema#",
   "version": "1.0",
   "description": "Asset manifest for Tux Target client and server builds",
-  "lastUpdated": "2026-01-05",
+  "lastUpdated": "2026-01-08",
 
   "directories": {
     "comment": "Font files come from RyzomCore samples, not data/ directory",
     "client": {
-      "required": ["texture", "shape", "sound", "level"],
-      "optional": ["gui", "particle", "misc", "smiley"]
+      "required": ["level", "particle", "shape", "sound", "texture"],
+      "optional": ["gui", "misc", "smiley"]
     },
     "server": {
       "required": ["level", "lua", "module", "shape"],

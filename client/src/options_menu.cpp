@@ -41,6 +41,8 @@ COptionsMenu::COptionsMenu()
 	, _originalFullscreen(false)
 	, _pendingVSync(false)
 	, _originalVSync(false)
+	, _pendingParticle(true)
+	, _originalParticle(true)
 {
 }
 
@@ -57,6 +59,8 @@ void COptionsMenu::load()
 	_fullscreenText = (CGuiText *)xml->get("txtFullscreen");
 	_vsyncButton = (CGuiButton *)xml->get("bVSync");
 	_vsyncText = (CGuiText *)xml->get("txtVSync");
+	_particleButton = (CGuiButton *)xml->get("bParticle");
+	_particleText = (CGuiText *)xml->get("txtParticle");
 	_musicVolumeSlider = (CGuiHScale *)xml->get("sMusicVolume");
 	_musicVolumeText = (CGuiText *)xml->get("txtMusicVolume");
 	_soundVolumeSlider = (CGuiHScale *)xml->get("sSoundVolume");
@@ -134,9 +138,14 @@ void COptionsMenu::show(IOptionsMenuCallback *callback)
 	_originalFullscreen = _pendingFullscreen;
 	_originalVSync = _pendingVSync;
 
+	// Load particle setting
+	_pendingParticle = CConfigFileTask::getInstance().configFile().getVar("DisplayParticle").asInt() == 1;
+	_originalParticle = _pendingParticle;
+
 	// Update UI to reflect current settings
 	_fullscreenText->text = _pendingFullscreen ? "ON" : "OFF";
 	_vsyncText->text = _pendingVSync ? "ON" : "OFF";
+	_particleText->text = _pendingParticle ? "ON" : "OFF";
 
 	// Initialize volume sliders
 	float musicVol = CConfigFileTask::getInstance().configFile().getVar("MusicVolume").asFloat();
@@ -212,6 +221,13 @@ bool COptionsMenu::update()
 		_vsyncText->text = _pendingVSync ? "ON" : "OFF";
 	}
 
+	// Handle Particle toggle
+	if(_particleButton->pressed())
+	{
+		_pendingParticle = !_pendingParticle;
+		_particleText->text = _pendingParticle ? "ON" : "OFF";
+	}
+
 	// Handle volume sliders - apply changes immediately
 	{
 		float musicVol = _musicVolumeSlider->percent();
@@ -229,7 +245,8 @@ bool COptionsMenu::update()
 	{
 		bool settingsChanged = (_selectedResolutionIndex != _originalResolutionIndex) ||
 		                       (_pendingFullscreen != _originalFullscreen) ||
-		                       (_pendingVSync != _originalVSync);
+		                       (_pendingVSync != _originalVSync) ||
+		                       (_pendingParticle != _originalParticle);
 
 		if(settingsChanged && !_resolutions.empty())
 		{
@@ -238,6 +255,7 @@ bool COptionsMenu::update()
 			CConfigFileTask::getInstance().configFile().getVar("ScreenHeight").setAsInt(_resolutions[_selectedResolutionIndex].second);
 			CConfigFileTask::getInstance().configFile().getVar("Fullscreen").setAsInt(_pendingFullscreen ? 1 : 0);
 			CConfigFileTask::getInstance().configFile().getVar("VSync").setAsInt(_pendingVSync ? 1 : 0);
+			CConfigFileTask::getInstance().configFile().getVar("DisplayParticle").setAsInt(_pendingParticle ? 1 : 0);
 
 			// Save volume settings too
 			CConfigFileTask::getInstance().configFile().getVar("MusicVolume").setAsFloat(_musicVolumeSlider->percent());
@@ -249,6 +267,7 @@ bool COptionsMenu::update()
 			_originalResolutionIndex = _selectedResolutionIndex;
 			_originalFullscreen = _pendingFullscreen;
 			_originalVSync = _pendingVSync;
+			_originalParticle = _pendingParticle;
 
 			// Notify callback about the change
 			if(_callback)

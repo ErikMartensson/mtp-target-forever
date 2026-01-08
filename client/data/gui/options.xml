@@ -72,6 +72,23 @@
 							</object>
 						</element>
 					</object>
+					<object class="CGuiHBox" name="particleBox">
+						<alignment>eAlignExpandHorizontal|eAlignCenterVertical</alignment>
+						<element>
+							<object class="CGuiText" name="particleLabel">
+								<alignment>eAlignLeft|eAlignCenterVertical</alignment>
+								<string>Particles: </string>
+							</object>
+							<object class="CGuiButton" name="bParticle">
+								<minSize>60,0</minSize>
+								<element>
+									<object class="CGuiText" name="txtParticle">
+										<string>ON</string>
+									</object>
+								</element>
+							</object>
+						</element>
+					</object>
 					<object class="CGuiSpacer" name="spacer2">
 						<minSize>0,10</minSize>
 					</object>

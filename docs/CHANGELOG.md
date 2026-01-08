@@ -9,6 +9,7 @@ In-game options accessible from both main menu and pause menu:
 - **Resolution selection** - Cycle through available display modes (left-click forward, right-click backward)
 - **Fullscreen toggle** - Switch between windowed and fullscreen modes
 - **VSync toggle** - Enable/disable vertical sync
+- **Particles toggle** - Enable/disable snow particle effects (requires restart)
 - **Music volume slider** - Adjust background music volume (0-100%)
 - **Sound volume slider** - Adjust sound effects volume (0-100%)
 - Volume changes apply immediately without restart

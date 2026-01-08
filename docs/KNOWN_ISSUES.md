@@ -229,24 +229,24 @@ Despite boxes extending 0.5 units in Z (from Z to Z+0.5), they behave as distinc
 
 ---
 
-### 13. Snow Particles Not Loading on Some Systems
-**Status:** Workaround Applied
-**Description:** The snow particle effect (`snow.ps`) fails to load on some systems, resulting in no snowflakes being rendered during gameplay.
+### 13. ~~Snow Particles Not Loading on Some Systems~~ (FIXED)
+**Status:** ✅ FIXED (January 8, 2026)
+**Description:** The snow particle effect (`snow.ps`) was not loading on some systems.
 
-**Symptoms:**
-- No snowflake particles visible during gameplay
-- Previously caused crash when external camera activated (Alt+A or on landing) - now fixed
+**Root Causes Found:**
+1. Particle files were marked as "optional" in CI build system, causing them to be excluded from artifacts
+2. Missing null checks in external camera code caused crashes when particles weren't loaded
 
-**Possible Causes:**
-- Missing `snow.ps` particle system file
-- `DisplayParticle` config option set to 0
-- Graphics driver compatibility issues with particle systems
+**Fixes Applied:**
+1. Changed `particle` from optional to required in `scripts/assets-manifest.json` so CI builds include particles
+2. Added null checks before LevelParticle hide/show calls in `client/src/3d_task.cpp`
+3. Added Particles toggle to Options menu for easy enable/disable (requires restart)
 
-**Workaround Applied:** Added null checks before accessing the particle system in external camera rendering (`client/src/3d_task.cpp`).
-
-**Files Affected:**
-- `client/src/3d_task.cpp:337-350` - LevelParticle.empty() checks added
-- `data/particle/snow.ps` - May be missing or incompatible
+**Files Modified:**
+- `scripts/assets-manifest.json` - particle now in required directories
+- `client/src/3d_task.cpp:337-350` - LevelParticle.empty() checks
+- `client/src/options_menu.cpp` - Particle toggle
+- `client/data/gui/options.xml` - Particle toggle UI
 
 ---
 
@@ -281,6 +281,8 @@ Despite boxes extending 0.5 units in Z (from Z to Z+0.5), they behave as distinc
 - [x] **Refactor options menu** (January 7, 2026) - Consolidated duplicate code into COptionsMenu class with callback interface
 - [x] **Fix sound effects** (January 7, 2026) - All game sounds working: countdown, open/close, impact, splash. Added distance-based volume for other players, user volume scaling, and client-side water collision detection
 - [x] **Fix external camera crash** (January 8, 2026) - Added null checks for LevelParticle before hide/show to prevent crash when snow particles aren't loaded
+- [x] **Fix snow particles in CI builds** (January 8, 2026) - Moved particle directory from optional to required in assets-manifest.json
+- [x] **Add particle toggle to options menu** (January 8, 2026) - Users can enable/disable snow particles via Options menu (requires restart)
 
 ---
 

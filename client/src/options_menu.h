@@ -71,6 +71,8 @@ private:
 	guiSPG<CGuiText> _fullscreenText;
 	guiSPG<CGuiButton> _vsyncButton;
 	guiSPG<CGuiText> _vsyncText;
+	guiSPG<CGuiButton> _particleButton;
+	guiSPG<CGuiText> _particleText;
 	guiSPG<CGuiHScale> _musicVolumeSlider;
 	guiSPG<CGuiText> _musicVolumeText;
 	guiSPG<CGuiHScale> _soundVolumeSlider;
@@ -86,6 +88,8 @@ private:
 	bool _originalFullscreen;
 	bool _pendingVSync;
 	bool _originalVSync;
+	bool _pendingParticle;
+	bool _originalParticle;
 };
 
 #endif
