@@ -132,17 +132,13 @@ void CNetworkTask::update()
 
 			H_BEFORE(NTLoopCallback);
 			netCallbacksHandler(msg);
-			nlinfo("NET: network_task callback returned for msg type %d", (int)msg.type());
 			H_AFTER(NTLoopCallback);
-			nlinfo("NET: network_task H_AFTER complete");
 		}
 		catch(Exception &e)
 		{
 			nlwarning("Malformed Message type '%u' : %s", msg.Type, e.what());
 		}
-		nlinfo("NET: network_task checking for more messages...");
 	}
-	nlinfo("NET: network_task update loop complete");
 	H_AFTER(NTLoop);
 }
 

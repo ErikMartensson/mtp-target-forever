@@ -91,25 +91,26 @@ void CTaskManager::execute()
 			ITask *task = *it;
 			if((*it)->Execute)
 			{
-//				nlinfo("Update %s", (*it)->name().c_str());
+				nlinfo("TASK: Update %s (order %d)", (*it)->name().c_str(), (*it)->Order);
 				(*it)->HTimerUpdate.before();
 				(*it)->update();
 				(*it)->HTimerUpdate.after();
+				nlinfo("TASK: Update %s complete", (*it)->name().c_str());
 			}
 		}
 
-//		nlinfo("----- render");
+		nlinfo("TASK: ----- render phase -----");
 		for(list<ITask*>::iterator it = OrderSortedTasks.begin(); it != OrderSortedTasks.end(); it++)
 		{
 			if((*it)->Execute)
 			{
-//				nlinfo("Render %s", (*it)->name().c_str());
+				nlinfo("TASK: Render %s", (*it)->name().c_str());
 				(*it)->HTimerRender.before();
 				(*it)->render();
 				(*it)->HTimerRender.after();
 			}
 		}
-//		nlinfo("----- end frame");
+		nlinfo("TASK: ----- end frame -----");
 
 		// release and remove task from Task
 		for(list<ITask*>::iterator it2 = Tasks.begin(); it2 != Tasks.end(); )

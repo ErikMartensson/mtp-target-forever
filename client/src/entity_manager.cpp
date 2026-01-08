@@ -109,9 +109,7 @@ void CEntityManager::update()
 		if(entities()[i] == NULL) continue;
 		if(entities()[i]->type() != CEntity::Unknown)
 		{
-			nlinfo("CEntityManager::update - updating entity %d (%s)", i, entities()[i]->name().c_str());
 			entities()[i]->update();
-			nlinfo("CEntityManager::update - entity %d update complete", i);
 		}
 	}
 }
