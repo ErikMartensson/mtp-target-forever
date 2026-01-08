@@ -708,21 +708,25 @@ static void cbCollideWhenFly(CNetMessage &msgin)
 	nlinfo("NET: cbCollideWhenFly done");
 }
 
+
 static void cbTimeArrival(CNetMessage &msgin)
 {
 	uint8 eid;
 	float time;
 	msgin.serial(eid, time);
 	nlinfo("NET: cbTimeArrival eid=%hu, time=%f", (uint16)eid, time);
-	
+
 	// check if the player exists
+	nlinfo("NET: cbTimeArrival checking exist...");
 	if(!CEntityManager::getInstance().exist(eid)) { nlwarning("The eid doesn't exist"); return; }
-	
+	nlinfo("NET: cbTimeArrival exist check passed");
+
 	if(CMtpTarget::getInstance().controler().getControledEntity()==eid)
 	{
 		// it's my arrival
 		C3DTask::getInstance().EnableExternalCamera = true;
 	}
+	nlinfo("NET: cbTimeArrival done");
 }
 
 //

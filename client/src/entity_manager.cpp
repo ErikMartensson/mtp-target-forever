@@ -135,9 +135,20 @@ void CEntityManager::removeAll()
 	}
 }
 
+
 bool CEntityManager::exist(uint8 eid)
 {
 	nlassert(eid != 255);
+	if(eid >= entities().size())
+	{
+		nlwarning("CEntityManager::exist(%d) - eid >= entities().size() (%d)", (int)eid, (int)entities().size());
+		return false;
+	}
+	if(entities()[eid] == NULL)
+	{
+		nlwarning("CEntityManager::exist(%d) - entities()[eid] is NULL!", (int)eid);
+		return false;
+	}
 	return entities()[eid]->Type != CEntity::Unknown;
 }
 
