@@ -94,14 +94,25 @@ void CEntityManager::update()
 	// do some security check
 	for(uint i = 0; i < 256; i++)
 	{
+		if(entities()[i] == NULL)
+		{
+			nlwarning("CEntityManager::update - entities()[%d] is NULL!", i);
+			continue;
+		}
 		nlassert(entities()[i]->Id == i);
 	}
-	nlassert(entities()[255]->Type == CEntity::Unknown);
+	if(entities()[255] != NULL)
+		nlassert(entities()[255]->Type == CEntity::Unknown);
 
 	for(uint i = 0; i < 256; i++)
 	{
+		if(entities()[i] == NULL) continue;
 		if(entities()[i]->type() != CEntity::Unknown)
+		{
+			nlinfo("CEntityManager::update - updating entity %d (%s)", i, entities()[i]->name().c_str());
 			entities()[i]->update();
+			nlinfo("CEntityManager::update - entity %d update complete", i);
+		}
 	}
 }
 

@@ -204,7 +204,11 @@ void CEntity::swapOpenClose()
 
 CExtendedInterpolator &CEntity::interpolator() const
 {
-	nlassert(Interpolator);
+	if(Interpolator == NULL)
+	{
+		nlwarning("CEntity::interpolator() - Interpolator is NULL for entity %d (%s)!", Id, Name.c_str());
+		nlassert(Interpolator); // Will crash here with diagnostic info above
+	}
 	return *Interpolator;
 }
 
