@@ -194,14 +194,15 @@ end:
 
 	for (uint u = 0; u < commands.size (); u++)
 	{
-		if(!CCommandRegistry::getInstance().isCommand(commands[u].first))
+		// Get the command - getCommand returns NULL if not found
+		ICommand *icom = CCommandRegistry::getInstance().getCommand(commands[u].first);
+		if(icom == NULL)
 		{
 			// the command doesn't exist
 			if (!quiet) log.displayNL("Command '%s' not found, try 'help'", commands[u].first.c_str());
 		}
 		else
 		{
-			ICommand *icom = CCommandRegistry::getInstance().getCommand(commands[u].first);
 			//ICommand *icom = (*comm).second;
 			if(icom->CategoryName=="mtpt_commands")//TODO find a better way, bad macro usage can result in bad cast :(((
 			{

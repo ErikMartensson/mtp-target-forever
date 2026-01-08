@@ -105,6 +105,13 @@ Sound features:
 - Chat message broadcast when each level starts: `Now playing: <DisplayName> (<filename.lua>)`
 - Helps identify levels for debugging and provides history in chat log
 
+### Command Handling Fix
+- Fixed server crash when players type unknown commands like `/forcelevel`
+- Root cause: NeL's `isCommand()` only checks if string starts with lowercase, not if command exists
+- Fix: Proper NULL check in command.cpp before dereferencing ICommand pointer
+- Fix: Use `getCommand() != NULL` check in net_callbacks.cpp instead of misleading `isCommand()`
+- Unknown commands now correctly return "Unknown command" error instead of crashing
+
 ## Build System
 
 ### Windows Build
@@ -152,6 +159,8 @@ Sound features:
 - `server/src/physics.cpp` - Momentum preservation fix
 - `server/src/module.cpp` - Lua 5.2+ compatibility
 - `server/src/level.cpp` - Property loading from level files
+- `server/src/command.cpp` - NULL check fix for unknown commands
+- `server/src/net_callbacks.cpp` - Proper command existence validation
 
 ## Version Strategy
 

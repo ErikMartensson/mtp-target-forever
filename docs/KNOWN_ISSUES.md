@@ -283,6 +283,7 @@ Despite boxes extending 0.5 units in Z (from Z to Z+0.5), they behave as distinc
 - [x] **Fix external camera crash** (January 8, 2026) - Added null checks for LevelParticle before hide/show to prevent crash when snow particles aren't loaded
 - [x] **Fix snow particles in CI builds** (January 8, 2026) - Moved particle directory from optional to required in assets-manifest.json
 - [x] **Add particle toggle to options menu** (January 8, 2026) - Users can enable/disable snow particles via Options menu (requires restart)
+- [x] **Fix unknown command server crash** (January 8, 2026) - Typing non-existent commands like `/forcelevel` no longer crashes the server. Fixed NULL pointer dereference in command.cpp and improved command validation in net_callbacks.cpp
 
 ---
 

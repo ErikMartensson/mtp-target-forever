@@ -189,15 +189,21 @@ static void cbCommand(CClient *c, CNetMessage &msgin)
 		{
 			CNetwork::getInstance().sendChat(c->id(), "Kick command is disabled (causes server instability)");
 		}
-		// Other commands - check if valid before executing
-		else if(CCommandRegistry::getInstance().isCommand(cmd.substr(0, cmd.find(' '))))
-		{
-			CNetwork::getInstance().sendChat(c->name()+" executed: /"+cmd);
-			CCommand::execute(c, cmd, *InfoLog);
-		}
+		// Other commands - check if command actually exists before executing
+		// Note: isCommand() only checks format (lowercase first char), not existence
+		// Use getCommand() to verify the command is actually registered
 		else
 		{
-			CNetwork::getInstance().sendChat(c->id(), "Unknown command: /" + cmd);
+			string cmdName = cmd.substr(0, cmd.find(' '));
+			if(CCommandRegistry::getInstance().getCommand(cmdName) != NULL)
+			{
+				CNetwork::getInstance().sendChat(c->name()+" executed: /"+cmd);
+				CCommand::execute(c, cmd, *InfoLog);
+			}
+			else
+			{
+				CNetwork::getInstance().sendChat(c->id(), "Unknown command: /" + cmd);
+			}
 		}
 	}
 	else
