@@ -57,7 +57,7 @@ StartPoints =
 
 Modules =
 {
-	{ Position = CVector(0, 0, 5), Scale = CVector(1, 1, 1), Rotation = CAngleAxis(1,0,0,0), Lua = "snow_ramp", Shape="snow_ramp", Friction = 0 },
+	{ Position = CVector(0, 0, 5), Scale = CVector(1, 1, 1), Rotation = CAngleAxis(1,0,0,0), Lua = "snow_ramp", Shape="snow_ramp", Friction = 0, Bounce = 0, Accel = 0.0001 },
 	{ Position = CVector(0, -15, 3.00), Scale = CVector(3, 3, 1), Rotation = CAngleAxis(1,0,0,0), Lua = "snow_box", Shape="snow_box", Score = 50, Friction = 10, Color = CRGBA(250,255,250,255) },
 	{ Position = CVector(0, -15, 2.98), Scale = CVector(9, 9, 1), Rotation = CAngleAxis(1,0,0,0), Lua = "snow_box", Shape="snow_box", Score = 50, Friction = 10, Color = CRGBA(225,255,225,255) },
 	{ Position = CVector(0, -15, 2.96), Scale = CVector(15, 15, 1), Rotation = CAngleAxis(1,0,0,0), Lua = "snow_box", Shape="snow_box", Score = 50, Friction = 10, Color = CRGBA(200,255,200,255) },
