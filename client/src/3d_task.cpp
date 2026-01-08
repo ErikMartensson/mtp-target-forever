@@ -321,24 +321,21 @@ void C3DTask::render()
 	CViewport vp;
 	CScissor s;
 
-	nlinfo("C3DTask::render - enableFog");
 	Driver->enableFog(true);
-	nlinfo("C3DTask::render - Scene->render()");
 	Scene->render();
-	nlinfo("C3DTask::render - Scene->render() done");
 
 	if(C3DTask::getInstance().kbDown(KeyMENU) && C3DTask::getInstance().kbPressed(KeyF2))
 		takeScreenShot();
 
 	if(EnableExternalCamera && CLevelManager::getInstance().levelPresent() && CLevelManager::getInstance().currentLevel().ExternalCameras.size() > 0)
 	{
-		nlinfo("C3DTask::render - external camera");
 		CMatrix oldmat = C3DTask::getInstance().scene().getCam().getMatrix();
 
 		vp.init(0.69f,0.55f,0.3f,0.3f);
 		s.init(0.69f,0.55f,0.3f,0.3f);
 
-		LevelParticle.hide();
+		if(!LevelParticle.empty())
+			LevelParticle.hide();
 		CMatrix m;
 		m.identity();
 		m.setPos(CLevelManager::getInstance().currentLevel().ExternalCameras[0].first);
@@ -348,10 +345,9 @@ void C3DTask::render()
 		Driver->setViewport(vp);
 		Driver->setScissor(s);
 		Driver->clearBuffers();
-		nlinfo("C3DTask::render - external camera Scene->render()");
 		Scene->render();
-		nlinfo("C3DTask::render - external camera Scene->render() done");
-		LevelParticle.show();
+		if(!LevelParticle.empty())
+			LevelParticle.show();
 
 		vp.init(0,0,1,1);
 		s.init(0,0,1,1);
@@ -361,12 +357,9 @@ void C3DTask::render()
 		C3DTask::getInstance().scene().getCam().setMatrix(oldmat);
 	}
 
-	nlinfo("C3DTask::render - disableFog");
 	C3DTask::getInstance().driver().enableFog(false);
 
-	nlinfo("C3DTask::render - renderNames");
 	CEntityManager::getInstance().renderNames();
-	nlinfo("C3DTask::render - done");
 }
 
 void C3DTask::release()
