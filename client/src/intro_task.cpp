@@ -607,7 +607,7 @@ void CIntroTask::update()
 
 void CIntroTask::render()
 {
-	CFontManager::getInstance().littlePrintf(0.0f, 0.0f, toString("v%s %s",MTPT_RELEASE_VERSION_NUMBER,MTPT_RELEASE_VERSION_NAME).c_str());
+	CFontManager::getInstance().littlePrintf(0.0f, 0.0f, toString("v%s%s",MTPT_RELEASE_VERSION_NUMBER,MTPT_RELEASE_VERSION_NAME).c_str());
 }
 
 void CIntroTask::onOptionsBack()

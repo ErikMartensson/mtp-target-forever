@@ -284,8 +284,7 @@ void C3DTask::init()
 		}
 	}
 
-	// TODO MTR find ReleaseVersion
-//	Driver->setWindowTitle("MTP Target Forever "+ReleaseVersion);
+	Driver->setWindowTitle(ucstring("MTP Target Forever " MTPT_RELEASE_VERSION_NUMBER MTPT_RELEASE_VERSION_NAME));
 }
 
 void C3DTask::update()
