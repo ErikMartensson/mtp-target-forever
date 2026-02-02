@@ -11,7 +11,7 @@
 				<element>
 					<object class="CGuiText" name="pauseTitle">
 						<alignment>eAlignCenterHorizontal|eAlignCenterVertical</alignment>
-						<string> PAUSED </string>
+						<string> MENU </string>
 					</object>
 					<object class="CGuiSpacer" name="spacerTop">
 						<minSize>0,15</minSize>
