@@ -1,5 +1,5 @@
 @echo off
-REM Run Tux Target Server with Log Rotation (Windows)
+REM Run MTP Target Forever Server with Log Rotation (Windows)
 REM
 REM This script starts the game server and rotates log files on startup
 REM to prevent infinite log growth.
@@ -17,18 +17,18 @@ set PROJECT_DIR=%SCRIPT_DIR%..
 
 REM Check for server (Ninja outputs to bin/, VS outputs to bin/Release/)
 set SERVER_DIR=%PROJECT_DIR%\build-server\bin
-if not exist "%SERVER_DIR%\tux-target-srv.exe" (
+if not exist "%SERVER_DIR%\mtp-target-forever-srv.exe" (
     set SERVER_DIR=%PROJECT_DIR%\build-server\bin\Release
 )
-if not exist "%SERVER_DIR%\tux-target-srv.exe" (
+if not exist "%SERVER_DIR%\mtp-target-forever-srv.exe" (
     set SERVER_DIR=%PROJECT_DIR%\build\bin\Release
 )
 
 set LOG_DIR=%SERVER_DIR%\logs
 
 REM Check if server exists
-if not exist "%SERVER_DIR%\tux-target-srv.exe" (
-    echo Error: Server not found at %SERVER_DIR%\tux-target-srv.exe
+if not exist "%SERVER_DIR%\mtp-target-forever-srv.exe" (
+    echo Error: Server not found at %SERVER_DIR%\mtp-target-forever-srv.exe
     echo Please build the server first with: scripts\build-server.bat
     exit /b 1
 )
@@ -37,7 +37,7 @@ REM Create logs directory
 if not exist "%LOG_DIR%" mkdir "%LOG_DIR%"
 
 echo =========================================
-echo   Tux Target Server
+echo   MTP Target Forever Server
 echo =========================================
 echo.
 echo Server directory: %SERVER_DIR%
@@ -69,7 +69,7 @@ echo   /forceend   - End current session (admin)
 echo.
 
 cd /d "%SERVER_DIR%"
-tux-target-srv.exe
+mtp-target-forever-srv.exe
 
 echo.
 echo Server exited.

@@ -262,7 +262,7 @@ jobs:
           Write-Host "Installing ODE via vcpkg..."
           # vcpkg is pre-installed on GitHub Actions runners
           # Use x64-windows-static-md triplet: static library with dynamic CRT (/MD)
-          # This matches how tux_target is built (dynamic CRT)
+          # This matches how mtp_target_forever is built (dynamic CRT)
           vcpkg install ode:x64-windows-static-md
 
           # Copy to C:/external/ode for consistency
@@ -473,7 +473,7 @@ jobs:
         run: |
           # Use shared deps-manifest.ps1 (single source of truth)
           . "${{ github.workspace }}/scripts/deps-manifest.ps1"
-          $env:TUXDEPS_PATH = "C:/external"
+          $env:MTPDEPS_PATH = "C:/external"
           Test-DepsInstalled -DepsPath "C:/external"
 
       - name: Configure CMake (Client)
@@ -493,7 +493,7 @@ jobs:
         shell: pwsh
         run: |
           # Use shared post-build.ps1 script (single source of truth)
-          $env:TUXDEPS_PATH = "C:/external"
+          $env:MTPDEPS_PATH = "C:/external"
           & "${{ github.workspace }}/scripts/post-build.ps1" `
             -BuildType Client `
             -BuildDir "build-client/bin" `
@@ -504,9 +504,9 @@ jobs:
       - name: Upload Client Artifact
         uses: actions/upload-artifact@v4
         with:
-          name: MTP-Target-Client-win64
+          name: MTP-Target-Forever-Client-win64
           path: |
-            build-client/bin/tux-target.exe
+            build-client/bin/mtp-target-forever.exe
             build-client/bin/*.dll
             build-client/bin/data/
             build-client/bin/*.cfg
@@ -575,7 +575,7 @@ jobs:
         shell: pwsh
         run: |
           # Use shared post-build.ps1 script (single source of truth)
-          $env:TUXDEPS_PATH = "C:/external"
+          $env:MTPDEPS_PATH = "C:/external"
           & "${{ github.workspace }}/scripts/post-build.ps1" `
             -BuildType Server `
             -BuildDir "build-server/bin" `
@@ -586,9 +586,9 @@ jobs:
       - name: Upload Server Artifact
         uses: actions/upload-artifact@v4
         with:
-          name: MTP-Target-Server-win64
+          name: MTP-Target-Forever-Server-win64
           path: |
-            build-server/bin/tux-target-srv.exe
+            build-server/bin/mtp-target-forever-srv.exe
             build-server/bin/*.dll
             build-server/bin/data/
             build-server/bin/*.cfg

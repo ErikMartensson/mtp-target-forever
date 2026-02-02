@@ -8,7 +8,7 @@ This document describes all the fixes required after building the client and ser
 
 ## Overview
 
-After successfully building both the client (tux-target.exe) and server (tux-target-srv.exe), several runtime issues were discovered that prevented gameplay. This document catalogues each issue, its root cause, and the fix applied.
+After successfully building both the client (mtp-target-forever.exe) and server (mtp-target-forever-srv.exe), several runtime issues were discovered that prevented gameplay. This document catalogues each issue, its root cause, and the fix applied.
 
 ---
 
@@ -274,8 +274,8 @@ Built and copied driver DLLs:
 cd /c/ryzomcore/build
 cmake --build . --config Release --target nel_drv_opengl_win -j 24
 cmake --build . --config Release --target nel_drv_openal_win -j 24
-cp bin/Release/nel_drv_opengl_win_r.dll /c/Users/User/Repos/tux_target/build/bin/Release/
-cp bin/Release/nel_drv_openal_win_r.dll /c/Users/User/Repos/tux_target/build/bin/Release/
+cp bin/Release/nel_drv_opengl_win_r.dll /c/Users/User/Repos/mtp-target-forever/build/bin/Release/
+cp bin/Release/nel_drv_openal_win_r.dll /c/Users/User/Repos/mtp-target-forever/build/bin/Release/
 ```
 
 **Required Files:**
@@ -322,7 +322,7 @@ cp /c/ryzomcore/nel/samples/3d/font/beteckna.ttf \
 - User config file missing required variables expected by client
 
 **Fix:**
-Added to `C:\Users\User\AppData\Roaming\tux-target.cfg`:
+Added to `C:\Users\User\AppData\Roaming\mtp-target.cfg`:
 ```cfg
 VSync                = 0;
 AntiAlias            = 0;
@@ -381,7 +381,7 @@ The script automatically:
 **Primary Config:** `build/bin/Release/mtp_target_default.cfg`
 - `DisplayWater = 1` - Basic water rendering (static texture)
 
-**User Config:** `C:\Users\User\AppData\Roaming\tux-target.cfg`
+**User Config:** `C:\Users\User\AppData\Roaming\mtp-target.cfg`
 - Contains login credentials and user preferences
 
 ### Server Configuration

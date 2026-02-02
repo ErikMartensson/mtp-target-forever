@@ -1,6 +1,6 @@
 # Known Issues and Future Tasks
 
-This document tracks known issues and planned improvements for the Tux Target game.
+This document tracks known issues and planned improvements for MTP Target Forever.
 
 ## High Priority
 

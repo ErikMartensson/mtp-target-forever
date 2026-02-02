@@ -1,6 +1,6 @@
 FILE(GLOB SRC *.cpp *.h)
 
-ADD_EXECUTABLE(tux-target-ls WIN32 ${SRC})
+ADD_EXECUTABLE(mtp-target-forever-ls WIN32 ${SRC})
 
 INCLUDE_DIRECTORIES(
 		${LIBXML2_INCLUDE_DIR}
@@ -8,7 +8,7 @@ INCLUDE_DIRECTORIES(
 		${MYSQL_INCLUDE_DIR})
 
 IF(WIN32)
-	TARGET_LINK_LIBRARIES(tux-target-ls	optimized ${NELMISC_LIBRARY}	debug ${NELMISC_LIBRARY_DEBUG} 
+	TARGET_LINK_LIBRARIES(mtp-target-forever-ls	optimized ${NELMISC_LIBRARY}	debug ${NELMISC_LIBRARY_DEBUG} 
 										optimized ${NELNET_LIBRARY}		debug ${NELNET_LIBRARY_DEBUG} 
 										${PLATFORM_LINKFLAGS}
 										${MYSQL_LIBRARIES}
@@ -17,12 +17,12 @@ IF(WIN32)
 										${PNG_LIBRARY}
 										${JPEG_LIBRARY})
 
-	SET_TARGET_PROPERTIES(tux-target-ls PROPERTIES 
-		PROJECT_LABEL "Server: Tux Target LS"
+	SET_TARGET_PROPERTIES(mtp-target-forever-ls PROPERTIES 
+		PROJECT_LABEL "Server: MTP Target Forever LS"
 		LINK_FLAGS_DEBUG "/NODEFAULTLIB:libc;libcmt;libcmtd;msvcrt"
 		LINK_FLAGS_RELEASE "/NODEFAULTLIB:libc;libcmt;libcmtd;msvcrtd")
 ELSE(WIN32)
-	TARGET_LINK_LIBRARIES(tux-target-ls	${NELMISC_LIBRARY} 
+	TARGET_LINK_LIBRARIES(mtp-target-forever-ls	${NELMISC_LIBRARY} 
 										${NELNET_LIBRARY} 
 										${PLATFORM_LINKFLAGS}
 										${MYSQL_LIBRARIES}
@@ -31,5 +31,5 @@ ENDIF(WIN32)
 
 ADD_DEFINITIONS(-DMT_SERVER -DMTPT_SERVER)
 
-INSTALL(TARGETS tux-target-ls RUNTIME DESTINATION games)
+INSTALL(TARGETS mtp-target-forever-ls RUNTIME DESTINATION games)
 INSTALL(FILES login_service.cfg DESTINATION games)

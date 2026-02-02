@@ -1,5 +1,5 @@
 #
-# Tux Target Assets Manifest
+# MTP Target Forever Assets Manifest
 #
 # Cross-platform asset management for client and server builds.
 # Works on Windows PowerShell 5.1+ and PowerShell Core (Linux/macOS).
@@ -388,7 +388,7 @@ function Show-AssetSummary {
 
 # Main execution when run directly
 if ($MyInvocation.InvocationName -ne '.') {
-    Write-Host "Tux Target Asset Manifest" -ForegroundColor Cyan
+    Write-Host "MTP Target Forever Asset Manifest" -ForegroundColor Cyan
     Write-Host "========================="
     Write-Host ""
     Show-AssetSummary -DataPath $DataPath

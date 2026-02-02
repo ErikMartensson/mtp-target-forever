@@ -227,7 +227,7 @@ void C3DTask::init()
 		}
 
 #ifdef NL_OS_WINDOWS
-		MessageBoxA (NULL, "Your graphic card is not supported by Tux Target.\r\n\r\nTry to update your driver.\r\nIf you have modified tux_target.cfg, be sure the resolution is ok. Or post a message on the forum.", "Error", MB_OK);
+		MessageBoxA (NULL, "Your graphic card is not supported by MTP Target Forever.\r\n\r\nTry to update your driver.\r\nIf you have modified mtp_target.cfg, be sure the resolution is ok.", "Error", MB_OK);
 #endif
 		exit(EXIT_FAILURE);
 	}
@@ -285,7 +285,7 @@ void C3DTask::init()
 	}
 
 	// TODO MTR find ReleaseVersion
-//	Driver->setWindowTitle("Mtp Target "+ReleaseVersion);
+//	Driver->setWindowTitle("MTP Target Forever "+ReleaseVersion);
 }
 
 void C3DTask::update()

@@ -1,7 +1,7 @@
 #
-# Tux Target RyzomCore/NeL Setup
+# MTP Target Forever RyzomCore/NeL Setup
 #
-# Clones and builds the RyzomCore NeL libraries required for Tux Target.
+# Clones and builds the RyzomCore NeL libraries required for MTP Target Forever.
 # Uses Ninja for fast builds and consistent output paths.
 #
 # Usage:
@@ -40,7 +40,7 @@ if (!$RyzomCorePath) {
 $buildPath = Join-Path $RyzomCorePath "build"
 
 Write-Host "==========================================="
-Write-Host "  Tux Target RyzomCore/NeL Setup"
+Write-Host "  MTP Target Forever RyzomCore/NeL Setup"
 Write-Host "==========================================="
 Write-Host ""
 Write-Host "RyzomCore path: $RyzomCorePath"

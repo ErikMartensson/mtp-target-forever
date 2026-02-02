@@ -1,10 +1,10 @@
-# Tux Target Controls
+# MTP Target Forever Controls
 
-This document covers all controls for Tux Target, from basic gameplay to advanced developer features.
+This document covers all controls for MTP Target Forever, from basic gameplay to advanced developer features.
 
 ## How to Play
 
-Tux Target is a penguin bowling/curling game. You roll down slopes and try to land on scoring targets. The higher the score on the target, the more points you earn.
+MTP Target Forever is a penguin bowling/curling game. You roll down slopes and try to land on scoring targets. The higher the score on the target, the more points you earn.
 
 ### Game Phases
 
@@ -177,7 +177,7 @@ When launching the client:
 .\scripts\run-client.bat --lan localhost --user YourName
 
 # Or manually:
-tux-target.exe --lan <server-ip> --user <username>
+mtp-target-forever.exe --lan <server-ip> --user <username>
 ```
 
 | Option | Description |

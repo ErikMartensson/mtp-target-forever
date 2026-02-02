@@ -1,6 +1,6 @@
 FILE(GLOB SRC *.cpp *.h ../../common/*.cpp ../../common/*.h)
 
-ADD_EXECUTABLE(tux-target-srv WIN32 ${SRC})
+ADD_EXECUTABLE(mtp-target-forever-srv WIN32 ${SRC})
 
 INCLUDE_DIRECTORIES(
 		${CMAKE_CURRENT_SOURCE_DIR}
@@ -13,7 +13,7 @@ INCLUDE_DIRECTORIES(
 		)
 
 IF(WIN32)
-	TARGET_LINK_LIBRARIES(tux-target-srv	optimized ${NELMISC_LIBRARY}	debug ${NELMISC_LIBRARY_DEBUG} 
+	TARGET_LINK_LIBRARIES(mtp-target-forever-srv	optimized ${NELMISC_LIBRARY}	debug ${NELMISC_LIBRARY_DEBUG} 
 										optimized ${NELNET_LIBRARY}		debug ${NELNET_LIBRARY_DEBUG} 
 										optimized ${NEL3D_LIBRARY}		debug ${NEL3D_LIBRARY_DEBUG}
 										${PLATFORM_LINKFLAGS}
@@ -25,12 +25,12 @@ IF(WIN32)
 										${PNG_LIBRARY}
 										${JPEG_LIBRARY})
 
-  SET_TARGET_PROPERTIES(tux-target-srv PROPERTIES
-	PROJECT_LABEL "Server - Tux Target FS"
+  SET_TARGET_PROPERTIES(mtp-target-forever-srv PROPERTIES
+	PROJECT_LABEL "Server - MTP Target Forever FS"
 	LINK_FLAGS_DEBUG "/NODEFAULTLIB:libc;libcmt;libcmtd;msvcrt"
 	LINK_FLAGS_RELEASE "/NODEFAULTLIB:libc;libcmt;libcmtd;msvcrtd")
 ELSE(WIN32)
-	TARGET_LINK_LIBRARIES(tux-target-srv	${NELMISC_LIBRARY}
+	TARGET_LINK_LIBRARIES(mtp-target-forever-srv	${NELMISC_LIBRARY}
 										${NELNET_LIBRARY} 
 										${NEL3D_LIBRARY}
 										${PLATFORM_LINKFLAGS}
@@ -42,4 +42,4 @@ ENDIF(WIN32)
 
 ADD_DEFINITIONS(-DMT_SERVER -DMTPT_SERVER)
 
-INSTALL(TARGETS tux-target-srv RUNTIME DESTINATION games)
+INSTALL(TARGETS mtp-target-forever-srv RUNTIME DESTINATION games)

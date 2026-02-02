@@ -1,7 +1,7 @@
 {
   "$schema": "http://json-schema.org/draft-07/schema#",
   "version": "1.0",
-  "description": "Asset manifest for Tux Target client and server builds",
+  "description": "Asset manifest for MTP Target Forever client and server builds",
   "lastUpdated": "2026-01-08",
 
   "directories": {

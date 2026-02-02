@@ -1,5 +1,5 @@
 @echo off
-REM Run Tux Target Client with Log Rotation (Windows)
+REM Run MTP Target Forever Client with Log Rotation (Windows)
 REM
 REM This script starts the game client and rotates log files on startup
 REM to prevent infinite log growth.
@@ -20,18 +20,18 @@ set PROJECT_DIR=%SCRIPT_DIR%..
 
 REM Check for client (Ninja outputs to bin/, VS outputs to bin/Release/)
 set CLIENT_DIR=%PROJECT_DIR%\build-client\bin
-if not exist "%CLIENT_DIR%\tux-target.exe" (
+if not exist "%CLIENT_DIR%\mtp-target-forever.exe" (
     set CLIENT_DIR=%PROJECT_DIR%\build-client\bin\Release
 )
-if not exist "%CLIENT_DIR%\tux-target.exe" (
+if not exist "%CLIENT_DIR%\mtp-target-forever.exe" (
     set CLIENT_DIR=%PROJECT_DIR%\build\bin\Release
 )
 
 set LOG_DIR=%CLIENT_DIR%\logs
 
 REM Check if client exists
-if not exist "%CLIENT_DIR%\tux-target.exe" (
-    echo Error: Client not found at %CLIENT_DIR%\tux-target.exe
+if not exist "%CLIENT_DIR%\mtp-target-forever.exe" (
+    echo Error: Client not found at %CLIENT_DIR%\mtp-target-forever.exe
     echo Please build the client first with: scripts\build-client.bat
     exit /b 1
 )
@@ -40,7 +40,7 @@ REM Create logs directory
 if not exist "%LOG_DIR%" mkdir "%LOG_DIR%"
 
 echo =========================================
-echo   Tux Target Client
+echo   MTP Target Forever Client
 echo =========================================
 echo.
 echo Client directory: %CLIENT_DIR%
@@ -76,7 +76,7 @@ echo   - Enter: Open chat
 echo.
 
 cd /d "%CLIENT_DIR%"
-tux-target.exe %*
+mtp-target-forever.exe %*
 
 echo.
 echo Client exited.

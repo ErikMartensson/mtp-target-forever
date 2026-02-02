@@ -1,7 +1,7 @@
 FILE(GLOB SRC *.cpp *.h ../../common/*.cpp)
 FILE(GLOB RESOURCES_RC ../*.rc)
 
-ADD_EXECUTABLE(tux-target WIN32 ${SRC} ${RESOURCES_RC})
+ADD_EXECUTABLE(mtp-target-forever WIN32 ${SRC} ${RESOURCES_RC})
 
 SOURCE_GROUP(Entity	FILES	entity.h 
 							entity.cpp 
@@ -183,7 +183,7 @@ IF(NOT CURL_INCLUDE_DIR AND CURL_FOUND)
 ENDIF()
 
 IF(WIN32)
-	TARGET_LINK_LIBRARIES(tux-target
+	TARGET_LINK_LIBRARIES(mtp-target-forever
 									# NeL libraries first (they depend on base dependencies)
 									optimized ${NELMISC_LIBRARY}	debug ${NELMISC_LIBRARY_DEBUG}
 									optimized ${NELNET_LIBRARY}		debug ${NELNET_LIBRARY_DEBUG}
@@ -208,15 +208,15 @@ IF(WIN32)
 									${PLATFORM_LINKFLAGS}
 									ws2_32.lib)
 
- 	SET_TARGET_PROPERTIES(tux-target PROPERTIES
-		PROJECT_LABEL "Client Tux Target"
+ 	SET_TARGET_PROPERTIES(mtp-target-forever PROPERTIES
+		PROJECT_LABEL "Client MTP Target Forever"
 		LINK_FLAGS_DEBUG "/NODEFAULTLIB:libc;libcmt;libcmtd;msvcrt"
 		LINK_FLAGS_RELEASE "/NODEFAULTLIB:libc;libcmt;libcmtd;msvcrtd")
 
 	ADD_DEFINITIONS(-DCURL_STATICLIB)
 	ADD_DEFINITIONS(-DLIBXML_STATIC)
 ELSE(WIN32)
-	TARGET_LINK_LIBRARIES(tux-target	${NELMISC_LIBRARY} 
+	TARGET_LINK_LIBRARIES(mtp-target-forever	${NELMISC_LIBRARY} 
 										${NELNET_LIBRARY} 
 										${NEL3D_LIBRARY}
 										${NELSOUND_LIBRARY}
@@ -227,4 +227,4 @@ ELSE(WIN32)
 										${LIBXML2_LIBRARIES})
 ENDIF(WIN32)
 
-INSTALL(TARGETS tux-target RUNTIME DESTINATION games)
+INSTALL(TARGETS mtp-target-forever RUNTIME DESTINATION games)

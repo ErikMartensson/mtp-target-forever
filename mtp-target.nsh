@@ -1,5 +1,5 @@
 ; Define your application name
-!define APPNAME "mtp-target"
+!define APPNAME "mtp-target-forever"
 !define APPVERSION "1.2.2"
 !define APPOLDVERSION "1.2.1"
 !define APPNAMEANDVERSION "${APPNAME} ${APPVERSION}"

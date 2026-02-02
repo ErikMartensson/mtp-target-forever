@@ -1,5 +1,5 @@
 #
-# Tux Target Post-Build Script (PowerShell)
+# MTP Target Forever Post-Build Script (PowerShell)
 #
 # Copies all required runtime files to the build directory after compiling.
 # Used by both local builds and CI.
@@ -48,7 +48,7 @@ if ($UseNinjaPaths) {
 }
 
 Write-Host "==========================================="
-Write-Host "  Tux Target Post-Build Setup"
+Write-Host "  MTP Target Forever Post-Build Setup"
 Write-Host "==========================================="
 Write-Host ""
 Write-Host "Build type: $BuildType"
@@ -153,14 +153,14 @@ function Copy-ClientFiles {
         Write-Host "   + mtp_target_default.cfg (from client/)"
     }
 
-    # Create tux-target.cfg wrapper if needed
-    $wrapperCfg = "$DestDir/tux-target.cfg"
+    # Create mtp-target.cfg wrapper if needed
+    $wrapperCfg = "$DestDir/mtp-target.cfg"
     if (!(Test-Path $wrapperCfg)) {
         @"
 // This file tells the client where to find the main config
 RootConfigFilename = "mtp_target_default.cfg";
 "@ | Set-Content $wrapperCfg
-        Write-Host "   + Created tux-target.cfg"
+        Write-Host "   + Created mtp-target.cfg"
     }
     Write-Host ""
 
@@ -267,7 +267,7 @@ if ($BuildType -eq "Client" -or $BuildType -eq "Both") {
     } else {
         # Default: Ninja outputs to bin/, VS outputs to bin/Release/
         $clientDir = "$repoRoot/build-client/bin"
-        if (!(Test-Path "$clientDir/tux-target.exe") -and (Test-Path "$repoRoot/build-client/bin/Release/tux-target.exe")) {
+        if (!(Test-Path "$clientDir/mtp-target-forever.exe") -and (Test-Path "$repoRoot/build-client/bin/Release/mtp-target-forever.exe")) {
             $clientDir = "$repoRoot/build-client/bin/Release"
         }
     }
@@ -280,7 +280,7 @@ if ($BuildType -eq "Server" -or $BuildType -eq "Both") {
     } else {
         # Default: Ninja outputs to bin/, VS outputs to bin/Release/
         $serverDir = "$repoRoot/build-server/bin"
-        if (!(Test-Path "$serverDir/tux-target-srv.exe") -and (Test-Path "$repoRoot/build-server/bin/Release/tux-target-srv.exe")) {
+        if (!(Test-Path "$serverDir/mtp-target-forever-srv.exe") -and (Test-Path "$repoRoot/build-server/bin/Release/mtp-target-forever-srv.exe")) {
             $serverDir = "$repoRoot/build-server/bin/Release"
         }
     }

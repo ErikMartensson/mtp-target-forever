@@ -69,7 +69,7 @@ Sound features:
 ### Command-Line Arguments
 - `--lan <host>` - Auto-connect to a LAN server
 - `--user <name>` - Set player name for auto-connect
-- Example: `tux-target.exe --lan localhost --user Player1`
+- Example: `mtp-target-forever.exe --lan localhost --user Player1`
 
 ### Right-Click Support
 - Added right-click detection to GUI button system

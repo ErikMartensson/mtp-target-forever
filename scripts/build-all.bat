@@ -1,6 +1,6 @@
 @echo off
 REM
-REM Build Both Tux Target Client and Server (Windows)
+REM Build Both MTP Target Forever Client and Server (Windows)
 REM
 REM This script builds both the game client and server to separate directories.
 REM Usage: scripts\build-all.bat [--clean] [--skip-post-build]
@@ -41,8 +41,8 @@ echo =========================================
 echo   Both builds complete!
 echo =========================================
 echo.
-echo Client: build-client\bin\tux-target.exe
-echo Server: build-server\bin\tux-target-srv.exe
+echo Client: build-client\bin\mtp-target-forever.exe
+echo Server: build-server\bin\mtp-target-forever-srv.exe
 echo.
 echo Run scripts:
 echo   scripts\run-client.bat

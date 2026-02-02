@@ -1,6 +1,6 @@
-# Tux Target
+# MTP Target Forever
 
-A penguin bowling/curling game where players roll down slopes and land on scoring targets. Originally released as MTP Target, this is a revival of v1.2.2a built against modern Ryzom Core/NeL libraries.
+A penguin bowling/curling game where players roll down slopes and land on scoring targets. MTP Target Forever is a community revival of the original MTP Target v1.2.2a, built against modern Ryzom Core/NeL libraries.
 
 ## Quick Start
 
@@ -25,7 +25,7 @@ A penguin bowling/curling game where players roll down slopes and land on scorin
 ## Directory Structure
 
 ```
-tux_target/
+mtp-target-forever/
 ├── deps/                        # Dependencies (git-ignored, created by setup-deps.ps1)
 │   ├── lua/                     # Lua 5.1
 │   ├── curl/                    # libcurl
@@ -38,11 +38,11 @@ tux_target/
 │   └── build/bin/               # NeL driver DLLs
 │
 ├── build-client/bin/            # Client build output (Ninja)
-│   ├── tux-target.exe
+│   ├── mtp-target-forever.exe
 │   └── data/                    # Game assets (copied from data/)
 │
 ├── build-server/bin/            # Server build output (Ninja)
-│   ├── tux-target-srv.exe
+│   ├── mtp-target-forever-srv.exe
 │   ├── mtp_target_service.cfg   # RUNTIME CONFIG - edit this!
 │   └── data/                    # Game assets (copied from data/)
 │

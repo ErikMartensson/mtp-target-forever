@@ -1,6 +1,6 @@
 # NeL Network Protocol Notes
 
-Technical reference for the NeL (Nevrax Engine Library) binary network protocol used by MTP Target.
+Technical reference for the NeL (Nevrax Engine Library) binary network protocol used by MTP Target Forever.
 
 **Status:** Active research - client binary may differ from source code
 **Last Updated:** December 22, 2025
@@ -9,7 +9,7 @@ Technical reference for the NeL (Nevrax Engine Library) binary network protocol 
 
 ## Protocol Overview
 
-MTP Target uses NeL's binary message format for all network communication:
+MTP Target Forever uses NeL's binary message format for all network communication:
 - **Login Service ↔ Client** (port 49997)
 - **Game Server ↔ Client** (ports 51574, 51575)
 - **Login Service ↔ Game Server** (port 49999)

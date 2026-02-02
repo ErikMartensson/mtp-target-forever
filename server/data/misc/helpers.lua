@@ -1,4 +1,4 @@
--- Helper functions for Tux Target server Lua scripts
+-- Helper functions for MTP Target Forever server Lua scripts
 
 -- include() function - loads and executes a Lua file
 -- This is a wrapper around dofile() that handles path resolution

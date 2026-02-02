@@ -1,5 +1,5 @@
 #
-# Tux Target CMake Configuration
+# MTP Target Forever CMake Configuration
 #
 # Single source of truth for CMake variables used by both local builds and CI.
 # This ensures consistent paths between environments.
@@ -120,7 +120,7 @@ if ($OutputArgs) {
 
 # Print configuration when run directly without -OutputArgs
 if ($MyInvocation.InvocationName -ne '.') {
-    Write-Host "Tux Target CMake Configuration"
+    Write-Host "MTP Target Forever CMake Configuration"
     Write-Host "==============================="
     Write-Host ""
     Write-Host "Dependencies path: $DepsPath"

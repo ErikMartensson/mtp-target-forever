@@ -46,13 +46,13 @@ jobs:
       - name: Download Client Artifact
         uses: actions/download-artifact@v4
         with:
-          name: tux-target-client-windows-Release
+          name: mtp-target-forever-client-windows-Release
           path: artifacts/client
 
       - name: Download Server Artifact
         uses: actions/download-artifact@v4
         with:
-          name: tux-target-server-windows-Release
+          name: mtp-target-forever-server-windows-Release
           path: artifacts/server
 
       - name: Determine version
@@ -69,36 +69,36 @@ jobs:
       - name: Package Client
         run: |
           cd artifacts/client
-          zip -r ../../tux-target-client-windows-${{ steps.version.outputs.version }}.zip .
+          zip -r ../../mtp-target-forever-client-windows-${{ steps.version.outputs.version }}.zip .
 
       - name: Package Server
         run: |
           cd artifacts/server
-          zip -r ../../tux-target-server-windows-${{ steps.version.outputs.version }}.zip .
+          zip -r ../../mtp-target-forever-server-windows-${{ steps.version.outputs.version }}.zip .
 
       - name: Generate Release Notes
         id: release-notes
         run: |
           cat << 'EOF' > release-notes.md
-          ## Tux Target ${{ steps.version.outputs.version }}
+          ## MTP Target Forever ${{ steps.version.outputs.version }}
 
           ### Downloads
 
           | Component | Platform | File |
           |-----------|----------|------|
-          | Game Client | Windows x64 | `tux-target-client-windows-${{ steps.version.outputs.version }}.zip` |
-          | Game Server | Windows x64 | `tux-target-server-windows-${{ steps.version.outputs.version }}.zip` |
+          | Game Client | Windows x64 | `mtp-target-forever-client-windows-${{ steps.version.outputs.version }}.zip` |
+          | Game Server | Windows x64 | `mtp-target-forever-server-windows-${{ steps.version.outputs.version }}.zip` |
 
           ### Quick Start
 
           **Client:**
           1. Extract the client zip file
-          2. Run `tux-target.exe`
+          2. Run `mtp-target-forever.exe`
           3. Select "Play on LAN" and enter `localhost` for local play
 
           **Server:**
           1. Extract the server zip file
-          2. Run `tux-target-srv.exe`
+          2. Run `mtp-target-forever-srv.exe`
           3. Server listens on port 51574
 
           ### Requirements
@@ -120,13 +120,13 @@ jobs:
         uses: softprops/action-gh-release@v2
         with:
           tag_name: ${{ steps.version.outputs.version }}
-          name: Tux Target ${{ steps.version.outputs.version }}
+          name: MTP Target Forever ${{ steps.version.outputs.version }}
           body_path: release-notes.md
           draft: ${{ inputs.draft || github.event_name == 'workflow_dispatch' }}
           prerelease: ${{ contains(steps.version.outputs.version, 'alpha') || contains(steps.version.outputs.version, 'beta') || contains(steps.version.outputs.version, 'rc') }}
           files: |
-            tux-target-client-windows-${{ steps.version.outputs.version }}.zip
-            tux-target-server-windows-${{ steps.version.outputs.version }}.zip
+            mtp-target-forever-client-windows-${{ steps.version.outputs.version }}.zip
+            mtp-target-forever-server-windows-${{ steps.version.outputs.version }}.zip
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
@@ -137,5 +137,5 @@ jobs:
           echo "**Version:** ${{ steps.version.outputs.version }}" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
           echo "**Assets:**" >> $GITHUB_STEP_SUMMARY
-          echo "- tux-target-client-windows-${{ steps.version.outputs.version }}.zip" >> $GITHUB_STEP_SUMMARY
-          echo "- tux-target-server-windows-${{ steps.version.outputs.version }}.zip" >> $GITHUB_STEP_SUMMARY
+          echo "- mtp-target-forever-client-windows-${{ steps.version.outputs.version }}.zip" >> $GITHUB_STEP_SUMMARY
+          echo "- mtp-target-forever-server-windows-${{ steps.version.outputs.version }}.zip" >> $GITHUB_STEP_SUMMARY

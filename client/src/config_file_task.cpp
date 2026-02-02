@@ -49,16 +49,16 @@ using namespace NLMISC;
 	
 void CConfigFileTask::init()
 {
-	const string ConfigFileName = "tux-target.cfg";
+	const string ConfigFileName = "mtp-target.cfg";
 	string ConfigFilePath;
 
 	// First, we look at the config file file in the current directory
 	if(!CFile::fileExists(ConfigFilePath + ConfigFileName))
 	{
 #ifdef NL_OS_WINDOWS
-		string DirName = "Tux Target";
+		string DirName = "MTP Target Forever";
 #else
-		string DirName = "tux-target";
+		string DirName = "mtp-target-forever";
 #endif
 
 		// Second, we look at the config file in the OS specific directory
@@ -75,7 +75,7 @@ void CConfigFileTask::init()
 		{
 			string confFP = ConfigFilePath + ConfigFileName;
 /*
-			if(!CFile::copyFile(confFP.c_str(), (string(TUX_TARGET_CONFIG_DIR) + ConfigFileName).c_str(), false, NULL))
+			if(!CFile::copyFile(confFP.c_str(), (string(MTP_TARGET_CONFIG_DIR) + ConfigFileName).c_str(), false, NULL))
 			{
 				nlerror ("Can't copy config template file into '%s'", confFP.c_str());
 			}
@@ -87,7 +87,7 @@ void CConfigFileTask::init()
 			{
 				nlerror ("Can't create config file '%s'", confFP.c_str());
 			}
-			string FileContent = "RootConfigFilename = \"" + string(TUX_TARGET_CONFIG_DIR) + ConfigFileName + "\";\n";
+			string FileContent = "RootConfigFilename = \"" + string(MTP_TARGET_CONFIG_DIR) + ConfigFileName + "\";\n";
 			fprintf(fp, FileContent.c_str());
 			fclose(fp);
 		}
@@ -104,7 +104,7 @@ void CConfigFileTask::init()
 	}
 	catch (EConfigFile &e)
 	{
-		nlinfo("Cannot launch Tux Target because there is an error in the Tux Target config file (tux-target.cfg).\nFix the error and launch Tux Target after.\n\n%s", e.what());
+		nlinfo("Cannot launch MTP Target Forever because there is an error in the config file (mtp-target.cfg).\nFix the error and launch MTP Target Forever after.\n\n%s", e.what());
 		exit(EXIT_FAILURE);
 	}
 }

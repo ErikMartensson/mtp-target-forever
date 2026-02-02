@@ -1,6 +1,6 @@
 @echo off
 REM
-REM Build Tux Target Client (Windows)
+REM Build MTP Target Forever Client (Windows)
 REM
 REM Prerequisites: Run setup-deps.ps1 first to install dependencies
 REM
@@ -30,7 +30,7 @@ set PROJECT_DIR=%SCRIPT_DIR%..
 set BUILD_DIR=%PROJECT_DIR%\build-client
 
 echo =========================================
-echo   Tux Target Client Build (Windows)
+echo   MTP Target Forever Client Build (Windows)
 echo =========================================
 echo.
 echo Project directory: %PROJECT_DIR%
@@ -39,6 +39,7 @@ echo.
 
 REM Check dependencies (default: deps/ directory in repo)
 set DEPS_PATH=%PROJECT_DIR%\deps
+if defined MTPDEPS_PATH set DEPS_PATH=%MTPDEPS_PATH%
 if defined TUXDEPS_PATH set DEPS_PATH=%TUXDEPS_PATH%
 echo Dependencies path: %DEPS_PATH%
 
@@ -116,8 +117,8 @@ echo.
 echo Build complete!
 
 REM Check for executable (Ninja outputs to bin/, not bin/Release/)
-if exist "%BUILD_DIR%\bin\tux-target.exe" (
-    echo Client executable: %BUILD_DIR%\bin\tux-target.exe
+if exist "%BUILD_DIR%\bin\mtp-target-forever.exe" (
+    echo Client executable: %BUILD_DIR%\bin\mtp-target-forever.exe
 ) else (
     echo Warning: Client executable not found
 )

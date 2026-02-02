@@ -1,6 +1,6 @@
 @echo off
 REM
-REM Tux Target Dependencies Setup (Windows wrapper)
+REM MTP Target Forever Dependencies Setup (Windows wrapper)
 REM
 REM Usage:
 REM   scripts\setup-deps.bat              - Install dependencies

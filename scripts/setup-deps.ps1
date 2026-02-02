@@ -1,5 +1,5 @@
 #
-# Tux Target Dependencies Setup
+# MTP Target Forever Dependencies Setup
 #
 # Downloads and configures all dependencies needed for building.
 # This uses the same Ryzom external package as the CI builds.
@@ -31,7 +31,7 @@ if (!$DepsPath) {
 }
 
 Write-Host "==========================================="
-Write-Host "  Tux Target Dependencies Setup"
+Write-Host "  MTP Target Forever Dependencies Setup"
 Write-Host "==========================================="
 Write-Host ""
 Write-Host "Install path: $DepsPath"

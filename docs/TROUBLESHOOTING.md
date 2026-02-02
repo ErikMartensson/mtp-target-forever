@@ -1,6 +1,6 @@
 # Troubleshooting Guide
 
-Common issues and solutions for Tux Target.
+Common issues and solutions for MTP Target Forever.
 
 ---
 
@@ -8,10 +8,10 @@ Common issues and solutions for Tux Target.
 
 ```bash
 # Verify executables exist
-ls -lh build/bin/Release/tux-target*.exe
+ls -lh build/bin/Release/mtp-target-forever*.exe
 
 # Check if services are running
-tasklist | findstr "tux-target"
+tasklist | findstr "mtp-target-forever"
 tasklist | findstr "deno"
 
 # Check ports
@@ -29,7 +29,7 @@ powershell.exe -Command "Test-NetConnection -ComputerName localhost -Port 51574"
 1. Driver DLLs present:
    - `build/bin/Release/nel_drv_opengl_win_r.dll`
    - `build/bin/Release/nel_drv_openal_win_r.dll`
-2. User config exists: `C:\Users\User\AppData\Roaming\tux-target.cfg`
+2. User config exists: `C:\Users\User\AppData\Roaming\mtp-target.cfg`
 3. Font files exist:
    - `build/bin/Release/data/font/n019003l.pfb`
    - `build/bin/Release/data/font/bigfont.ttf`
@@ -40,7 +40,7 @@ powershell.exe -Command "Test-NetConnection -ComputerName localhost -Port 51574"
 
 **Error:** `CF: Exception will be launched: variable "VSync" not found`
 
-**Fix:** Add missing variables to `C:\Users\User\AppData\Roaming\tux-target.cfg`:
+**Fix:** Add missing variables to `C:\Users\User\AppData\Roaming\mtp-target.cfg`:
 ```cfg
 VSync = 0;
 AntiAlias = 0;
@@ -54,7 +54,7 @@ SoundVolume = 0.8;
 **Check:**
 1. OpenGL driver: `nel_drv_opengl_win_r.dll` present
 2. OpenAL driver: `nel_drv_openal_win_r.dll` present
-3. Config: `SoundDriver = "OpenAL"` in tux-target.cfg
+3. Config: `SoundDriver = "OpenAL"` in mtp-target.cfg
 4. Log: Search for "WRN" or "ERR" in log.log
 
 ---
@@ -102,7 +102,7 @@ CLevel = CLevel or {}
 **Status:** Login service is incomplete/not working.
 
 **Workaround:** Use "Play on LAN" mode instead:
-1. Start server: `./tux-target-srv.exe`
+1. Start server: `./mtp-target-forever-srv.exe`
 2. Start client, select "Play on LAN"
 3. Enter server address: `localhost`
 4. Enter any username/password
@@ -110,7 +110,7 @@ CLevel = CLevel or {}
 ### "Server lost" After Connecting
 
 **Check:**
-1. Server running: `tasklist | findstr tux-target-srv`
+1. Server running: `tasklist | findstr mtp-target-forever-srv`
 2. Level files present: 71 .lua files in data/level/
 3. Server log for errors
 
@@ -213,6 +213,6 @@ grep -i "error\|warning\|failed" build/bin/Release/mtp_target_service.log
 netstat -an | findstr "49997\|51574"
 
 # Kill stuck processes
-taskkill /F /IM tux-target-srv.exe
-taskkill /F /IM tux-target.exe
+taskkill /F /IM mtp-target-forever-srv.exe
+taskkill /F /IM mtp-target-forever.exe
 ```

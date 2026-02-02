@@ -135,7 +135,7 @@ public:
 
 		initWelcome();
 
-		nlinfo("Mtp Target User Init");
+		nlinfo("MTP Target Forever User Init");
 	}
 	
 	bool	update()

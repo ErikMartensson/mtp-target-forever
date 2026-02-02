@@ -1,5 +1,5 @@
 @echo off
-REM Clear Tux Target client cache
+REM Clear MTP Target Forever client cache
 REM This removes cached level files and other cached data
 
 set CACHE_DIR=%~dp0..\build-client\bin\Release\cache

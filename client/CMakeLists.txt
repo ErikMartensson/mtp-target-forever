@@ -1,21 +1,21 @@
 ADD_SUBDIRECTORY(src)
 
-CONFIGURE_FILE(tux-target.cfg.in tux-target.cfg)
+CONFIGURE_FILE(mtp-target.cfg.in mtp-target.cfg)
 
 IF("${CMAKE_MAJOR_VERSION}.${CMAKE_MINOR_VERSION}" VERSION_GREATER 2.6)
-	INSTALL(FILES ${CMAKE_CURRENT_BINARY_DIR}/tux-target.cfg DESTINATION etc/tux-target)
+	INSTALL(FILES ${CMAKE_CURRENT_BINARY_DIR}/mtp-target.cfg DESTINATION etc/mtp-target-forever)
 ELSE("${CMAKE_MAJOR_VERSION}.${CMAKE_MINOR_VERSION}" VERSION_GREATER 2.6)
-	INSTALL(FILES ${CMAKE_BINARY_DIR}/tux-target.cfg DESTINATION etc/tux-target)
+	INSTALL(FILES ${CMAKE_BINARY_DIR}/mtp-target.cfg DESTINATION etc/mtp-target-forever)
 ENDIF("${CMAKE_MAJOR_VERSION}.${CMAKE_MINOR_VERSION}" VERSION_GREATER 2.6)
 
 INSTALL(DIRECTORY data/
-	DESTINATION share/games/tux-target
+	DESTINATION share/games/mtp-target-forever
 	COMPONENT mtptargetdata
 	PATTERN "CVS" EXCLUDE
 	PATTERN ".svn" EXCLUDE
 	PATTERN "Makefile*" EXCLUDE)
 
 IF(UNIX)
-    INSTALL(FILES tux-target.png DESTINATION share/icons/hicolor/32x32/)
-    INSTALL(FILES tux-target.desktop DESTINATION share/applications/)
+    INSTALL(FILES mtp-target-forever.png DESTINATION share/icons/hicolor/32x32/)
+    INSTALL(FILES mtp-target-forever.desktop DESTINATION share/applications/)
 ENDIF(UNIX)

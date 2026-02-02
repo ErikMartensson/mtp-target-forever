@@ -1,4 +1,4 @@
-# MTP Target - Level Reference
+# MTP Target Forever - Level Reference
 
 This document lists all available levels, their scoring mechanics, and server scripts.
 

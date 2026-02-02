@@ -30,11 +30,11 @@ ENDIF(DEFINED NEL_PREFIX_PATH)
 
 CMAKE_MINIMUM_REQUIRED(VERSION 3.5)
 
-PROJECT(Tux-Target CXX C)
-SET(TUX_VERSION_MAJOR 1)
-SET(TUX_VERSION_MINOR 19)
-SET(TUX_VERSION_PATCH 0)
-SET(TUX_VERSION "${TUX_VERSION_MAJOR}.${TUX_VERSION_MINOR}.${TUX_VERSION_PATCH}")
+PROJECT(MTP-Target-Forever CXX C)
+SET(MTPF_VERSION_MAJOR 1)
+SET(MTPF_VERSION_MINOR 19)
+SET(MTPF_VERSION_PATCH 0)
+SET(MTPF_VERSION "${MTPF_VERSION_MAJOR}.${MTPF_VERSION_MINOR}.${MTPF_VERSION_PATCH}")
 
 #-----------------------------------------------------------------------------
 # Redirect output files
@@ -57,11 +57,11 @@ NL_SETUP_PREFIX_PATHS()
 #-----------------------------------------------------------------------------
 # Override default options
 
-OPTION(BUILD_CLIENT "Build the Mtp Target Client" ON)
-OPTION(BUILD_SERVER "Build the Tux Target Servers" ON)
+OPTION(BUILD_CLIENT "Build the MTP Target Forever Client" ON)
+OPTION(BUILD_SERVER "Build the MTP Target Forever Servers" ON)
 
-SET(TUX_TARGET_CONFIG_DIR "${NL_ETC_PREFIX}/tux-target" CACHE FILEPATH "Tux Target config file location")
-SET(TUX_TARGET_DATA_DIR "${NL_SHARE_PREFIX}/games/tux-target" CACHE FILEPATH "Tux Target data file location")
+SET(MTP_TARGET_CONFIG_DIR "${NL_ETC_PREFIX}/mtp-target-forever" CACHE FILEPATH "MTP Target Forever config file location")
+SET(MTP_TARGET_DATA_DIR "${NL_SHARE_PREFIX}/games/mtp-target-forever" CACHE FILEPATH "MTP Target Forever data file location")
 
 #-----------------------------------------------------------------------------
 #Platform specifics
@@ -93,7 +93,7 @@ ENDIF(BUILD_SERVER)
 
 NL_SETUP_BUILD_FLAGS()
 
-ADD_DEFINITIONS(-DTUX_TARGET_CONFIG_DIR="${TUX_TARGET_CONFIG_DIR}/")
+ADD_DEFINITIONS(-DMTP_TARGET_CONFIG_DIR="${MTP_TARGET_CONFIG_DIR}/")
 
 IF(BUILD_CLIENT)
   ADD_SUBDIRECTORY(client)

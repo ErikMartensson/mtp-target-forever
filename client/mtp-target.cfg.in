@@ -174,7 +174,7 @@ SoundVolume	= 1.0;
 MusicVolume = 0.8;
 
 // Path to the m3u playlist
-M3UList		= "tux-target.m3u";
+M3UList		= "mtp-target.m3u";
 
 // 1 = Shuffle the playlist
 // 0 = No Shuffle
@@ -198,7 +198,7 @@ AllowMouse           = 2;
 InverseMouse         = 0;
 
 // Where to get the data files
-Path = { "@TUX_TARGET_DATA_DIR@" };
+Path = { "@MTP_TARGET_DATA_DIR@" };
 
 // Where to put files downloaded form the server
 CacheDirectory = "cache";

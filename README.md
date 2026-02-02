@@ -1,4 +1,4 @@
-# MTP Target - Community Revival
+# MTP Target Forever
 
 <p align="center">
   <img src="assets/site_logo.png" alt="MTP Target Logo" width="170" height="94">
@@ -12,8 +12,8 @@
 
 | Component | Download |
 |-----------|----------|
-| **Game Client** | [MTP-Target-Client-win64.zip](https://nightly.link/ErikMartensson/tux_target/workflows/build/main/MTP-Target-Client-win64.zip) |
-| **Game Server** | [MTP-Target-Server-win64.zip](https://nightly.link/ErikMartensson/tux_target/workflows/build/main/MTP-Target-Server-win64.zip) |
+| **Game Client** | [MTP-Target-Forever-Client-win64.zip](https://nightly.link/ErikMartensson/tux_target/workflows/build/main/MTP-Target-Forever-Client-win64.zip) |
+| **Game Server** | [MTP-Target-Forever-Server-win64.zip](https://nightly.link/ErikMartensson/tux_target/workflows/build/main/MTP-Target-Forever-Server-win64.zip) |
 
 *Built automatically from the latest `main` branch commit.*
 
@@ -137,7 +137,7 @@ cd C:\ryzomcore && mkdir build && cd build
 cmake .. -G "Visual Studio 17 2022" -A x64 `
     -DWITH_SOUND=ON -DWITH_NEL=ON -DWITH_NEL_TOOLS=OFF `
     -DWITH_NEL_TESTS=OFF -DWITH_NEL_SAMPLES=OFF -DWITH_RYZOM=OFF `
-    -DWITH_STATIC=ON -DCMAKE_PREFIX_PATH="C:/path/to/tux_target/deps"
+    -DWITH_STATIC=ON -DCMAKE_PREFIX_PATH="C:/path/to/mtp-target-forever/deps"
 
 cmake --build . --config Release --parallel 4 --target nelmisc nel3d nelnet nelsound nelsnd_lowlevel nelgeorges nelligo
 cmake --build . --config Release --parallel 2 --target nel_drv_opengl_win nel_drv_openal_win

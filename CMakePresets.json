@@ -17,7 +17,7 @@
         "WITH_STATIC_LIBXML2": "ON",
         "WITH_STATIC_CURL": "ON",
         "NEL_PREFIX_PATH": "${env:NEL_PREFIX_PATH:C:/ryzomcore/build}",
-        "CMAKE_PREFIX_PATH": "${env:TUXDEPS_PREFIX_PATH:C:/tux_target_deps}"
+        "CMAKE_PREFIX_PATH": "${env:MTPDEPS_PREFIX_PATH:C:/mtp_target_deps}"
       },
       "condition": {
         "type": "equals",

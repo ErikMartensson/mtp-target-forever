@@ -1,18 +1,21 @@
 #
-# Tux Target Dependencies Manifest
+# MTP Target Forever Dependencies Manifest
 #
 # This is the single source of truth for all required dependency files.
 # Used by: setup-deps.ps1, build.yml (CI), build scripts
 #
 
-# Default installation path: deps/ directory inside repo (can be overridden via $env:TUXDEPS_PATH)
+# Default installation path: deps/ directory inside repo (can be overridden via $env:MTPDEPS_PATH or $env:TUXDEPS_PATH)
 # Determine repo root from script location
 $script:ScriptRoot = if ($PSScriptRoot) { $PSScriptRoot } else { Split-Path -Parent $MyInvocation.MyCommand.Path }
 $script:RepoRoot = Split-Path -Parent $script:ScriptRoot
 $script:DefaultDepsPath = Join-Path $script:RepoRoot "deps"
 
 function Get-DepsPath {
-    if ($env:TUXDEPS_PATH) {
+    # Check new env var first, fall back to old
+    if ($env:MTPDEPS_PATH) {
+        return $env:MTPDEPS_PATH
+    } elseif ($env:TUXDEPS_PATH) {
         return $env:TUXDEPS_PATH
     }
     return $script:DefaultDepsPath
@@ -83,7 +86,7 @@ $script:ServerLibs = @(
     "ode/lib/ode_doubles.lib"
 )
 
-# Libraries NOT needed by Tux Target (can be removed to save ~3.4GB)
+# Libraries NOT needed by MTP Target Forever (can be removed to save ~3.4GB)
 # These are part of the Ryzom external package but unused by this project
 $script:UnusedLibraries = @(
     "assimp",           # 3D model importer (25MB)

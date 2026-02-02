@@ -1,6 +1,6 @@
-# Building MTP Target
+# Building MTP Target Forever
 
-This guide covers building the MTP Target game server and client from source on Windows.
+This guide covers building the MTP Target Forever game server and client from source on Windows.
 
 ---
 
@@ -113,10 +113,10 @@ Dependencies are installed to `deps/` in the repository (git-ignored):
 
 ### Custom dependency location
 
-To use a different location, set `TUXDEPS_PATH`:
+To use a different location, set `MTPDEPS_PATH`:
 
 ```powershell
-$env:TUXDEPS_PATH = "D:\my-deps"
+$env:MTPDEPS_PATH = "D:\my-deps"
 .\scripts\build-client.bat
 ```
 
@@ -231,7 +231,7 @@ Ninja outputs to `bin/` (not `bin/Release/` like Visual Studio):
 
 ```
 build-client/bin/
-├── tux-target.exe
+├── mtp-target-forever.exe
 ├── *.dll (runtime dependencies)
 ├── data/
 │   ├── font/
@@ -242,7 +242,7 @@ build-client/bin/
 └── mtp_target_default.cfg
 
 build-server/bin/
-├── tux-target-srv.exe
+├── mtp-target-forever-srv.exe
 ├── *.dll (runtime dependencies)
 ├── data/
 │   ├── level/
@@ -269,11 +269,11 @@ build-server/bin/
 ```powershell
 # Server
 cd build-server\bin
-.\tux-target-srv.exe
+.\mtp-target-forever-srv.exe
 
 # Client
 cd build-client\bin
-.\tux-target.exe
+.\mtp-target-forever.exe
 ```
 
 ### In-Game
@@ -308,7 +308,7 @@ First build takes ~20 minutes; subsequent builds use cached dependencies.
 After a successful CI build:
 1. Go to Actions tab on GitHub
 2. Select the build run
-3. Download `tux-target-client-windows-Release` or `tux-target-server-windows-Release`
+3. Download `mtp-target-forever-client-windows-Release` or `mtp-target-forever-server-windows-Release`
 
 ---
 

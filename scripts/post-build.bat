@@ -1,5 +1,5 @@
 @echo off
-REM Post-Build Setup Script for Tux Target (Windows)
+REM Post-Build Setup Script for MTP Target Forever (Windows)
 REM
 REM This script copies all required runtime files to the build directory
 REM after compiling the client and server.
@@ -52,19 +52,19 @@ REM Set default release directory if not specified
 REM Ninja outputs to bin/, VS outputs to bin/Release/ - check Ninja first
 if "%RELEASE_DIR%"=="" (
     if %CLIENT_ONLY%==1 (
-        if exist "%PROJECT_DIR%\build-client\bin\tux-target.exe" (
+        if exist "%PROJECT_DIR%\build-client\bin\mtp-target-forever.exe" (
             set RELEASE_DIR=%PROJECT_DIR%\build-client\bin
         ) else (
             set RELEASE_DIR=%PROJECT_DIR%\build-client\bin\Release
         )
     ) else if %SERVER_ONLY%==1 (
-        if exist "%PROJECT_DIR%\build-server\bin\tux-target-srv.exe" (
+        if exist "%PROJECT_DIR%\build-server\bin\mtp-target-forever-srv.exe" (
             set RELEASE_DIR=%PROJECT_DIR%\build-server\bin
         ) else (
             set RELEASE_DIR=%PROJECT_DIR%\build-server\bin\Release
         )
     ) else (
-        if exist "%PROJECT_DIR%\build\bin\tux-target.exe" (
+        if exist "%PROJECT_DIR%\build\bin\mtp-target-forever.exe" (
             set RELEASE_DIR=%PROJECT_DIR%\build\bin
         ) else (
             set RELEASE_DIR=%PROJECT_DIR%\build\bin\Release
@@ -82,7 +82,7 @@ if %CLIENT_ONLY%==1 (
 )
 
 echo =========================================
-echo Tux Target Post-Build Setup (%MODE%)
+echo MTP Target Forever Post-Build Setup (%MODE%)
 echo =========================================
 echo.
 
@@ -185,13 +185,13 @@ if exist "%PROJECT_DIR%\data\config\mtp_target_default.cfg" (
     echo    ! Warning: Using original config (may need water fix)
 )
 
-REM Create tux-target.cfg wrapper (client looks for this file, not mtp_target_default.cfg)
-if not exist "%RELEASE_DIR%\tux-target.cfg" (
-    echo // This file tells the client where to find the main config> "%RELEASE_DIR%\tux-target.cfg"
-    echo RootConfigFilename = "mtp_target_default.cfg";>> "%RELEASE_DIR%\tux-target.cfg"
-    echo    + Created: tux-target.cfg
+REM Create mtp-target.cfg wrapper (client looks for this file, not mtp_target_default.cfg)
+if not exist "%RELEASE_DIR%\mtp-target.cfg" (
+    echo // This file tells the client where to find the main config> "%RELEASE_DIR%\mtp-target.cfg"
+    echo RootConfigFilename = "mtp_target_default.cfg";>> "%RELEASE_DIR%\mtp-target.cfg"
+    echo    + Created: mtp-target.cfg
 ) else (
-    echo    + tux-target.cfg already exists
+    echo    + mtp-target.cfg already exists
 )
 echo.
 set /a STEP+=1
@@ -368,12 +368,19 @@ REM Determine base deps directory (check repo deps/ first, then env var, then le
 set DEPS_BASE=
 if exist "%PROJECT_DIR%\deps\lua\lib\lua.lib" (
     set DEPS_BASE=%PROJECT_DIR%\deps
+) else if defined MTPDEPS_PATH (
+    if exist "%MTPDEPS_PATH%" set DEPS_BASE=%MTPDEPS_PATH%
 ) else if defined TUXDEPS_PATH (
     if exist "%TUXDEPS_PATH%" set DEPS_BASE=%TUXDEPS_PATH%
+) else if defined MTPDEPS_PREFIX_PATH (
+    if exist "%MTPDEPS_PREFIX_PATH%" set DEPS_BASE=%MTPDEPS_PREFIX_PATH%
 ) else if defined TUXDEPS_PREFIX_PATH (
     if exist "%TUXDEPS_PREFIX_PATH%" set DEPS_BASE=%TUXDEPS_PREFIX_PATH%
 )
 REM Legacy fallback
+if "%DEPS_BASE%"=="" (
+    if exist "C:\mtp_target_deps" set DEPS_BASE=C:\mtp_target_deps
+)
 if "%DEPS_BASE%"=="" (
     if exist "C:\tux_target_deps" set DEPS_BASE=C:\tux_target_deps
 )
@@ -381,7 +388,7 @@ if "%DEPS_BASE%"=="" (
 if "%DEPS_BASE%"=="" (
     echo    ! Warning: Dependency directory not found
     echo      Run: scripts\setup-deps.ps1 to install dependencies
-    echo      Or set TUXDEPS_PATH environment variable
+    echo      Or set MTPDEPS_PATH environment variable
     echo.
     set /a STEP+=1
     goto skip_deps_copy
@@ -483,16 +490,16 @@ REM VERIFICATION
 REM ============================================
 echo %STEP%. Verifying executables...
 if %SERVER_ONLY%==0 (
-    if exist "%RELEASE_DIR%\tux-target.exe" (
-        echo    + Client: tux-target.exe
+    if exist "%RELEASE_DIR%\mtp-target-forever.exe" (
+        echo    + Client: mtp-target-forever.exe
     ) else (
         echo    ! Client executable not found
     )
 )
 
 if %CLIENT_ONLY%==0 (
-    if exist "%RELEASE_DIR%\tux-target-srv.exe" (
-        echo    + Server: tux-target-srv.exe
+    if exist "%RELEASE_DIR%\mtp-target-forever-srv.exe" (
+        echo    + Server: mtp-target-forever-srv.exe
     ) else (
         echo    ! Server executable not found
     )
@@ -512,7 +519,7 @@ echo.
 if %SERVER_ONLY%==0 (
     echo To run the client:
     echo   cd %RELEASE_DIR%
-    echo   tux-target.exe
+    echo   mtp-target-forever.exe
     echo   Or: scripts\run-client.bat
     echo.
 )
@@ -520,7 +527,7 @@ if %SERVER_ONLY%==0 (
 if %CLIENT_ONLY%==0 (
     echo To run the server:
     echo   cd %RELEASE_DIR%
-    echo   tux-target-srv.exe
+    echo   mtp-target-forever-srv.exe
     echo   Or: scripts\run-server.bat
     echo.
 )
