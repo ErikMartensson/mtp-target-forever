@@ -479,12 +479,13 @@ jobs:
       - name: Configure CMake (Client)
         shell: pwsh
         run: |
+          $shortHash = "${{ github.sha }}".Substring(0, 7)
           mkdir build-client
           cd build-client
           # Use shared cmake-config.ps1 (single source of truth)
           . "${{ github.workspace }}/scripts/cmake-config.ps1" -DepsPath "C:/external" -NelPath "C:/ryzomcore/build"
           $cmakeArgs = Get-ClientCMakeArgs
-          cmake .. -G Ninja -DCMAKE_BUILD_TYPE=Release @cmakeArgs
+          cmake .. -G Ninja -DCMAKE_BUILD_TYPE=Release "-DMTPT_VERSION_SUFFIX=-$shortHash" @cmakeArgs
 
       - name: Build Client
         run: cmake --build build-client --parallel 4
