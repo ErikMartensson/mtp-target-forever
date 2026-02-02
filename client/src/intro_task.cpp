@@ -296,7 +296,7 @@ void CIntroTask::updateMenu()
 
 	if(howToPlay->pressed())
 	{
-		openURL("https://github.com/ErikMartensson/tux_target/blob/main/docs/CONTROLS.md");
+		openURL("https://github.com/ErikMartensson/mtp-target-forever/blob/main/docs/CONTROLS.md");
 	}
 	if(playOnLineButton->pressed())
 	{

@@ -12,8 +12,8 @@
 
 | Component | Download |
 |-----------|----------|
-| **Game Client** | [MTP-Target-Forever-Client-win64.zip](https://nightly.link/ErikMartensson/tux_target/workflows/build/main/MTP-Target-Forever-Client-win64.zip) |
-| **Game Server** | [MTP-Target-Forever-Server-win64.zip](https://nightly.link/ErikMartensson/tux_target/workflows/build/main/MTP-Target-Forever-Server-win64.zip) |
+| **Game Client** | [MTP-Target-Forever-Client-win64.zip](https://nightly.link/ErikMartensson/mtp-target-forever/workflows/build/main/MTP-Target-Forever-Client-win64.zip) |
+| **Game Server** | [MTP-Target-Forever-Server-win64.zip](https://nightly.link/ErikMartensson/mtp-target-forever/workflows/build/main/MTP-Target-Forever-Server-win64.zip) |
 
 *Built automatically from the latest `main` branch commit.*
 
