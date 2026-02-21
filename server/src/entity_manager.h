@@ -26,6 +26,8 @@
 // Includes
 //
 
+#include <map>
+
 #include <nel/misc/reader_writer.h>
 #include <nel/misc/variable.h>
 #include <nel/misc/singleton.h>
@@ -109,8 +111,12 @@ public:
 	std::list<uint8> IdUpdateList;
 	
 private:
-	
+
 	std::list <CEntity*> Entities;
+
+	// Team assignment cache - computed once per session, cleared in initBeforeStartLevel()
+	std::map<uint8, uint> TeamAssignmentCache;
+	void computeTeamAssignments(uint teamCount);
 
 	uint8		findNewId();
 	void		checkForcedClientCount();

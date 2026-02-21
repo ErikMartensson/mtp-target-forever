@@ -84,7 +84,7 @@ public:
 	virtual void render();
 	virtual void release() { }
 		
-	void renderNames();
+	void renderNames(float fontScale = 1.0f);
 	virtual std::string name() const { return "CEntityManager"; }
 
 	void	add(uint8 eid, const std::string &name, sint32 totalScore, NLMISC::CRGBA &color, const std::string &texture, bool spectator, bool isLocal, const std::string &trace, const std::string &meshName);

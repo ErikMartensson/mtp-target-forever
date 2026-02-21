@@ -36,6 +36,7 @@
 #include <nel/misc/path.h>
 
 #include "gui.h"
+#include "graph.h"
 #include "3d_task.h"
 #include "hud_task.h"
 #include "chat_task.h"
@@ -46,6 +47,7 @@
 #include "entity_manager.h"
 #include "resource_manager2.h"
 #include "config_file_task.h"
+#include "external_camera_task.h"
 #include "../../common/custom_floating_point.h"
 
 
@@ -276,7 +278,7 @@ static void cbUpdate(CNetMessage &msgin)
 				pos = CEntityManager::getInstance()[eid].LastSent2OthersPos + dpos;
 				CEntityManager::getInstance()[eid].LastSent2OthersPos = pos;
 				CEntityManager::getInstance()[eid].LastSent2MePos = pos;
-				if(DisplayDebug)
+				if(DisplayDebug == 1)
 					nlinfo("TCP update client %hu a %g %g %g ping %hu", (uint16)eid, pos.x, pos.y, pos.z);
 				if(SessionFile) 
 					fprintf(SessionFile, "%hu PO %f %f %f\n", (uint16)eid, pos.x, pos.y, pos.z);
@@ -370,7 +372,7 @@ static void cbUpdateOne(CNetMessage &msgin)
 		{
 			pos = CEntityManager::getInstance()[eid].LastSent2MePos + dpos;
 			CEntityManager::getInstance()[eid].LastSent2MePos = pos;
-			if(DisplayDebug)
+			if(DisplayDebug == 1)
 				nlinfo("TCP updateOne client %hu a %g %g %g ping %hu", (uint16)eid, pos.x, pos.y, pos.z);
 			if(SessionFile) 
 				fprintf(SessionFile, "%hu PO %f %f %f\n", (uint16)eid, pos.x, pos.y, pos.z);
@@ -433,7 +435,7 @@ static void cbFullUpdate(CNetMessage &msgin)
 		{
 			CEntityManager::getInstance()[eid].LastSent2MePos = pos;
 			CEntityManager::getInstance()[eid].LastSent2OthersPos = pos;
-			if(DisplayDebug)
+			if(DisplayDebug == 1)
 				nlinfo("TCP updateFull client %hu a %g %g %g ping %hu", (uint16)eid, pos.x, pos.y, pos.z, ping);
 
 			if(SessionFile) 
@@ -453,6 +455,10 @@ static void cbFullUpdate(CNetMessage &msgin)
 			}
 			CEntityManager::getInstance()[eid].interpolator().addKey(CEntityInterpolatorKey(CEntityState(pos,false,oc,ce),rsxTime));
 			CEntityManager::getInstance()[eid].ping(ping);
+
+			// Update ping graph for the local player
+			if (CMtpTarget::getInstance().controler().getControledEntity() == eid)
+				PingGraph.addOneValue(float(ping));
 		}
 		/*
 		else
@@ -695,7 +701,7 @@ static void cbCollideWhenFly(CNetMessage &msgin)
 	{
 		// it's my collide when fly
 		nlinfo("NET: cbCollideWhenFly setting EnableExternalCamera");
-		C3DTask::getInstance().EnableExternalCamera = true;
+		CExternalCameraTask::getInstance().setExternalCamera(true);
 	}
 	nlinfo("NET: cbCollideWhenFly local check done");
 
@@ -724,7 +730,7 @@ static void cbTimeArrival(CNetMessage &msgin)
 	if(CMtpTarget::getInstance().controler().getControledEntity()==eid)
 	{
 		// it's my arrival
-		C3DTask::getInstance().EnableExternalCamera = true;
+		CExternalCameraTask::getInstance().setExternalCamera(true);
 	}
 	nlinfo("NET: cbTimeArrival done");
 }

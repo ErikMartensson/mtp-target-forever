@@ -52,7 +52,7 @@
 // Variables
 //
 
-extern bool DisplayDebug;
+extern uint8 DisplayDebug;
 extern bool FollowEntity;
 extern NLMISC::CQuat ControlerFreeLookRot;
 extern CVector ControlerFreeLookPos;

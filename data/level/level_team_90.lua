@@ -69,7 +69,7 @@ Modules =
 	{ Position = CVector(0.16, 0, 3), Scale = CVector(8, 8, 1), Rotation = CAngleAxis(1,0,0,0), Lua = "team_target_100_red", Shape="box_sol", Score = 100, Friction = 10, Color = CRGBA(255,64,64,255) },
 	{ Position = CVector(0.04, 0, 3), Scale = CVector(4, 4, 1), Rotation = CAngleAxis(1,0,0,0), Lua = "team_target_300_red", Shape="box_sol", Score = 300, Friction = 10, Color = CRGBA(255,0,0,255) },
 	-- Blue team targets (negative X side) - same as level_team_classic but rotated 90 degrees (X and Y swapped)
-	{ Position = CVector(-0.40, 0, 3), Scale = CVector(16, 16, 1), Rotation = CAngleAxis(1,0,0,0), Lua = "team_target_50_blue", Shape="box_sol", Score = 50, Friction = 25, Color = CRGBA(255,255,255,255) },
+	{ Position = CVector(-0.40, 0, 3), Scale = CVector(16, 16, 1), Rotation = CAngleAxis(1,0,0,0), Lua = "team_target_50_blue", Shape="box_sol", Score = 50, Friction = 25, Color = CRGBA(128,128,255,255) },
 	{ Position = CVector(-0.16, 0, 3), Scale = CVector(8, 8, 1), Rotation = CAngleAxis(1,0,0,0), Lua = "team_target_100_blue", Shape="box_sol", Score = 100, Friction = 10, Color = CRGBA(64,64,255,255) },
 	{ Position = CVector(-0.04, 0, 3), Scale = CVector(4, 4, 1), Rotation = CAngleAxis(1,0,0,0), Lua = "team_target_300_blue", Shape="box_sol", Score = 300, Friction = 10, Color = CRGBA(0,0,255,255) }
 }

@@ -28,6 +28,7 @@
 #include <nel/misc/quat.h>
 #include <nel/misc/common.h>
 
+#include "graph.h"
 #include "entity.h"
 #include "chat_task.h"
 #include "time_task.h"
@@ -281,7 +282,14 @@ void CInterpolator::update()
 		CChatTask::getInstance().addLine(chatLine1);
 	}
 	LastChatLine = chatLine1;
-	
+
+	// Update debug graphs for controlled entity
+	if(Entity->id() == CMtpTarget::getInstance().controler().getControledEntity())
+	{
+		NbKeysGraph.addOneValue(float(Keys.size()));
+		LCTGraph.addOneValue(float(LCT * 1000.0f)); // Convert to ms
+		DTGraph.addOneValue(float(DeltaTime * 1000.0f)); // Convert to ms
+	}
 }
 
 

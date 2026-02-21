@@ -330,7 +330,8 @@ void CIntroTask::updateLoginOnline()
 		return;
 	}
 
-	if(loginButton->pressed() || _autoLogin==1)
+	bool enterPressed = loginText->wasReturnPressed() || passwordText->wasReturnPressed();
+	if(loginButton->pressed() || _autoLogin==1 || enterPressed)
 	{
 		loginText->text = NLMISC::strlwr(loginText->text);
 		passwordText->text = NLMISC::strlwr(passwordText->text);
@@ -428,7 +429,8 @@ void CIntroTask::updateLoginOnlan()
 		return;
 	}
 
-	if(loginLanButton->pressed() || _autoLogin)
+	bool enterPressedLan = loginLanText->wasReturnPressed() || passwordLanText->wasReturnPressed() || serverLanText->wasReturnPressed();
+	if(loginLanButton->pressed() || _autoLogin || enterPressedLan)
 	{
 		loginLanText->text = NLMISC::strlwr(loginLanText->text);
 		passwordLanText->text = NLMISC::strlwr(passwordLanText->text);

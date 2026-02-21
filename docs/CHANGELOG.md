@@ -2,6 +2,242 @@
 
 All notable improvements and changes from the original MTP Target v1.2.2a.
 
+## Modern Text Input (February 9, 2026)
+
+### Full Text Editing for GUI Fields and Chat
+
+Added clipboard, selection, and word navigation support to all text input fields (IP address, username, password, chat). Both the GUI text field system (`CGuiText`) and chat input (`CChatTask`) now use a shared `CTextEditor` class.
+
+**New editing features:**
+- **Ctrl+C / Ctrl+X / Ctrl+V** - Copy, cut, paste via system clipboard (uses NeL's `UDriver` clipboard API)
+- **Ctrl+Z** - Undo last edit (supports multiple undo levels)
+- **Shift+Arrow keys** - Select text character by character
+- **Ctrl+Left/Right** - Jump to word boundaries
+- **Ctrl+Shift+Left/Right** - Select by word
+- **Home / End** - Jump to start/end of text
+- **Shift+Home / Shift+End** - Select to start/end
+- **Ctrl+A** - Select all
+- **Ctrl+Backspace** - Delete previous word
+- **Delete** - Delete character forward (also works with selection)
+- **Tab / Shift+Tab** - Jump between input fields (IP, username, password)
+- **Enter** - Submit login form from any text field (both online and LAN login)
+- **Visual selection highlight** - Selected text shown with semi-transparent blue background in both GUI fields and chat
+- **Select-all on focus** - Clicking into a GUI text field selects all existing text for easy replacement
+- **Blinking cursor** - Visible cursor position in chat input
+
+**Use cases enabled:**
+- Paste a server IP address into the connection field
+- Press Enter to connect after typing credentials (no need to click Login button)
+- Tab through fields, type credentials, press Enter — fully keyboard-driven login
+- Select and copy/cut text in any input field
+- Quick word-level navigation and deletion
+- Standard PC text editing muscle memory works everywhere
+
+**Files added:**
+- `client/src/text_editor.h` - CTextEditor class declaration
+- `client/src/text_editor.cpp` - Text editing state machine (cursor, selection, clipboard, word nav)
+
+**Files modified:**
+- `client/src/gui_text.h/cpp` - Integrated CTextEditor for GUI text fields, selection rendering, Tab navigation
+- `client/src/chat_task.h/cpp` - Integrated CTextEditor for chat input, cursor and selection rendering
+- `client/src/intro_task.cpp` - Enter key triggers login from any focused text field
+- `client/src/font_manager.h/cpp` - Added `littleStringWidth()` for text measurement
+- `client/src/CMakeLists.txt` - Added text_editor source files
+
+---
+
+## Team Level Improvements (February 9, 2026)
+
+### Six Fixes for Team-Based Levels
+
+Fixed multiple issues with team levels (`level_team_90`, `level_team_classic`, `level_team_mirror`, `level_team_all_on_one`):
+
+**1. Random Team Assignment**
+Players were always assigned to the red team first because the team assignment algorithm picked team 0 when pack sizes were tied. Now collects all tied candidates and randomly selects one.
+
+**2. Consistent & Balanced Team Distribution**
+The `getTeam()` function was called once per entity, but recomputed all team assignments from scratch each time using `rand()`. Since `rand()` state advanced between calls, assignments could be inconsistent and unbalanced. Fixed by computing team assignments once per session and caching them. All subsequent `getTeam()` calls return the cached result.
+
+**3. Bots Don't Use Wrong-Side Replays**
+On split-ramp team levels, bots assigned to the blue side would load replay files recorded from the red side, causing them to fly the wrong direction. Added distance-based validation: fallback replays whose first position is >5 units from the bot's starting point are discarded.
+
+**4. Team Score Text No Longer Persists to Non-Team Levels**
+The red/blue score counter in the top-left stayed visible when transitioning from a team level to a non-team level. Root cause: off-by-one bug in `levelEndSession()` — the loop `for i=0,entityCount do` went one past the last entity, causing a Lua error that prevented the `displayTextToAll` cleanup lines from executing. Fixed loop bound to `entityCount-1`.
+
+**5. Score Reset Bug in level_team_all_on_one**
+Team scores were being overwritten with 0 when collisions stopped (same bug previously fixed in `level_team_server.lua`). Applied the `scoringHappenedThisFrame` guard and added missing cleanup lines.
+
+**6. Blue Team 50-Point Platform Color**
+The blue team's outermost (50-point) scoring platform was pure white `CRGBA(255,255,255,255)` while the red team's was tinted `CRGBA(255,128,128,255)`. Changed blue 50-point platforms to `CRGBA(128,128,255,255)` in all three split-ramp team levels.
+
+**Files Modified:**
+- `server/src/entity_manager.h` - Added team assignment cache
+- `server/src/entity_manager.cpp` - Cache team assignments, randomize tied selection
+- `server/src/bot.cpp` - Distance-based replay validation for fallback replays
+- `data/lua/level_team_server.lua` - Fix off-by-one in `levelEndSession()` loop
+- `data/lua/level_team_all_on_one_server.lua` - Fix off-by-one, add cleanup, add scoring fix
+- `data/level/level_team_90.lua` - Blue 50-point platform color
+- `data/level/level_team_classic.lua` - Blue 50-point platform color
+- `data/level/level_team_mirror.lua` - Blue 50-point platform color
+
+### Other Improvements
+
+**level_team_all_on_one ServerLua fix:** Level was pointing to `level_team_server.lua` instead of `level_team_all_on_one_server.lua`, causing incorrect "Land on RED/BLUE target" text on a single shared target.
+
+**level_team_space platform visibility:** Client-side `CModule:new()` was undefined, causing `CLevel:init()` to error out after the first module. Added client-side stub in `data/lua/utilities.lua` so all platforms render correctly.
+
+**Post-build client data copying:** Level and Lua utility files were only copied to the server build directory, not the client. Added level and Lua copying to the client section of `scripts/post-build.bat`.
+
+**Chat smiley codes:** Updated `ReplaceStringByImage` config from 4 broken entries (wrong `.tga` extension) to all 28 smiley codes from v1.5.19 with correct `.dds` extensions.
+
+---
+
+## Intermittent Scoring Failure Fix (February 8, 2026)
+
+### Root Cause Identified and Fixed
+
+Fixed the game-breaking bug where players intermittently received 0 points when landing on scoring targets. The bug was unpredictable - scoring worked for 10+ rounds, then failed for 1-2 rounds, then worked again.
+
+**Root Cause:** The Lunar template's userdata caching with weak table garbage collection. When `Lunar::push()` reused cached userdata from the weak "v" table, it wasn't re-applying the metatable. If the cached userdata's metatable became stale after GC, `entity.collideWithModule` returned nil because the method lookup failed.
+
+**Why player-player collision "primed" the fix:** The `entityEntityCollideEvent()` function exercised `Lunar::push()` first, warming the cache or triggering GC at a safe point.
+
+**Fix Applied:**
+- Modified `common/lunar.h` to ALWAYS set metatable in `Lunar::push()`, not just for new userdata
+- Added silent debug counters in `data/lua/helpers.lua` to track method lookup success/failure
+- Added metatable verification diagnostic in `server/src/lua_engine.cpp` (DEBUG builds only)
+
+**Files Modified:**
+- `common/lunar.h` - Always re-apply metatable after pushuserdata
+- `data/lua/helpers.lua` - Debug counters: `_dbg_collideWithModule_nil`, etc.
+- `server/src/lua_engine.cpp` - DEBUG-only metatable integrity check
+
+---
+
+## v1.5.19 Multi-Theme Level Restoration
+
+### 28 New Playable Levels Across 4 Themes
+
+Ported all remaining levels from v1.5.19 by building a Lua compatibility bridge between the v1.5.19 imperative `CLevel:init()` architecture and our v1.2.2a static global-table level loader.
+
+**Space Theme (10 levels):**
+- `level_space_asteroids`, `level_space_fleet` (ReleaseLevel 6 - highest quality)
+- `level_space_atomium`, `level_space_calbren`, `level_space_cargo_inside`
+- `level_space_hangar18`, `level_space_havoc`, `level_space_hotwings`
+- `level_space_imo_rings`, `level_space_stabilo`
+
+**Sun Theme (4 levels):**
+- `level_sun_target`, `level_sun_cross`, `level_sun_extra_ball`, `level_sun_paint`
+
+**City Theme (5 levels):**
+- `level_city_easy`, `level_city_darts`, `level_city_paint`
+- `level_city_destroy`, `level_city_precision`
+
+**Gate Levels (4 levels) - New Game Mode:**
+- `level_gates_easy`, `level_gates_hard`, `level_gates_ramp`, `level_gates_zig_zag`
+- Fly through scoring gates that decrease in value each pass
+- Pure Lua AABB gate collision detection (no C++ gate system needed)
+
+**Other (5 levels):**
+- `level_bowls1` - Distance-based scoring (closer to center = more points)
+- `level_donuts2` - Second donuts variant
+- `level_mtp_paint` - Alternative paint level
+- `level_snow_line` - Snow line layout
+- `level_team_space` - Team mode in space theme
+
+### Engine-Level Fixes
+
+- **Default friction for scoring targets** - Modules with `Score > 0` but `Friction == 0` now automatically get friction of 10 applied during level loading (`server/src/level.cpp`). In v1.5.19, the server applied friction to scoring targets; without this fix, balls roll across city/space targets without slowing down. Fixes `level_city_easy`, `level_city_darts`, `level_city_precision`, and all space target levels.
+- **Main loop reordering for postUpdate scoring** - Moved `CSessionManager::update()` to run AFTER `levelPostUpdate()` in the server main loop (`server/src/main.cpp`). Levels like `level_city_paint` use per-frame score recalculation: `CEntity:preUpdate()` resets score to 0, then `CLevel:postUpdate()` recalculates it from painted modules. Previously, the session manager read `CurrentScore` between these two steps, always seeing 0. This fix ensures scores are fully calculated before the session manager checks arrival times and end conditions.
+- **Negative score support** - Fixed `setCurrentScore` in `server/src/entity_lua_proxy.cpp` to cast `lua_Number` to `sint32` instead of `uint32`. The bowls1 level uses negative scores for distance-based penalties, which would underflow to large positive numbers with the unsigned cast.
+
+### Bot Replay Fix
+
+- **Added missing `Name` to all v1.5.19 levels** - 31 ported levels were missing the `Name` global variable. The bot replay system (`server/src/bot.cpp`) matches replay files by level name. When `Name` was empty, `string::find("")` matched every replay file, causing bots to load replay data from wrong levels and behave erratically. Added `Name = "Display Name"` to all 31 affected level files.
+
+### Server-Side Lua Fixes
+
+- **Gate AABB collision bug fix** - Fixed CLuaVector property access in gate collision detection (`helpers.lua`). Changed `.x`/`.y`/`.z` property access to `:getX()`/`:getY()`/`:getZ()` method calls, since CLuaVector is a userdata type that only supports methods.
+- **userData transfer for city_paint** - Added userData transfer logic in `levelInit()` (`helpers.lua`). During `CLevel:init()`, Lua stores custom objects (e.g., CModulePaintBloc) on CLevelModule proxies via `setUserData()`. Since the C++ CModuleProxy objects are created *after* init, the userData must be explicitly copied from Lua table entries to the corresponding CModuleProxy objects.
+- **`level():teamMode()` implementation** - Added team mode detection in `utilities.lua` that checks if any entity name starts with `[` (bracket prefix indicates team assignment). Used by `level_city_paint_server.lua` for team-based territory claiming.
+- **Entity/Module class name bridging** - v1.5.19 server scripts define methods on `CEntity`/`CModule`/`CLevel`, but the Lunar template registers these as `Entity`/`Module`/`Level`. Bridged via aliases (`CEntity = Entity`, etc.) in `utilities.lua`, which is loaded on both client and server as part of the level file's include chain.
+- **Paint level server script update** - Replaced v1.2.2a `level_paint_server.lua` with v1.5.19 version that includes `CModulePaintBloc` class definition. The old version lacked this class, causing crashes on `level_sun_paint` and `level_mtp_paint`.
+- **level_team_space fix** - Changed `CModuleBase:new(team)` calls to `CModule:new(module, team)` to use the class defined in `level_team_server.lua`.
+- **CVector decimal point fix** - Fixed `utilities_sun.lua` where `CVector(-15, -50, 3,5)` had a comma instead of decimal point for 3.5.
+
+### Lua Compatibility Layer
+
+Created a multi-layered bridge for v1.5.19 level scripts:
+
+- **`data/lua/utilities.lua`** - CLevel Lua shim that translates `CLevel:init()` calls into global tables our C++ reads. Includes CLevel methods (`addModule`, `addStartPoint`, `addCamera`, `setWater`, `setSky`, `setFog`, `setSun`, `addGate`), module proxy with `setTexture`/`setScale`/`setScore`/etc., and CGateProxy class.
+- **Theme utilities** (`utilities_snow.lua`, `utilities_space.lua`, `utilities_sun.lua`, `utilities_city.lua`) - Theme-specific helpers for water, sky, fog, sun lighting, and material properties.
+- **`data/lua/helpers.lua`** - Server-side bridge loaded before level files. Provides collision event routing that supports both v1.2.2a global function style and v1.5.19 entity method style. Includes gate AABB collision detection, level update bridges, and entity lifecycle hooks.
+- **v1.5.19 naming aliases** - `CEntity = Entity`, method aliases (`currentScore`, `name`, `position`, etc.), function aliases (`module`, `moduleCount`, `entityById`, `timeRemaining`).
+
+### C++ Changes for Level Compatibility
+
+- **CLevel:init() support** (client + server `level.cpp`) - After loading a level file, check for and call `CLevel:init()` to trigger v1.5.19-style level setup
+- **Module texture support** (client `level.cpp` + `module.cpp`) - Read `Texture0`/`Texture1` fields from Modules table and apply to loaded shapes
+- **Module proxy setTexture** (client `module_lua_proxy.cpp`) - Added `setTexture(layer, name)` method for runtime texture changes via `execLuaOnAllClient`
+- **CLuaVector methods** (common `lua_nel.h`/`lua_nel.cpp`) - Added `getX`/`getY`/`getZ`/`setX`/`setY`/`setZ` methods used by v1.5.19 scripts
+- **include() function** (common `lua_utility.cpp`) - Lua `include()` function using `CPath::lookup` for cross-directory script loading
+- **nlinfo/nlwarning** (common `lua_utility.cpp`) - Registered as Lua functions for v1.5.19 server scripts
+- **moduleById alias** (client `level.cpp`) - Registered `moduleById` as alias for `getModuleById`
+
+---
+
+## v1.5.19 Feature Ports
+
+### Music Controls
+- **F5** - Pause/resume music playback
+- **F6** - Previous track
+- **Shift+F7** - Next track
+
+### Replay Playback Controls
+Full replay playback control when viewing `.mtr` replay files:
+- **Home** - Restart replay from beginning
+- **Z** - Toggle pause/resume
+- **S** (hold) - Slow down playback
+- **X** (hold) - Speed up playback
+- **A/E** (hold) - Slow speed (-0.1x / +0.1x)
+- **Q/D** (hold) - Medium speed (-3x / +3x)
+- **W/C** (hold) - Fast speed (-6x / +6x)
+
+Added `speedTime()` and `getSpeedTime()` methods to `CTimeTask` for time speed control.
+
+### External Camera Task (Picture-in-Picture)
+Spectator camera view rendered as a picture-in-picture window:
+- **Alt+A** - Toggle external camera on/off
+- **Entity-following mode** - Automatically tracks nearest player within 10m who is above you
+- **Fixed position mode** - Uses level-defined `ExternalCameras` positions
+- Auto-enables on collision/landing, auto-disables on session end
+- **Sky scene rendering** - PIP window shows sky background correctly (v1.5.19 parity)
+- **Scaled player names** - Names render 4x larger in PIP for readability (v1.5.19 parity)
+- **Runtime-configurable viewport** - CVariable support for adjusting PIP position/size via console commands (x1/y1/w1/h1 for viewport, x2/y2/w2/h2 for border, sc for name scale, DistToFollowInExternalCam for entity tracking distance)
+
+New files: `client/src/external_camera_task.h`, `client/src/external_camera_task.cpp`
+
+### Graph Visualization (Debug Display)
+Performance graphs for debugging and network analysis:
+- **F4** - Cycle through debug display modes (0=off, 1=debug info, 2=graphs, 3=trace)
+- Graphs include: FPS, MSPF (ms per frame), ping, packet timing, LCT, key count
+- Each graph shows current values, mean line, and peak line
+- Semi-transparent overlays with auto-scaling
+
+New files: `client/src/graph.h`, `client/src/graph.cpp`
+
+### Gate System (C++)
+Native C++ gate objects for gate-mode levels:
+- **`addGate()`** - Lua function to create gates at runtime
+- **`gateById(id)`** / **`getGateById(id)`** - Retrieve gate by ID
+- Gate properties: position, scale, score
+- Lua proxy with `getUserData`/`setUserData` for custom data storage
+- Visual mesh instance using col_box.shape
+
+New files: `client/src/gate.h`, `client/src/gate.cpp`, `client/src/gate_lua_proxy.h`, `client/src/gate_lua_proxy.cpp`
+
+---
+
 ## Client Improvements
 
 ### Options Menu (New)
@@ -136,6 +372,17 @@ Sound features:
 - `data/sound/DFN/*.dfn` - Sound definition schemas for NeL sound system
 - `data/sound/soundbank/*.sound` - Sound sheet definitions (countdown, effects)
 - `data/sound/samplebank/sound/*.wav` - Audio sample files
+- `data/lua/utilities.lua` - CLevel Lua compatibility shim for v1.5.19 levels
+- `data/lua/utilities_snow.lua` - Snow theme utilities
+- `data/lua/utilities_space.lua` - Space theme utilities
+- `data/lua/utilities_sun.lua` - Sun theme utilities
+- `data/lua/utilities_city.lua` - City theme utilities
+- `data/lua/helpers.lua` - Server-side bridge for collision events and gate detection
+- `data/level/level_space_*.lua` (12 files) - Space theme levels
+- `data/level/level_sun_*.lua` (6 files) - Sun theme levels
+- `data/level/level_city_*.lua` (6 files) - City theme levels
+- `data/level/level_gates_*.lua` (4 files) - Gate mode levels
+- `data/level/level_bowls1.lua`, `level_donuts2.lua`, `level_mtp_paint.lua`, `level_snow_line.lua` - Other new levels
 - `docs/CHANGELOG.md` - This file
 - `common/lua_compat.h` - Lua compatibility macros
 - `scripts/*.bat` - Build and run scripts
@@ -154,11 +401,20 @@ Sound features:
 - `client/src/gui_mouse_listener.cpp/h` - Right-click detection
 - `client/src/sound_manager.cpp/h` - Volume control, sound playback, gain/relative mode
 - `client/src/entity.cpp/h` - Client-side water detection, distance-based sound volume
+- `client/src/level.cpp` - CLevel:init() call, texture support, moduleById alias
+- `client/src/module.cpp` - Runtime texture application from level Lua
+- `client/src/module_lua_proxy.cpp` - Added setTexture method for client module proxy
+
+### Common Source
+- `common/lua_nel.h` - Added CLuaVector getX/getY/getZ/setX/setY/setZ declarations
+- `common/lua_nel.cpp` - Added CLuaVector accessor implementations
+- `common/lua_utility.cpp` - include() function, nlinfo/nlwarning registration
 
 ### Server Source
 - `server/src/physics.cpp` - Momentum preservation fix
 - `server/src/module.cpp` - Lua 5.2+ compatibility
-- `server/src/level.cpp` - Property loading from level files
+- `server/src/level.cpp` - Property loading, CLevel:init() call, default friction for scoring modules
+- `server/src/main.cpp` - Reordered update loop: session manager now runs after levelPostUpdate
 - `server/src/command.cpp` - NULL check fix for unknown commands
 - `server/src/net_callbacks.cpp` - Proper command existence validation
 

@@ -408,11 +408,26 @@ public:
 
 uint CEntityManager::getTeam(uint8 eid,uint teamCount)
 {
+	// Use cached assignments if available (computed once per session)
+	if(TeamAssignmentCache.empty())
+		computeTeamAssignments(teamCount);
+
+	std::map<uint8, uint>::iterator cacheIt = TeamAssignmentCache.find(eid);
+	if(cacheIt != TeamAssignmentCache.end())
+		return cacheIt->second;
+
+	return 0;
+}
+
+void CEntityManager::computeTeamAssignments(uint teamCount)
+{
+	TeamAssignmentCache.clear();
+
 	list<teamNumber> teams;
 	list<teamNumber> sortedTeams;
 	vector<list<string> > teamPack;
 	list<teamNumber>::iterator itTeams;
-	
+
 	//list All team
 	for(EntityConstIt it = entities().begin(); it != entities().end(); it++)
 	{
@@ -478,7 +493,7 @@ uint CEntityManager::getTeam(uint8 eid,uint teamCount)
 							break;
 						}
 						else
-							i = (i+1)%teamCount;						
+							i = (i+1)%teamCount;
 					}
 				}
 			}
@@ -492,17 +507,21 @@ uint CEntityManager::getTeam(uint8 eid,uint teamCount)
 		string eTeam = e->team();
 		if(eTeam.empty())
 		{
-			uint smallestTeamId = 0;
 			uint smallestTeamCount = 10000;
-			//find smallest pack
+			//find smallest pack size
 			for(uint i=0;i<teamPack.size();i++)
 			{
 				if(teamPack[i].size()<smallestTeamCount)
-				{
 					smallestTeamCount = teamPack[i].size();
-					smallestTeamId = i;
-				}
 			}
+			//collect all teams tied for smallest
+			vector<uint> candidates;
+			for(uint i=0;i<teamPack.size();i++)
+			{
+				if(teamPack[i].size()==smallestTeamCount)
+					candidates.push_back(i);
+			}
+			uint smallestTeamId = candidates[rand()%candidates.size()];
 			teamPack[smallestTeamId].push_back(e->name());
 		}
 	}
@@ -517,39 +536,44 @@ uint CEntityManager::getTeam(uint8 eid,uint teamCount)
 				string eTeam = e->team();
 				if(eTeam==itTeams->name)
 				{
-					uint smallestTeamId = 0;
 					uint smallestTeamCount = 10000;
-					//find smallest pack
+					//find smallest pack size
 					for(uint i=0;i<teamPack.size();i++)
 					{
 						if(teamPack[i].size()<smallestTeamCount)
-						{
 							smallestTeamCount = teamPack[i].size();
-							smallestTeamId = i;
-						}
 					}
+					//collect all teams tied for smallest
+					vector<uint> candidates;
+					for(uint i=0;i<teamPack.size();i++)
+					{
+						if(teamPack[i].size()==smallestTeamCount)
+							candidates.push_back(i);
+					}
+					uint smallestTeamId = candidates[rand()%candidates.size()];
 					teamPack[smallestTeamId].push_back(e->name());
 				}
 			}
 		}
 	}
-	
 
-	//the entity we search team 
-	string eName = getById(eid)->name();
-
-	//display teams
+	// Cache all assignments by entity id
 	for(i=0;i<teamPack.size();i++)
 	{
 		list<string>::iterator it;
 		for(it=teamPack[i].begin();it!=teamPack[i].end();it++)
 		{
-			//nlinfo("team %d : %s",i,(*it).c_str());
-			if((*it)==eName)
-				return i;
+			// Find entity by name and cache their team
+			for(EntityConstIt eit = entities().begin(); eit != entities().end(); eit++)
+			{
+				if((*eit)->name() == (*it))
+				{
+					TeamAssignmentCache[(*eit)->id()] = i;
+					break;
+				}
+			}
 		}
 	}
-	return 0;
 }
 
 CEntity *CEntityManager::getByName(const std::string &name)
@@ -1460,11 +1484,14 @@ float CEntityManager::slowerVelocity()
 
 void CEntityManager::initBeforeStartLevel()
 {
+	// Clear team cache so assignments are recomputed for each new session
+	TeamAssignmentCache.clear();
+
 	CEntityManager::EntityConstIt it;
 	for(it = entities().begin(); it != entities().end(); it++)
 	{
 		CEntity *c = *it;
-		c->initBeforeStartLevel();		
+		c->initBeforeStartLevel();
 	}
 }
 

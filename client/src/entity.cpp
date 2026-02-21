@@ -40,6 +40,7 @@
 #include "entity.h"
 #include "mtp_target.h"
 #include "resource_manager2.h"
+#include "external_camera_task.h"
 
 #include "stdpch.h"
 
@@ -147,6 +148,7 @@ CEntity::CEntity()
 	FadeCloseParticleStartTime = 0.0f;
 	OriginalColor = CRGBA(255,255,255,255);
 	WasInWater = true;  // Start true to avoid spurious splash on connect
+	Collided = false;
 }
 
 CEntity::~CEntity()
@@ -248,6 +250,14 @@ void CEntity::update()
 		// Just entered water - play splash sound
 		playSound(CSoundManager::Splash);
 		close();  // Switch to ball mode when entering water
+		Collided = true;  // Mark entity as finished for external camera filtering
+
+		// Enable external camera when local player lands in water
+		// Use fixed camera position (followEntities=false) since player is out of the game
+		if (CMtpTarget::getInstance().controler().getControledEntity() == id())
+		{
+			CExternalCameraTask::getInstance().setExternalCamera(true, false);
+		}
 	}
 	WasInWater = isInWater;
 
@@ -388,7 +398,7 @@ void CEntity::collisionWithWater(bool col)
 
 /*
 		CWaterHeightMap &whm = GetWaterPoolManager().getPoolByID(0);
-		const float waterRatio = whm.getUnitSize(); 
+		const float waterRatio = whm.getUnitSize();
 		const float invWaterRatio = 1.0f / waterRatio;
 		sint px = (sint) (_position.x * invWaterRatio);
 		sint py = (sint) (_position.y * invWaterRatio);
@@ -427,7 +437,7 @@ bool CEntity::namePosOnScreen(CVector &res)
 	return false;
 }
 
-void CEntity::renderName() const
+void CEntity::renderName(float fontScale) const
 {
 	// display name of other people than me
 	if(CMtpTarget::getInstance().controler().getControledEntity() != id() || !ReplayFile.empty())
@@ -440,7 +450,7 @@ void CEntity::renderName() const
 			camPos = CMtpTarget::getInstance().controler().Camera.getMatrix()->getPos();
 		CVector dpos = pos - camPos;
 		if(dpos.norm()<1)
-			CFontManager::getInstance().printf3D(color(),pos,0.01f, name().c_str());
+			CFontManager::getInstance().printf3D(color(),pos,0.01f * fontScale, name().c_str());
 	}
 }
 
@@ -504,6 +514,7 @@ void CEntity::reset()
 	StartPointId = 255;
 	showCollideWhenFly = false;
 	showCollideWhenFlyPos = CVector(0,0,0);
+	Collided = false;
 	if(!ImpactParticle.empty())
 	{
 		ImpactParticle.activateEmitters(false);
@@ -522,6 +533,7 @@ void CEntity::sessionReset()
 		interpolator().reset();
 	OpenClose = false;
 	WasInWater = true;  // Start true to avoid spurious splash before valid position data
+	Collided = false;
 	if(!TraceParticleOpen.empty())
 		TraceParticleOpen.setUserColor(CRGBA(0,0,0,0));
 	if(!TraceParticleClose.empty())
@@ -813,5 +825,6 @@ void CEntity::collideWhenFly(CVector &pos)
 {
 	showCollideWhenFlyPos = pos;
 	showCollideWhenFly = true;
+	Collided = true;  // Mark entity as finished for external camera filtering
 }
 

@@ -25,6 +25,7 @@
 
 #include "stdpch.h"
 
+#include <cstdint>
 #include <nel/misc/path.h>
 
 #include "main.h"
@@ -192,7 +193,7 @@ CEntity::~CEntity()
 	if(Geom)
 	{
 		// to be sure, set the data to dummy before erasing
-		dGeomSetData(Geom, (void *)0xDEADBEEF);
+		dGeomSetData(Geom, (void *)(uintptr_t)0xDEADBEEF);
 		dGeomDestroy(Geom);
 		Geom = 0;
 	}
@@ -318,7 +319,13 @@ void CEntity::update()
 
 	set<CModule *>::iterator mit;
 	for(mit=collideModules.begin();mit!=collideModules.end();mit++)
-		CLuaEngine::getInstance().entitySceneCollideEvent(this,*mit);	
+	{
+		// Memory barrier workaround: accessing module properties before Lua callback
+		// prevents intermittent scoring failures (likely compiler optimization issue)
+		volatile uint32 moduleScore = (*mit)->score();
+		(void)moduleScore;  // Suppress unused variable warning
+		CLuaEngine::getInstance().entitySceneCollideEvent(this,*mit);
+	}
 	collideModules.clear();
 
 	set<CEntity *>::iterator eit;

@@ -35,6 +35,7 @@ extern "C"
 
 #include "../../common/lua_nel.h"
 
+#include "gate.h"
 #include "particles.h"
 #include "module.h"
 #include "start_point.h"
@@ -89,6 +90,9 @@ public:
 	uint32 getStartPointCount();
 	void updateStartPoint(uint32 id, const NLMISC::CVector &pos, const NLMISC::CVector &rot,uint32 selectedBy);
 
+	CGate *getGate(uint32 id);
+	uint32 getGateCount();
+
 	bool execLuaCode(std::string code);
 	lua_State						*luaState() {return LuaState;}
 
@@ -99,6 +103,8 @@ public:
 	static int getEntityById(lua_State *L);
 	static int getModuleById(lua_State *L);
 	static int getParticlesById(lua_State *L);
+	static int getGateById(lua_State *L);
+	static int addGate(lua_State *L);
 
 	std::vector<std::pair<NLMISC::CVector, NLMISC::CQuat> >		ExternalCameras;
 
@@ -116,6 +122,7 @@ private:
 	bool							Valid;
 
 //	std::vector<NL3D::UInstance *>	Meshes;
+	std::vector<CGate *>			Gates;
 	std::vector<CModule *>			Modules;
 	std::vector<CParticles *>		Particles;
 	std::vector<CLuaVector>			Cameras;

@@ -4,64 +4,260 @@ This document tracks known issues and planned improvements for MTP Target Foreve
 
 ## High Priority
 
-### 1. ~~Missing Maps~~ (MOSTLY FIXED)
-**Status:** ✅ 32 of 32 playable levels working
-**Description:** All snow-theme levels have been ported and tested. Remaining levels require space/sun/city theme assets.
+### 1. Intermittent Scoring Failure (Game-Breaking)
+**Status:** Fix Applied (February 8, 2026) - Requires Testing
+**Severity:** Game-breaking - players get 0 points when they should score
+**Affected Levels:** At least `level_bowls1` (likely affects all levels using `collideWithModule`)
 
-**Working Levels (32):**
-All playable levels (ReleaseLevel 1-5) have been tested and verified working. See [docs/LEVELS.md](LEVELS.md) for the complete list.
+**Description:**
+Players intermittently receive 0 points when landing on scoring targets, even when collision detection confirms the player is on the target. The bug is unpredictable - scoring may work for 10+ consecutive rounds, then fail for 1-2 rounds, then work again.
 
-**Unavailable Levels (30):**
-These require missing theme assets (space, sun, city) or gate mechanics:
-- Space: `level_space_*` (12 levels)
-- Sun: `level_sun_*` (7 levels)
-- City: `level_city_*` (6 levels)
-- Gates: `level_gates_*` (4 levels)
-- Other: `level_bowls1` (1 level)
+**Symptoms:**
+- Player lands on scoring target but receives 0 points
+- Bots also affected (not player-specific)
+- Works correctly for several rounds, then fails, then works again
+- No error messages in logs when failure occurs
+- Pattern is completely unpredictable
 
-**Solution:** Import missing assets from original game data or create replacements.
+**Key Observation (Critical Clue):**
+Adding debug `print()` statements in the Lua scoring callback or debug logging in C++ code **prevents the bug from occurring**. The bug only appears when NOT debugging. This strongly suggests:
+- Race condition or timing-dependent issue
+- Compiler optimization eliminating necessary operations
+- Memory ordering/visibility issue between threads or between C++ and Lua
+
+**Reproduction Steps:**
+1. Set server playlist to only `level_bowls1`
+2. Connect with client and play rounds
+3. Land on the green target bar in the center
+4. Score should be distance-based (closer = higher score)
+5. After ~5-15 rounds, scoring randomly stops working
+6. Continue playing - it will randomly start working again
+
+**Technical Investigation (February 2026):**
+
+1. **Collision Detection Layer (`physics.cpp`):**
+   - `dCollide()` returns 1 (collision detected) ✓
+   - Module is added to `collideModules` set ✓
+   - This layer appears to work correctly
+
+2. **Entity Update Layer (`entity.cpp`):**
+   - `collideModules` set is iterated
+   - `entitySceneCollideEvent()` is called for each module
+   - Lua callback `collideWithModule(module)` should be invoked
+
+3. **Lua Scoring Layer (`level_bowls1_server.lua`):**
+   - `CEntity:collideWithModule(module)` calculates distance-based score
+   - Calls `self:setCurrentScore(score, false)`
+   - When bug occurs, this callback may not be executing or score not being set
+
+**Code Flow:**
+```
+physics.cpp:dCollide() → entity.cpp:collideModules set →
+lua_engine.cpp:entitySceneCollideEvent() → Lua:collideWithModule() →
+entity_lua_proxy.cpp:setCurrentScore()
+```
+
+**Attempted Fixes (All Failed):**
+
+1. **Volatile memory barrier in physics.cpp:**
+   ```cpp
+   volatile int numContacts = numc;  // Force memory barrier
+   if(numContacts > 0) { ... }
+   ```
+   Result: Bug still occurs
+
+2. **Volatile memory barrier in entity.cpp:**
+   ```cpp
+   volatile uint32 moduleScore = (*mit)->score();
+   (void)moduleScore;  // Force read before Lua callback
+   CLuaEngine::getInstance().entitySceneCollideEvent(this,*mit);
+   ```
+   Result: Bug still occurs
+
+3. **Debug print statements in Lua:**
+   ```lua
+   print("collideWithModule called, module score: " .. module:getScore())
+   ```
+   Result: Bug STOPS occurring (but adds log spam)
+
+**Possible Root Causes to Investigate:**
+
+1. **Lua State Corruption:**
+   - Lua garbage collection running at wrong time
+   - Metatable or userdata being collected prematurely
+   - Stack corruption between C++ and Lua calls
+
+2. **Threading/Timing Issue:**
+   - Physics runs in separate thread from Lua?
+   - Race between collision detection and Lua callback
+   - Entity state changing between collision detect and score set
+
+3. **Compiler Optimization (MSVC):**
+   - Aggressive optimization eliminating "unnecessary" operations
+   - Try building with `/Od` (disable optimization) to confirm
+   - May need `#pragma optimize("", off)` around critical sections
+
+4. **ODE Physics Library:**
+   - Trimesh collision detection returning stale data
+   - Contact geom data being overwritten before processing
+   - dCollide internal state issue
+
+5. **Bot Replay System:**
+   - Bots replaying forces that interfere with collision
+   - First round (no replays) vs subsequent rounds (with replays)
+   - However, bug also affects human players
+
+**Files Involved:**
+- `server/src/physics.cpp` - ODE collision detection, `nearCallback()`
+- `server/src/entity.cpp` - `collideModules` set processing, lines ~318-327
+- `server/src/lua_engine.cpp` - `entitySceneCollideEvent()` Lua invocation
+- `server/src/entity_lua_proxy.cpp` - `setCurrentScore()` C++/Lua bridge
+- `data/lua/level_bowls1_server.lua` - Distance-based scoring logic
+- `data/lua/helpers.lua` - Lua utility functions
+
+**Fix Applied (February 8, 2026):**
+
+Root cause identified: **Lunar template's userdata caching with weak table GC**. The `Lunar::push()` function uses a weak "v" table to cache userdata by C++ pointer. When cached userdata is reused, `pushuserdata()` returns NULL, and the metatable was NOT re-applied. If the cached userdata's metatable state became stale after GC, `entity.collideWithModule` would return nil.
+
+Why player-player collision "fixed" it: `entityEntityCollideEvent()` exercises the same `Lunar::push()` path first, which would prime the cache or trigger GC at a safe point.
+
+**Changes Applied:**
+
+1. **`common/lunar.h`** - Modified `Lunar::push()` to ALWAYS set metatable, not just for new userdata. This ensures cached userdata from the weak table always has a valid metatable reference.
+
+2. **`data/lua/helpers.lua`** - Added silent debug counters to track method lookup success/failure:
+   - `_dbg_collideWithModule_called` / `_dbg_collideWithModule_nil`
+   - `_dbg_collideWithEntity_called` / `_dbg_collideWithEntity_nil`
+   - `_dbg_collideWithWater_called` / `_dbg_collideWithWater_nil`
+
+3. **`server/src/lua_engine.cpp`** - Added metatable verification diagnostic in `entitySceneCollideEvent()` (DEBUG builds only).
+
+**Verification Steps:**
+1. Build server with changes
+2. Set playlist to only `level_bowls1`
+3. Play 20+ rounds solo (no player-player collisions)
+4. Check Lua counters: `_dbg_collideWithModule_nil` should stay at 0
+5. Scoring should work consistently
+
+**Current State of Codebase:**
+The metatable fix in lunar.h should eliminate the intermittent failure. Silent counters remain in helpers.lua for monitoring. Volatile memory barriers in physics.cpp and entity.cpp are also still in place.
 
 ---
 
-### 2. Team Level Scoring Inconsistencies
-**Status:** Partially Fixed
-**Description:** Team level scoring can be unreliable in certain situations. Points may not always be counted correctly, especially with negative scores (landing on enemy targets).
+### ~~2. Missing Maps~~ (FIXED)
+**Status:** ✅ 60 playable levels (32 original + 28 restored from v1.5.19)
+**Description:** All levels have been ported. Built a Lua compatibility bridge to support v1.5.19-style `CLevel:init()` levels alongside the original v1.2.2a global-table format.
 
-**Symptoms:**
-- Score display in top-left corner may show 0 when players stop actively colliding with targets
-- Score display may persist into the next non-team level
-- Negative scores (from landing on enemy targets) may not subtract correctly in some cases
+**Restored Levels (28):**
+- Space: 10 levels (`level_space_asteroids`, `fleet`, `atomium`, `calbren`, `cargo_inside`, `hangar18`, `havoc`, `hotwings`, `imo_rings`, `stabilo`)
+- Sun: 4 levels (`level_sun_target`, `cross`, `extra_ball`, `paint`)
+- City: 5 levels (`level_city_easy`, `darts`, `paint`, `destroy`, `precision`)
+- Gates: 4 levels (`level_gates_easy`, `hard`, `ramp`, `zig_zag`)
+- Other: 5 levels (`level_bowls1`, `donuts2`, `mtp_paint`, `snow_line`, `team_space`)
+
+**Note:** Space levels use ReleaseLevel 6, which may need to be added to the server's allowed ReleaseLevel list. New levels require runtime testing to verify textures, scoring, and theme rendering.
+
+---
+
+### 2. New v1.5.19 Levels Need Per-Level Fixes
+**Status:** In Progress (engine-level fixes applied; per-level testing ongoing)
+**Description:** All 28 restored v1.5.19 levels load without crashing. Engine-level fixes for friction and score timing have been applied. Individual levels need testing to verify gameplay.
+
+**Engine-level fixes applied:**
+- ~~**Missing friction on landing platforms**~~ ✅ FIXED - Scoring modules (Score > 0) with no friction now auto-apply friction=10 in C++ level loader
+- ~~**postUpdate scoring broken**~~ ✅ FIXED - Reordered main loop so session manager runs after levelPostUpdate. Fixes city_paint and similar per-frame score recalculation levels.
+
+**Remaining issues:**
+
+**a) ~~Missing level Name~~ ✅ FIXED**
+- ~~New levels didn't display a name in chat or match bot replay files~~
+- Fixed: Added `Name = "Display Name"` global to all 31 v1.5.19 levels
+
+**b) ~~Bot behavior erratic on new levels~~ ✅ FIXED**
+- ~~Bots loaded wrong replay data because level Name was empty, causing `string::find("")` to match every replay file~~
+- Fixed: Adding level names prevents cross-level replay file matching. Bots are now passive (no matching replays) rather than erratic
+
+**Per-level testing checklist:**
+
+| Level | Loads | Ramp OK | Scoring | Bots | Notes |
+|-------|-------|---------|---------|------|-------|
+| `level_space_asteroids` | ✓ | ✓ | ✓ | Passive | Maybe too fast, but playable |
+| `level_space_atomium` | ? | ? | ? | ? | |
+| `level_space_calbren` | ? | ? | ? | ? | |
+| `level_space_cargo_inside` | ? | ? | ? | ? | |
+| `level_space_fleet` | ? | ? | ? | ? | |
+| `level_space_hangar18` | ? | ? | ? | ? | |
+| `level_space_havoc` | ? | ? | ? | ? | |
+| `level_space_hotwings` | ? | ? | ? | ? | |
+| `level_space_imo_rings` | ? | ? | ? | ? | |
+| `level_space_stabilo` | ? | ? | ? | ? | |
+| `level_sun_target` | ✓ | ✓ | ✓ | Passive | Works fine |
+| `level_sun_cross` | ? | ? | ? | ? | |
+| `level_sun_extra_ball` | ? | ? | ? | ? | |
+| `level_sun_paint` | ? | ? | ? | ? | |
+| `level_city_easy` | ✓ | ✓ | ✓ | Passive | Fixed with engine-level friction |
+| `level_city_darts` | ? | ? | ? | ? | |
+| `level_city_paint` | ✓ | ✓ | ✓ | Passive | Painting and scoring work (fixed with main loop reorder) |
+| `level_city_destroy` | ? | ? | ? | ? | |
+| `level_city_precision` | ? | ? | ? | ? | |
+| `level_gates_easy` | ✓ | ✓ | ✓ | Passive | Works fine, gate scoring works |
+| `level_gates_hard` | ? | ? | ? | ? | |
+| `level_gates_ramp` | ? | ? | ? | ? | |
+| `level_gates_zig_zag` | ? | ? | ? | ? | |
+| `level_bowls1` | ✓ | ✓ | **BUG** | Passive | See Issue #1 - Intermittent scoring failure |
+| `level_donuts2` | ? | ? | ? | ? | |
+| `level_mtp_paint` | ? | ? | ? | ? | |
+| `level_snow_line` | ? | ? | ? | ? | |
+| `level_team_space` | ? | ? | ? | ? | |
+
+**Related Files:**
+- `data/lua/utilities.lua` - Base CLevel shim (addModule defaults)
+- `data/lua/utilities_snow.lua` - `setRamp()`, `setTeamRamp()`
+- `data/lua/utilities_sun.lua` - `setSunRamp()`
+- `data/lua/utilities_space.lua` - `setSpaceRamp()`
+- `server/src/level.cpp` - Reads Name, Author, Modules from Lua globals (+ default friction)
+- `server/src/main.cpp` - Main loop ordering (session manager after postUpdate)
+
+---
+
+### ~~3. Team Level Scoring Inconsistencies~~ (FIXED)
+**Status:** ✅ FIXED (February 9, 2026)
+**Description:** Multiple issues with team levels (`level_team_90`, `level_team_all_on_one`, `level_team_classic`, `level_team_mirror`).
+
+**Issues Fixed:**
+1. **Always assigned to red team** - Team assignment algorithm always picked team 0 when packs were tied in size. Fixed by collecting tied candidates and randomly selecting one.
+2. **Bots fly wrong direction on opposite team** - Fallback replays from the wrong side were loaded on split-ramp levels. Fixed with distance-based validation (>5 units = wrong side, discard).
+3. **Team score text persists to non-team levels** - Off-by-one bug in `levelEndSession()` caused a Lua error before cleanup lines executed. Fixed loop bound to `entityCount-1`.
+4. **Score reset in level_team_all_on_one** - Applied `scoringHappenedThisFrame` guard (same fix as level_team_server.lua) and added missing cleanup lines.
+
+**Files Modified:**
+- `server/src/entity_manager.cpp` - Randomize team pack selection when tied
+- `server/src/bot.cpp` - Distance-based replay validation for fallback replays
+- `data/lua/level_team_server.lua` - Fix off-by-one in `levelEndSession()` loop
+- `data/lua/level_team_all_on_one_server.lua` - Fix off-by-one, add cleanup, add scoring fix
+
+---
+
+### 4. ~~Bot AI Erratic on v1.5.19 Levels~~ (FIXED)
+**Status:** ✅ FIXED (February 4, 2026)
+**Description:** Bots were erratically flying around on v1.5.19 levels, loading wrong replay data.
 
 **Root Cause:**
-The team scoring system resets `currentTeamRedScore`/`currentTeamBlueScore` to 0 every frame, then accumulates scores from active collisions. When players stop colliding (ball stops on target), the frame score is 0, which can overwrite the accumulated total.
+The bot replay system (`server/src/bot.cpp:135-141`) matches replay files by level name using `string::find(CurrentLevel)`. When a level's `Name` global was empty (all 31 v1.5.19 levels), `string::find("")` returns 0 for every filename, so bots loaded replay data from completely wrong levels — replaying forces intended for different geometry.
 
-**Partial Fixes Applied:**
-- Added nil-safety checks in `Module:collide()` for `entity:parent()` and `self:getScore()`
-- Added text clearing in `levelEndSession()` to reduce persistence to next level
-- Fixed `level_team_all_on_one` to use shared `level_team_server.lua` script
+**Fix Applied:**
+Added `Name = "Display Name"` to all 31 v1.5.19 level files. With proper names set, bots search for matching replay files (e.g., "Space Fleet.6.000.mtr") and find none, making them passive rather than erratic.
 
-**Files Affected:**
-- `data/lua/level_team_server.lua` - Main team scoring logic
-- `data/lua/level_team_all_on_one_server.lua` - Unused (level now uses level_team_server.lua)
+**Note:** Bots are now passive on v1.5.19 levels (no replay data exists). To make bots actively play these levels, players would need to record replays. Bots still work on original snow levels that have matching replay files.
 
----
-
-### 3. Bot AI Not Working on All Maps
-**Status:** Not Started
-**Description:** Bots aren't deploying (playing) correctly on all maps. This appears to be a per-map issue where bot behavior may depend on level-specific scripting.
-
-**Symptoms:**
-- Bots may not move properly
-- Bots may not aim for targets correctly
-- Some maps work better than others
-
-**Solution:** Review and fix bot behavior on a per-map basis. May require updating Lua server scripts for each level.
+**Files Modified:**
+- 31 level files in `data/level/` — added `Name` global
 
 ---
 
 ## Medium Priority
 
-### 4. High Ping on Local Server
+### 5. High Ping on Local Server
 **Status:** Not Started
 **Description:** Playing on a locally-hosted server results in 17-19ms ping. Modern games typically have near-zero ping for local connections.
 
@@ -79,7 +275,7 @@ The team scoring system resets `currentTeamRedScore`/`currentTeamBlueScore` to 0
 
 ---
 
-### 5. Input Delay / Steering Lag
+### 6. Input Delay / Steering Lag
 **Status:** Not Started
 **Description:** There's a noticeable delay between steering inputs and the penguin actually changing direction. This may be related to the high ping issue.
 
@@ -101,7 +297,7 @@ The team scoring system resets `currentTeamRedScore`/`currentTeamBlueScore` to 0
 
 ---
 
-### 6. ~~Momentum Loss on Ramp Transition~~ (FIXED)
+### 7. ~~Momentum Loss on Ramp Transition~~ (FIXED)
 **Status:** ✅ FIXED (January 2, 2026)
 **Description:** Players would lose momentum at slope-to-ramp transitions, stopping abruptly at angle changes.
 
@@ -133,13 +329,13 @@ Changed contact surface mode from `dContactMu2` to `dContactApprox1` in `server/
 
 ---
 
-### 7. ~~Darts Map Spawn Position~~ (FIXED)
+### 8. ~~Darts Map Spawn Position~~ (FIXED)
 **Status:** ✅ FIXED
 **Description:** level_darts is now working correctly with proper acceleration, visibility, and scoring.
 
 ---
 
-### 8. ~~Team Mirror Level Scoring~~ (FIXED)
+### 9. ~~Team Mirror Level Scoring~~ (FIXED)
 **Status:** ✅ FIXED
 **Description:** Team levels now work correctly with original scoring logic restored.
 
@@ -177,7 +373,7 @@ Despite boxes extending 0.5 units in Z (from Z to Z+0.5), they behave as distinc
 
 ## Low Priority / Nice to Have
 
-### 9. /reset Command Broken
+### 10. /reset Command Broken
 **Status:** Not Started
 **Description:** The `/reset` command (Ctrl+F6) behaves identically to `/forceend` (Ctrl+F5) - it advances to the next level instead of restarting the current session.
 
@@ -191,15 +387,19 @@ Despite boxes extending 0.5 units in Z (from Z to Z+0.5), they behave as distinc
 
 ---
 
-### 10. Non-functional Debug Keys
-**Status:** Not Started
+### 11. Non-functional Debug Keys
+**Status:** Partially Fixed
 **Description:** Several client debug keys don't work as expected.
+
+**Fixed Keys:**
+| Key | Action | Status |
+|-----|--------|--------|
+| F4 | Cycle debug display modes (off/debug/graphs/trace) | ✅ Fixed |
 
 **Non-functional Keys:**
 | Key | Expected Action |
 |-----|-----------------|
 | Shift+F1 | Toggle start positions display |
-| F4 | Toggle editor mode |
 | Ctrl+F4 | Toggle debug info overlay |
 
 **Related Files:**
@@ -208,7 +408,7 @@ Despite boxes extending 0.5 units in Z (from Z to Z+0.5), they behave as distinc
 
 ---
 
-### 11. Bot Commands Cause Server Crashes
+### 12. Bot Commands Cause Server Crashes
 **Status:** Workaround Applied
 **Description:** The F5 (addBot) and F6 (kick bot) commands cause the server to crash when executed during gameplay.
 
@@ -221,7 +421,7 @@ Despite boxes extending 0.5 units in Z (from Z to Z+0.5), they behave as distinc
 
 ---
 
-### 12. Water Rendering Disabled
+### 13. Water Rendering Disabled
 **Status:** Workaround Applied
 **Description:** Water rendering is currently disabled because the required water textures or shaders are missing.
 
@@ -229,7 +429,7 @@ Despite boxes extending 0.5 units in Z (from Z to Z+0.5), they behave as distinc
 
 ---
 
-### 13. ~~Snow Particles Not Loading on Some Systems~~ (FIXED)
+### 14. ~~Snow Particles Not Loading on Some Systems~~ (FIXED)
 **Status:** ✅ FIXED (January 8, 2026)
 **Description:** The snow particle effect (`snow.ps`) was not loading on some systems.
 
@@ -250,11 +450,16 @@ Despite boxes extending 0.5 units in Z (from Z to Z+0.5), they behave as distinc
 
 ---
 
-### 14. Version Compatibility
-**Status:** Ongoing
-**Description:** The current build uses v1.2.2a source code. Some features from v1.5.19 are not available.
+### 15. Version Compatibility
+**Status:** Mostly Resolved
+**Description:** The current build uses v1.2.2a source code with a Lua compatibility bridge for v1.5.19 levels. All v1.5.19 level files are now loadable.
 
-**Future Goal:** Port v1.5.19 features while maintaining stability, or create a compatibility layer.
+**Remaining gaps:**
+- `setAdvancedLevel(true)` - Stubbed as no-op (unknown effect, used by space levels)
+- ~~`level():teamMode()` - Not yet implemented~~ ✅ Implemented in utilities.lua (February 4, 2026)
+- ~~Gate AABB collision used wrong CLuaVector API~~ ✅ Fixed `.x/.y/.z` → `:getX()/:getY()/:getZ()` (February 4, 2026)
+- ~~userData not transferred from CLevelModule to CModuleProxy~~ ✅ Fixed in levelInit() (February 4, 2026)
+- ~~Negative scores may underflow (C++ `setCurrentScore` casts to `uint32` - affects bowls1)~~ ✅ Fixed cast to `sint32` (February 5, 2026)
 
 ---
 
@@ -284,6 +489,27 @@ Despite boxes extending 0.5 units in Z (from Z to Z+0.5), they behave as distinc
 - [x] **Fix snow particles in CI builds** (January 8, 2026) - Moved particle directory from optional to required in assets-manifest.json
 - [x] **Add particle toggle to options menu** (January 8, 2026) - Users can enable/disable snow particles via Options menu (requires restart)
 - [x] **Fix unknown command server crash** (January 8, 2026) - Typing non-existent commands like `/forcelevel` no longer crashes the server. Fixed NULL pointer dereference in command.cpp and improved command validation in net_callbacks.cpp
+- [x] **Restore all missing v1.5.19 levels** (February 2, 2026) - Ported 28 levels across space, sun, city, and gate themes via Lua compatibility bridge. Added CLevel:init() support, module texture application, CLuaVector methods, gate AABB collision, and v1.5.19 naming aliases
+- [x] **Fix utilities.lua double-include crash** (February 2, 2026) - Levels including multiple theme utilities (e.g. utilities_snow + utilities_sun) would crash because the second include reset `CLevel = {}`. Added include guard.
+- [x] **Fix CRGBA 3-argument crash** (February 2, 2026) - v1.5.19 levels use `CRGBA(r,g,b)` without alpha. Changed `luaL_checknumber` to `luaL_optnumber` with default 255 for the alpha parameter in `common/lua_nel.h`.
+- [x] **Add nil guard for Modules table** (February 2, 2026) - Server and client would panic if a level's Lua failed and Modules table was nil. Added nil checks before `lua_next` iteration in both `server/src/level.cpp` and `client/src/level.cpp`.
+- [x] **Fix gate AABB collision bug** (February 4, 2026) - Gate collision detection used `.x`/`.y`/`.z` property access on CLuaVector, but CLuaVector is a userdata type that only supports `:getX()`/`:getY()`/`:getZ()` methods. Fixed in `data/lua/helpers.lua`.
+- [x] **Add userData transfer for city_paint** (February 4, 2026) - CModulePaintBloc objects stored on CLevelModule proxies during `CLevel:init()` weren't accessible on CModuleProxy objects created later. Added transfer logic in `levelInit()` in `data/lua/helpers.lua`.
+- [x] **Implement level():teamMode()** (February 4, 2026) - Added team mode detection in `utilities.lua` by checking entity name prefixes. Used by `level_city_paint_server.lua`.
+- [x] **Add Entity/Module/Level class name aliases** (February 4, 2026) - Bridged v1.5.19 naming (`CEntity`/`CModule`/`CLevel`) to v1.2.2a registered names (`Entity`/`Module`/`Level`) via aliases in `utilities.lua`.
+- [x] **Engine-level default friction for scoring modules** (February 4, 2026) - Modules with Score > 0 and Friction == 0 now auto-apply friction=10 in `server/src/level.cpp`. Fixes city and space targets where balls would roll across without stopping.
+- [x] **Fix main loop scoring timing** (February 4, 2026) - Moved `CSessionManager::update()` after `levelPostUpdate()` in `server/src/main.cpp`. Levels using per-frame score recalculation (e.g. city_paint) had CurrentScore=0 when the session manager checked it, because preUpdate reset score before postUpdate recalculated it.
+- [x] **Fix bot erratic behavior on v1.5.19 levels** (February 4, 2026) - Added `Name` global to all 31 v1.5.19 levels. Bots were loading wrong replay files because `string::find("")` matched every file. With proper names, bots are passive (no matching replays) instead of erratic.
+- [x] **Fix negative score underflow** (February 5, 2026) - Server's `setCurrentScore` cast `lua_Number` to `uint32` instead of `sint32`, causing negative scores (used by bowls1) to underflow into large positive numbers. Fixed in `server/src/entity_lua_proxy.cpp`.
+- [x] **Fix paint level crashes** (February 5, 2026) - `level_sun_paint` and `level_mtp_paint` crashed because they used `CModulePaintBloc` which was only defined in `level_city_paint_server.lua`. Replaced v1.2.2a `level_paint_server.lua` with v1.5.19 version that includes the class definition.
+- [x] **Fix level_team_space crash** (February 5, 2026) - Level called undefined `CModuleBase:new(team)`. Changed to use `CModule:new(module, team)` which is defined in `level_team_server.lua`.
+- [x] **Fix CVector comma bug** (February 5, 2026) - `utilities_sun.lua` had `CVector(-15, -50, 3,5)` where the comma should be a decimal point. Fixed to `CVector(-15, -50, 3.5)`.
+- [x] **Add missing level names** (February 5, 2026) - Added `Name = "Gates Zig Zag"` to `level_gates_zig_zag.lua` which was missing it.
+- [x] **Fix F4 graph visualization crash** (February 8, 2026) - Pressing F4 twice crashed the client because graph.cpp referenced non-existent config variable "Font" instead of "LittleFont". Fixed in `client/src/graph.cpp`.
+- [x] **Populate debug graphs with data** (February 8, 2026) - Graphs were showing all zeros. Added data population for FPS, MSPF, Ping, NbKeys, LCT, and DT graphs in `time_task.cpp`, `net_callbacks.cpp`, and `interpolator.cpp`.
+- [x] **Fix external camera entity filtering** (February 8, 2026) - External camera's 10m entity-following mode now correctly excludes crashed/water-collided entities. Added `Collided` flag to CEntity.
+- [x] **Fix PIP font scaling** (February 8, 2026) - Player names in PIP window had wrong letter spacing. Fixed printf3D to scale quad size with the scale parameter in `font_manager.cpp`.
+- [x] **Fix team level issues** (February 9, 2026) - Six fixes: cached team assignment (consistent & balanced), random tied-team selection, bot replay distance validation, off-by-one fix in levelEndSession, scoringHappenedThisFrame guard for level_team_all_on_one, blue 50-point platform color.
 
 ---
 

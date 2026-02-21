@@ -93,6 +93,7 @@ public:
 	
 	const NLMISC::CRGBA	&color() const { return Color; }
 	void  color(const NLMISC::CRGBA &col);
+	void  setTexture(uint layer, const std::string &textureName);
 	void luaInit();
 	
 	CModuleProxy *LuaProxy;

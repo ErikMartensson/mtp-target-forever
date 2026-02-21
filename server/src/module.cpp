@@ -25,6 +25,7 @@
 
 #include "stdpch.h"
 
+#include <cstdint>
 #include <nel/misc/path.h>
 
 #include "variables.h"
@@ -115,15 +116,15 @@ void CModule::init(const std::string &name, const std::string &shapeName, uint8 
 #ifdef _ODE_COMPATIBILITY_H_ //if this is defined we use ode 0.5
 	//dGeomTriMeshDataBuildSimple(triMeshDataId, &OdeVertices[0], OdeVertices.size(), &Indices[0], Indices.size());
 #if defined(dDOUBLE) //we use ode 0.5 so we could manage single or double precision
-	dGeomTriMeshDataBuildDouble(triMeshDataId, &OdeVertices[0], 3*sizeof(dReal), OdeVertices.size()/3, &Indices[0], Indices.size(), 3*sizeof(int));
+	dGeomTriMeshDataBuildDouble(triMeshDataId, &OdeVertices[0], 3*sizeof(dReal), (int)(OdeVertices.size()/3), &Indices[0], (int)Indices.size(), 3*sizeof(int));
 #else
-	dGeomTriMeshDataBuildSingle(triMeshDataId, &OdeVertices[0], 3*sizeof(dReal), OdeVertices.size()/3, &Indices[0], Indices.size(), 3*sizeof(int));
+	dGeomTriMeshDataBuildSingle(triMeshDataId, &OdeVertices[0], 3*sizeof(dReal), (int)(OdeVertices.size()/3), &Indices[0], (int)Indices.size(), 3*sizeof(int));
 #endif
 #else
-#if defined(dDOUBLE) 
+#if defined(dDOUBLE)
 #error // dont use ode 0.039 in double mode
 #else
-	dGeomTriMeshDataBuild(triMeshDataId, &OdeVertices[0], 3*sizeof(dReal), OdeVertices.size()/3, &Indices[0], Indices.size(), 3*sizeof(int));
+	dGeomTriMeshDataBuild(triMeshDataId, &OdeVertices[0], 3*sizeof(dReal), (int)(OdeVertices.size()/3), &Indices[0], (int)Indices.size(), 3*sizeof(int));
 #endif
 #endif
 	
@@ -195,7 +196,7 @@ CModule::~CModule()
 			triMeshDataId = 0;
 		}
 
-		dGeomSetData(Geom, (void *)0xDEADBEEF);
+		dGeomSetData(Geom, (void *)(uintptr_t)0xDEADBEEF);
 		dGeomDestroy(Geom);
 		Geom = 0;
 	}

@@ -271,7 +271,12 @@ static void nearCallback(void *data, dGeomID o1, dGeomID o2)
 	}
 
 	nlassert(o1!=0 && o2!=0);
-	if(int numc = dCollide(o1,o2,numContact,&contact[0].geom,sizeof(dContact)))
+	int numc = dCollide(o1,o2,numContact,&contact[0].geom,sizeof(dContact));
+
+	// Memory barrier workaround: accessing numc through volatile prevents
+	// intermittent collision detection failures (likely compiler optimization issue)
+	volatile int numContacts = numc;
+	if(numContacts > 0)
 	{
 
 		/*

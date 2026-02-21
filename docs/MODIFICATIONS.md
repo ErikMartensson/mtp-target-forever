@@ -2,7 +2,7 @@
 
 This document details all changes made to the MTP Target source code for compatibility with modern systems (Ubuntu 22.04+, 64-bit, current libraries).
 
-**Last Updated:** January 2, 2026
+**Last Updated:** February 5, 2026
 **Status:** All modifications applied and tested
 
 ---
@@ -45,7 +45,34 @@ These modifications enable compilation on modern systems without changing game f
 | [client/src/entity_manager.h](#11-disconnectreconnect-flow-fix) | +1 | removeAll decl |
 | [client/src/entity_manager.cpp](#11-disconnectreconnect-flow-fix) | +15 | removeAll impl |
 
-**Total:** 35+ files, ~250+ lines changed
+| [client/src/level.cpp](#12-v1519-level-compatibility-bridge) | ~40 | CLevel:init(), textures |
+| [client/src/module.cpp](#12-v1519-level-compatibility-bridge) | ~10 | Texture application |
+| [client/src/module_lua_proxy.cpp](#12-v1519-level-compatibility-bridge) | ~15 | setTexture method |
+| [common/lua_nel.h](#12-v1519-level-compatibility-bridge) | +6 | CLuaVector methods |
+| [common/lua_nel.cpp](#12-v1519-level-compatibility-bridge) | ~30 | CLuaVector implementations |
+| [server/src/level.cpp](#12-v1519-level-compatibility-bridge) | ~15 | CLevel:init() call |
+| [server/src/level.cpp](#13-engine-level-scoring-fixes) | +5 | Default friction for scoring modules |
+| [server/src/main.cpp](#13-engine-level-scoring-fixes) | ~5 | Main loop reorder for postUpdate scoring |
+| [server/src/entity_lua_proxy.cpp](#14-negative-score-support) | 1 | uint32 → sint32 cast for negative scores |
+| [client/src/controler.cpp](#15-v1519-feature-ports) | ~80 | Music, replay, external camera controls |
+| [client/src/time_task.h](#15-v1519-feature-ports) | +10 | Time speed control methods |
+| [client/src/time_task.cpp](#15-v1519-feature-ports) | ~15 | Time speed implementation |
+| [client/src/external_camera_task.h](#15-v1519-feature-ports) | NEW | External camera task header |
+| [client/src/external_camera_task.cpp](#15-v1519-feature-ports) | NEW | External camera task implementation |
+| [client/src/mtp_target.cpp](#15-v1519-feature-ports) | ~5 | External camera task registration |
+| [client/src/sky_task.h](#15-v1519-feature-ports) | +1 | skyScene() accessor for PIP |
+| [client/src/entity.h](#15-v1519-feature-ports) | +1 | fontScale param for renderName() |
+| [client/src/entity.cpp](#15-v1519-feature-ports) | ~3 | Font scaling in renderName() |
+| [client/src/text_editor.h](#17-modern-text-input) | NEW | Shared text editing class |
+| [client/src/text_editor.cpp](#17-modern-text-input) | NEW | Text editing state machine |
+| [client/src/gui_text.h](#17-modern-text-input) | +3 | CTextEditor member |
+| [client/src/gui_text.cpp](#17-modern-text-input) | ~40 | CTextEditor integration, selection rendering |
+| [client/src/chat_task.h](#17-modern-text-input) | +2 | CTextEditor member |
+| [client/src/chat_task.cpp](#17-modern-text-input) | ~60 | CTextEditor integration, cursor/selection rendering |
+| [client/src/font_manager.h](#17-modern-text-input) | +1 | littleStringWidth() declaration |
+| [client/src/font_manager.cpp](#17-modern-text-input) | +5 | littleStringWidth() implementation |
+
+**Total:** 64+ files, ~660+ lines changed
 
 ---
 
@@ -639,6 +666,328 @@ void CEntityManager::removeAll()
 - Players can now disconnect and reconnect without restarting the game
 - Server errors display properly and can be dismissed
 - Clean state transitions prevent memory leaks and crashes
+
+---
+
+## 12. v1.5.19 Level Compatibility Bridge
+
+**Files:**
+- [client/src/level.cpp](../client/src/level.cpp)
+- [server/src/level.cpp](../server/src/level.cpp)
+- [client/src/module.cpp](../client/src/module.cpp)
+- [client/src/module_lua_proxy.cpp](../client/src/module_lua_proxy.cpp)
+- [common/lua_nel.h](../common/lua_nel.h)
+- [common/lua_nel.cpp](../common/lua_nel.cpp)
+- [common/lua_utility.cpp](../common/lua_utility.cpp)
+
+### Problem
+v1.5.19 levels use a fundamentally different architecture - imperative `CLevel:init()` calls instead of static global tables. All 28 new levels (space, sun, city, gates) use this pattern and couldn't load without C++ bridge code.
+
+### Changes
+
+#### CLevel:init() Call (client + server level.cpp)
+After `luaOpenAndLoad(filename)`, added code to check for and call `CLevel:init()`:
+```cpp
+lua_getglobal(LuaState, "CLevel");
+if (!lua_isnil(LuaState, -1)) {
+    lua_getfield(LuaState, -1, "init");
+    if (lua_isfunction(LuaState, -1)) {
+        lua_pushvalue(LuaState, -2);
+        lua_pcall(LuaState, 1, 0, 0);
+    } else { lua_pop(LuaState, 1); }
+}
+lua_pop(LuaState, 1);
+```
+
+#### Module Texture Support (client level.cpp + module.cpp)
+Extended the Modules table reader to check for `Texture0`/`Texture1` fields and apply them to loaded shapes via `UInstance::getMaterial()`.
+
+#### Module Proxy setTexture (client module_lua_proxy.cpp)
+Added `setTexture(layer, textureName)` method to CModuleProxy for runtime texture changes via `execLuaOnAllClient`.
+
+#### CLuaVector Methods (common lua_nel.h/cpp)
+Added `getX`/`getY`/`getZ`/`setX`/`setY`/`setZ` methods to CLuaVector. v1.5.19 scripts call `pos:getX()` etc. which the original CLuaVector didn't support.
+
+#### include() and nlinfo/nlwarning (common lua_utility.cpp)
+- Added `include()` C function using `CPath::lookup` for loading scripts from any registered data directory
+- Registered `nlinfo` and `nlwarning` as Lua functions for v1.5.19 server scripts
+
+#### moduleById Alias (client level.cpp)
+Registered `moduleById` as alias for `getModuleById` for v1.5.19 `execLuaOnAllClient` compatibility.
+
+### Why This Matters
+Without these changes, none of the 28 v1.5.19-style levels could load. The bridge enables both architectures to coexist - original v1.2.2a levels work unchanged while new levels execute their `CLevel:init()` to populate the same global tables.
+
+---
+
+## 13. Engine-Level Scoring Fixes
+
+**Files:**
+- [server/src/level.cpp](../server/src/level.cpp)
+- [server/src/main.cpp](../server/src/main.cpp)
+
+### Problem
+Two engine-level issues prevented scoring on v1.5.19 levels:
+
+1. **No friction on scoring targets:** City and space theme targets have Score > 0 but don't set Friction. The v1.5.19 server presumably applied friction automatically; without it, balls roll across targets without slowing down.
+
+2. **Main loop timing bug:** Levels like `city_paint` use per-frame score recalculation: `CEntity:preUpdate()` resets CurrentScore to 0, then `CLevel:postUpdate()` recalculates it. But `CSessionManager::update()` ran between these two steps, reading CurrentScore=0 when checking arrival times and end conditions. Scores were never recognized.
+
+### Changes
+
+#### Default Friction for Scoring Modules (server/src/level.cpp)
+After reading module properties from Lua, apply default friction if Score > 0 and Friction == 0:
+```cpp
+if (ModuleScore > 0 && ModuleFriction == 0)
+{
+    ModuleFriction = 10;
+    nlinfo("Module %d: applying default friction %f (score=%d)", moduleId, ModuleFriction, ModuleScore);
+}
+```
+
+#### Main Loop Reordering (server/src/main.cpp)
+Moved `CSessionManager::update()` to run after `levelPostUpdate()`:
+```cpp
+// Before (broken):
+CEntityManager::getInstance().update();    // preUpdate → score=0
+CSessionManager::getInstance().update();   // reads score=0!
+CLevelManager::getInstance().update();
+CLuaEngine::getInstance().levelPostUpdate(); // postUpdate → score=correct (too late)
+
+// After (fixed):
+CEntityManager::getInstance().update();    // preUpdate → score=0
+CLevelManager::getInstance().update();
+CLuaEngine::getInstance().levelPostUpdate(); // postUpdate → score=correct
+CSessionManager::getInstance().update();   // reads correct score
+```
+
+### Why This Matters
+Without the friction fix, players on city/space levels slide off targets without scoring. Without the main loop fix, `level_city_paint` (and any level using per-frame score recalculation via postUpdate) always reports 0 score — painting works visually but no points are ever awarded.
+
+---
+
+## 14. Negative Score Support
+
+**File:** [server/src/entity_lua_proxy.cpp](../server/src/entity_lua_proxy.cpp)
+
+### Problem
+The `setCurrentScore` function in the server's entity Lua proxy cast the score to `uint32` before assigning it to `CurrentScore` (which is declared as `sint32`). This caused negative scores to underflow into large positive numbers.
+
+The `level_bowls1` level uses negative scores for distance-based penalties — the farther you land from the target center, the more negative points you receive. With the unsigned cast, a score of -100 would become 4,294,967,196.
+
+### Change
+**Line 263:**
+```cpp
+// Before (broken):
+_entity->CurrentScore = ((uint32)score);
+
+// After (fixed):
+_entity->CurrentScore = ((sint32)score);
+```
+
+### Why This Matters
+The client already used `(sint32)` for the same function. This fix aligns the server with the client and enables levels that use negative scoring mechanics.
+
+---
+
+## 15. v1.5.19 Feature Ports
+
+### Music Controls
+
+**File:** [client/src/controler.cpp](../client/src/controler.cpp)
+
+Added F5/F6/Shift+F7 key bindings for music playback control, replacing the broken addBot/kickBot commands (which crashed the game).
+
+```cpp
+// F5: Pause/resume music
+if (C3DTask::getInstance().kbPressed(KeyF5))
+    CSoundManager::getInstance().switchPauseMusic();
+
+// F6: Previous track
+if (C3DTask::getInstance().kbPressed(KeyF6))
+    CSoundManager::getInstance().playPreviousMusic();
+
+// Shift+F7: Next track (F7 alone is free look toggle)
+if (C3DTask::getInstance().kbDown(KeySHIFT))
+    CSoundManager::getInstance().playNextMusic();
+```
+
+### Replay Playback Controls
+
+**Files:**
+- [client/src/time_task.h](../client/src/time_task.h) - Added `speedTime()`, `getSpeedTime()`, `realDeltaTime()` methods
+- [client/src/time_task.cpp](../client/src/time_task.cpp) - Added `TimeSpeed` multiplier to delta time calculation
+- [client/src/controler.cpp](../client/src/controler.cpp) - Added replay key bindings
+
+Added time speed control and comprehensive replay playback controls:
+- Home: Reset replay
+- Z: Pause/resume
+- S/X: Gradual slow down / speed up
+- A/E/Q/D/W/C: Hold-for-speed controls (replaySetSpeed helper function)
+
+### External Camera Task
+
+**Files:**
+- [client/src/external_camera_task.h](../client/src/external_camera_task.h) - NEW
+- [client/src/external_camera_task.cpp](../client/src/external_camera_task.cpp) - NEW
+- [client/src/mtp_target.cpp](../client/src/mtp_target.cpp) - Task registration
+- [client/src/controler.cpp](../client/src/controler.cpp) - Key binding update
+- [client/src/sky_task.h](../client/src/sky_task.h) - Added `skyScene()` accessor for PIP sky rendering
+- [client/src/entity_manager.h](../client/src/entity_manager.h) - Added `fontScale` parameter to `renderNames()`
+- [client/src/entity_manager.cpp](../client/src/entity_manager.cpp) - Pass font scale to entity renderName()
+- [client/src/entity.h](../client/src/entity.h) - Added `fontScale` parameter to `renderName()`
+- [client/src/entity.cpp](../client/src/entity.cpp) - Apply font scale to printf3D
+
+Ported from v1.5.19: Picture-in-picture camera view rendered in the corner of the screen. Two modes:
+1. **Entity-following** - Tracks nearest player within 10m above your position
+2. **Fixed position** - Uses level-defined external camera position
+
+v1.5.19 feature parity:
+- **CVariable support** - Runtime-configurable viewport (x1/y1/w1/h1), scissor (x2/y2/w2/h2), name scale (sc), and entity tracking distance (DistToFollowInExternalCam)
+- **Sky scene rendering** - PIP window renders sky background correctly
+- **Font scaling** - Player names render at 4x size in PIP for readability (configurable via `sc` variable)
+- **DisplayExternalCamera** - CVariable to enable/disable PIP globally
+
+Key binding: Alt+A toggle
+
+### Graph Visualization
+
+**Files:**
+- [client/src/graph.h](../client/src/graph.h) - NEW
+- [client/src/graph.cpp](../client/src/graph.cpp) - NEW
+- [client/src/chat_task.cpp](../client/src/chat_task.cpp) - Graph rendering integration
+- [client/src/main.cpp](../client/src/main.cpp) - DisplayDebug type change
+- [client/src/mtp_target.h](../client/src/mtp_target.h) - DisplayDebug type change
+- [client/src/controler.cpp](../client/src/controler.cpp) - F4 key binding
+
+Changed `DisplayDebug` from `bool` to `uint8` to support multiple debug modes:
+- 0: Off
+- 1: Debug info (camera position, FPS)
+- 2: Performance graphs
+- 3: Trace mode
+
+CGraph class renders real-time graphs with:
+- Current values as vertical bars
+- Mean line with value label
+- Peak line with value label
+- Semi-transparent colored background
+
+Graphs include: FPS, MSPF, nbkeys, LCT, packetdt, dt, ping
+
+### Gate System
+
+**Files:**
+- [client/src/gate.h](../client/src/gate.h) - NEW
+- [client/src/gate.cpp](../client/src/gate.cpp) - NEW
+- [client/src/gate_lua_proxy.h](../client/src/gate_lua_proxy.h) - NEW
+- [client/src/gate_lua_proxy.cpp](../client/src/gate_lua_proxy.cpp) - NEW
+- [client/src/level.h](../client/src/level.h) - Gates vector and functions
+- [client/src/level.cpp](../client/src/level.cpp) - Gate loading and Lua registration
+
+Added native C++ gate objects for visual rings in gate-mode levels:
+- `CGate` class inheriting from `CEditableElementCommon`
+- `CGateProxy` for Lua bindings (position, scale, score, userData)
+- Gates stored in `CLevel::Gates` vector
+- Lua functions: `addGate()`, `getGateById()`, `gateById()`
+- Visual representation using col_box.shape
+
+---
+
+## 16. Lunar Template Metatable Fix (Intermittent Scoring)
+
+**File:** [common/lunar.h](../common/lunar.h)
+
+### Problem
+Players intermittently received 0 points when landing on scoring targets. The bug was unpredictable - scoring worked for 10+ rounds, failed for 1-2 rounds, then worked again. Crucially, the bug **disappeared** when debug `print()` statements were added, strongly suggesting a timing/GC-related issue.
+
+### Root Cause
+The Lunar template's `push()` function uses a weak "v" table to cache userdata by C++ pointer. When `pushuserdata()` finds existing cached userdata, it returns NULL and the original code only set the metatable when `ud != NULL`. If the cached userdata's metatable became stale after garbage collection, `entity.collideWithModule` would return nil because the method lookup failed.
+
+Player-player collision "fixed" the issue because `entityEntityCollideEvent()` exercises `Lunar::push()` first, which would prime the metatable cache or trigger GC at a safe point.
+
+### Changes
+
+#### Metatable Application (lines 106-130)
+**Before:**
+```cpp
+static int push(lua_State *L, T *obj, bool gc=false) {
+    // ...
+    userdataType *ud = static_cast<userdataType*>(pushuserdata(L, obj, sizeof(userdataType)));
+    if (ud) {
+        ud->pT = obj;  // store pointer to object in userdata
+        lua_pushvalue(L, mt);
+        lua_setmetatable(L, -2);  // Only set metatable for NEW userdata
+        // ... gc handling ...
+    }
+    lua_replace(L, mt);
+    lua_settop(L, mt);
+    return mt;
+}
+```
+
+**After:**
+```cpp
+static int push(lua_State *L, T *obj, bool gc=false) {
+    // ...
+    userdataType *ud = static_cast<userdataType*>(pushuserdata(L, obj, sizeof(userdataType)));
+    if (ud) {
+        ud->pT = obj;  // store pointer to object in userdata
+        // ... gc handling (moved before metatable set) ...
+    }
+    // ALWAYS set metatable, not just for new userdata
+    lua_pushvalue(L, mt);
+    lua_setmetatable(L, -2);  // Ensures cached userdata has valid metatable
+    lua_replace(L, mt);
+    lua_settop(L, mt);
+    return mt;
+}
+```
+
+### Why This Matters
+The fix ensures the metatable is always properly set on the userdata, regardless of cache state. This eliminates the race condition where cached userdata might have a stale metatable reference after garbage collection.
+
+---
+
+## 17. Modern Text Input
+
+**Files:**
+- [client/src/text_editor.h](../client/src/text_editor.h) (NEW)
+- [client/src/text_editor.cpp](../client/src/text_editor.cpp) (NEW)
+- [client/src/gui_text.h](../client/src/gui_text.h)
+- [client/src/gui_text.cpp](../client/src/gui_text.cpp)
+- [client/src/chat_task.h](../client/src/chat_task.h)
+- [client/src/chat_task.cpp](../client/src/chat_task.cpp)
+- [client/src/font_manager.h](../client/src/font_manager.h)
+- [client/src/font_manager.cpp](../client/src/font_manager.cpp)
+- [client/src/CMakeLists.txt](../client/src/CMakeLists.txt)
+
+### Problem
+Text input in GUI fields (IP address, username, password) and chat lacked basic PC editing features. No clipboard paste (Ctrl+V), no copy/cut, no text selection, no word navigation. Both input systems (`CGuiText` for GUI fields, `CChatTask` for chat) implemented input handling from scratch with minimal features (just typing, backspace, and arrow keys).
+
+### Changes
+
+#### New CTextEditor Class
+Created a shared text editing state machine that encapsulates all text editing logic:
+- **State:** text content, cursor position, selection anchor (-1 = no selection), max length, undo stack
+- **Editing:** insert, delete back/forward, delete word back, undo (Ctrl+Z)
+- **Cursor movement:** left/right/home/end (all with shift for selection), word-level with Ctrl
+- **Clipboard:** copy/cut/paste via NeL's `UDriver::copyTextToClipboard/pasteTextFromClipboard`
+- **Selection:** select all, clear, get selected text
+- **Undo:** up to 50 undo levels, saves state before each edit operation
+- **Input processing:** `processInput()` reads keyboard state for one frame, handling all shortcuts
+- **Word boundaries:** treats word chars (alphanumeric + underscore), punctuation, and spaces as separate categories for Ctrl+Backspace and Ctrl+Left/Right
+
+#### CGuiText Integration (gui_text.cpp)
+Replaced the hand-rolled character-by-character input loop with `_editor.processInput()`. Added external text sync (for Lua-driven text changes) and selection highlight rendering using a custom `CQuad` with `selectionMaterial` (requires `setZFunc(always)` to render above GUI entry backgrounds). Select-all on focus gain for easy text replacement.
+
+#### CChatTask Integration (chat_task.cpp)
+Replaced the static `ChatInput` string and manual character loop with `_chatEditor`. Added blinking cursor rendering at the correct pixel position and selection highlight rendering. The `addToInput()` method now delegates to `_chatEditor.insertText()`.
+
+#### CFontManager Addition (font_manager.h/cpp)
+Added `littleStringWidth()` method to measure text width in the chat font using `LittleTextContext->getStringInfo()`.
+
+### Why This Matters
+Players can now paste server IP addresses, use standard Ctrl+C/X/V clipboard operations, select text with shift+arrows, and navigate by word with Ctrl+arrows. These are basic expectations for any PC application text input.
 
 ---
 

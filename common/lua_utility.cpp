@@ -167,6 +167,8 @@ lua_State *luaOpen()
 	lua_register(L, "print", lua_nlinfo);
 	lua_register(L, "warn", lua_nlwarning);
 	lua_register(L, "error", lua_nlwarning);
+	lua_register(L, "nlinfo", lua_nlinfo);
+	lua_register(L, "nlwarning", lua_nlwarning);
 	lua_register(L, "_ALERT", lua_ALERT);
 	lua_register(L, "_TRACEBACK ", lua_ERRORMESSAGE);
 	lua_register(L, "_ERRORMESSAGE ", lua_ERRORMESSAGE);

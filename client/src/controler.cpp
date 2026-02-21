@@ -35,6 +35,8 @@
 #include "level_manager.h"
 #include "entity_manager.h"
 #include "chat_task.h"
+#include "sound_manager.h"
+#include "external_camera_task.h"
 
 using namespace std;
 using namespace NLMISC;
@@ -49,6 +51,34 @@ static bool			 CaptureState = false;
 CQuat ControlerFreeLookRot(0,0,0,0);
 CVector ControlerFreeLookPos(0,0,0);
 CMatrix ControlerCamMatrix;
+
+// Helper function for replay speed control - temporarily sets speed while key is held
+static void replaySetSpeed(TKey key, double value)
+{
+	static bool firstDown = true;
+	static TKey currentKey = KeyCount;
+	static double oldSpeed = 0.0;
+
+	if (C3DTask::getInstance().kbDown(key) && currentKey == KeyCount)
+	{
+		if (firstDown)
+		{
+			oldSpeed = CTimeTask::getInstance().getSpeedTime();
+			CTimeTask::getInstance().speedTime(value);
+			firstDown = false;
+			currentKey = key;
+		}
+	}
+	else if (!C3DTask::getInstance().kbDown(key) && currentKey == key)
+	{
+		if (!firstDown)
+		{
+			CTimeTask::getInstance().speedTime(oldSpeed);
+			firstDown = true;
+			currentKey = KeyCount;
+		}
+	}
+}
 
 
 CControler::CControler()
@@ -270,47 +300,95 @@ void CControler::update()
 			C3DTask::getInstance().driver().setPolygonMode (p);
 		}
 
-		if (C3DTask::getInstance().kbDown(KeyCONTROL) && C3DTask::getInstance().kbPressed(KeyF4))
+		// F4: Cycle debug display modes (0=off, 1=debug info, 2=graphs, 3=trace)
+		if (C3DTask::getInstance().kbPressed(KeyF4))
 		{
-			if (C3DTask::getInstance().kbDown(KeySHIFT))
-			{
-//				mtpTarget::getInstance().World.switchStartPosition();
-			}
-			else
-			{
-				DisplayDebug = !DisplayDebug;
-			}
+			DisplayDebug = (DisplayDebug + 1) % 4;
 		}
 
 		if (C3DTask::getInstance().kbDown(KeyCONTROL))
 		{
 			if (C3DTask::getInstance().kbPressed(KeyF5))
 				CNetworkTask::getInstance().command("forceEnd");
-			//mtNetSendCommand("forceEnd");
-			
+
 			if (C3DTask::getInstance().kbPressed(KeyF6))
 				CNetworkTask::getInstance().command("reset");
-			//mtNetSendCommand("reset");
 		}
 		else
 		{
+			// Music controls (F5/F6 without modifier)
 			if (C3DTask::getInstance().kbPressed(KeyF5))
-				CNetworkTask::getInstance().command("addBot");
-			//mtNetSendCommand("forceEnd");
-			
+				CSoundManager::getInstance().switchPauseMusic();
+
 			if (C3DTask::getInstance().kbPressed(KeyF6))
-				CNetworkTask::getInstance().command("kick bot");
-			//mtNetSendCommand("reset");
+				CSoundManager::getInstance().playPreviousMusic();
 		}
 		
-		if (C3DTask::getInstance().kbPressed(KeyPAUSE) && !ReplayFile.empty())
+		// Replay controls (only active when viewing a replay file)
+		if (!ReplayFile.empty())
 		{
-			CTimeTask::getInstance().reset();
+			// Pause key: Reset replay to beginning
+			if (C3DTask::getInstance().kbPressed(KeyPAUSE))
+			{
+				CTimeTask::getInstance().reset();
+			}
+
+			// Home: Reset and reload replay
+			if (C3DTask::getInstance().kbPressed(KeyHOME))
+			{
+				CTimeTask::getInstance().reset();
+				CMtpTarget::getInstance().loadReplayFile();
+			}
+
+			// Z: Toggle pause/resume
+			if (C3DTask::getInstance().kbPressed(KeyZ))
+			{
+				CTimeTask::getInstance().speedTime(
+					(CTimeTask::getInstance().getSpeedTime() != 0.0) ? 0.0 : 1.0);
+			}
+
+			// S: Slow down (hold)
+			if (C3DTask::getInstance().kbDown(KeyS))
+			{
+				double speed = CTimeTask::getInstance().getSpeedTime();
+				if (speed > 0.0)
+					CTimeTask::getInstance().speedTime(speed - 0.05);
+				else
+					CTimeTask::getInstance().speedTime(0.0);
+			}
+
+			// X: Speed up (hold)
+			if (C3DTask::getInstance().kbDown(KeyX))
+			{
+				double speed = CTimeTask::getInstance().getSpeedTime();
+				if (speed < 1.0)
+					CTimeTask::getInstance().speedTime(speed + 0.05);
+				else
+					CTimeTask::getInstance().speedTime(1.0);
+			}
+
+			// Hold-for-speed controls: A/E for slow, Q/D for medium, W/C for fast
+			replaySetSpeed(KeyA, -0.1);
+			replaySetSpeed(KeyE, +0.1);
+			replaySetSpeed(KeyQ, -3.0);
+			replaySetSpeed(KeyD, +3.0);
+			replaySetSpeed(KeyW, -6.0);
+			replaySetSpeed(KeyC, +6.0);
 		}
+
 		if (C3DTask::getInstance().kbPressed(KeyF7))
 		{
-			FollowEntity = !FollowEntity;
-			CMtpTarget::getInstance().controler().Camera.getMatrix()->getPos(ControlerFreeLookPos);
+			if (C3DTask::getInstance().kbDown(KeySHIFT))
+			{
+				// Shift+F7: Next music track
+				CSoundManager::getInstance().playNextMusic();
+			}
+			else
+			{
+				// F7: Toggle free look camera
+				FollowEntity = !FollowEntity;
+				CMtpTarget::getInstance().controler().Camera.getMatrix()->getPos(ControlerFreeLookPos);
+			}
 		}
 
 		if (C3DTask::getInstance().kbPressed(KeyF8))
@@ -407,9 +485,10 @@ void CControler::update()
 		}
 		
 
+		// Alt+A: Toggle external camera (picture-in-picture spectator view)
 		if (C3DTask::getInstance().kbDown(KeyMENU) && C3DTask::getInstance().kbPressed(KeyA))
 		{
-			C3DTask::getInstance().EnableExternalCamera = !C3DTask::getInstance().EnableExternalCamera;
+			CExternalCameraTask::getInstance().switchExternalCamera();
 		}
 	}
 

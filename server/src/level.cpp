@@ -143,6 +143,33 @@ void CLevel::_luaInit()
 		if(!CLuaEngine::getInstance().session())
 			return;
 	}
+
+	// v1.5.19 compatibility: if the level defines CLevel:init(), call it.
+	// This populates global tables (Modules, StartPoints, Cameras, etc.)
+	// from the imperative API used by v1.5.19-style levels.
+	lua_getglobal(_luaSession, "CLevel");
+	if (!lua_isnil(_luaSession, -1))
+	{
+		lua_getfield(_luaSession, -1, "init");
+		if (lua_isfunction(_luaSession, -1))
+		{
+			lua_pushvalue(_luaSession, -2); // push CLevel table as self
+			int res = lua_pcall(_luaSession, 1, 0, 0);
+			if (res != 0)
+			{
+				const char *msg = lua_tostring(_luaSession, -1);
+				if (msg == NULL) msg = "(error with no message)";
+				nlwarning("LUA: CLevel:init() failed: %s", msg);
+				lua_pop(_luaSession, 1); // pop error message
+			}
+		}
+		else
+		{
+			lua_pop(_luaSession, 1); // pop non-function
+		}
+	}
+	lua_pop(_luaSession, 1); // pop CLevel or nil
+
 	luaGetGlobalVariable(_luaSession, Name);
 	//	nlinfo("level name '%s'", Name.c_str());
 	
@@ -196,6 +223,13 @@ void CLevel::_luaInit()
 
 	// Load modules
 	lua_getglobal(_luaSession, "Modules");
+	if (lua_isnil(_luaSession, -1))
+	{
+		nlwarning("Modules table not found in level '%s' - level may not have loaded correctly", FileName.c_str());
+		lua_pop(_luaSession, 1);
+		Valid = false;
+		return;
+	}
 	lua_pushnil(_luaSession);
 	uint8 moduleId = 0;
 	while(lua_next(_luaSession, -2) != 0)
@@ -295,6 +329,15 @@ void CLevel::_luaInit()
 			nlinfo("Bounce %d", ModuleBounce ? 1 : 0);
 		}
 		lua_pop(_luaSession, 1);
+
+		// Apply default friction to scoring modules that don't specify one.
+		// The v1.5.19 server applied friction to scoring targets automatically;
+		// without this, balls roll across targets without slowing down.
+		if (ModuleScore > 0 && ModuleFriction == 0)
+		{
+			ModuleFriction = 10;
+			nlinfo("Module %d: applying default friction %f (score=%d)", moduleId, ModuleFriction, ModuleScore);
+		}
 
 		CModule *mod = new CModule();
 		mod->init(Lua,ShapeName, moduleId, Position, Scale, Rotation, Color);

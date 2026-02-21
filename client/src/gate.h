@@ -18,66 +18,54 @@
  * MA 02111-1307, USA.
  */
 
-
-//
-// This is the main class that manages all other classes
-//
-
-#ifndef MTPT_SKY_TASK_H
-#define MTPT_SKY_TASK_H
+#ifndef MTPT_GATE_H
+#define MTPT_GATE_H
 
 
 //
 // Includes
 //
 
+#include <nel/misc/vector.h>
+#include <nel/misc/matrix.h>
+#include <nel/3d/u_instance.h>
 
+#include "../../common/editable_element_common.h"
 
-//
-// Externs
-//
+class CGateProxy;
 
-namespace NL3D
-{
-	class UScene;
-	class UInstance;
-	class UCloudScape;
-	class CWaterShape;
-	class CWaterModel;
-}
 
 //
 // Classes
 //
 
-class CSkyTask : public NLMISC::CSingleton<CSkyTask>, public ITask
+class CGate : public CEditableElementCommon
 {
 public:
+	CGate();
+	virtual ~CGate();
 
-	virtual void init();
-	virtual void update();
-	virtual void render();
-	virtual void release();
+	virtual void update(const NLMISC::CVector &pos, const NLMISC::CVector &rot);
+	virtual std::string toLuaString();
 
-	virtual std::string name() const { return "CSkyTask"; }
+	void setPosition(const NLMISC::CVector &pos);
+	NLMISC::CVector scale() const { return Scale; }
+	void setScale(const NLMISC::CVector &scale);
 
-	void shapeName(std::string shapeName);
-	std::string shapeName();
+	sint32 score() const { return Score; }
+	void setScore(sint32 s) { Score = s; }
 
-	// Accessor for sky scene (used by external camera PIP rendering)
-	NL3D::UScene *skyScene() { return nelSkyScene; }
+	uint8 id() const { return Id; }
+	void setId(uint8 i) { Id = i; }
 
-	friend class NLMISC::CSingleton<CSkyTask>;
-protected:
-	CSkyTask();
-	
+	void show();
+	void hide();
+
+	CGateProxy *LuaProxy;
+
 private:
-
-	NL3D::UScene			*nelSkyScene;
-	NL3D::UInstance			nelSkyMesh;
-	NL3D::UCloudScape		*nelCloudScape;
-
-	std::string ShapeName;
+	sint32 Score;
+	uint8 Id;
 };
 
 #endif

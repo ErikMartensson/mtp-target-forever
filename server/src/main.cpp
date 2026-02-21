@@ -25,6 +25,7 @@
 
 #include "stdpch.h"
 
+#include <cstdint>
 #include <nel/misc/vector.h>
 #include <nel/misc/time_nl.h>
 #include <nel/misc/command.h>
@@ -100,7 +101,7 @@ public:
 				time(&ltime);
 				struct tm *today = localtime(&ltime);
 				strftime(d, 80, "%Y %m %d %H %M %S", today);
-				fprintf(fp, "%u %s # Server restarted\n", ltime, d);
+				fprintf(fp, "%lld %s # Server restarted\n", (long long)ltime, d);
 				fclose(fp);
 			}
 		}	  
@@ -148,12 +149,14 @@ public:
 		updatePhysics();
 
 		CEntityManager::getInstance().update();
-		
-		// Update the current session
-		CSessionManager::getInstance().update();
 
 		CLevelManager::getInstance().update();
 		CLuaEngine::getInstance().levelPostUpdate();
+
+		// Update the current session AFTER levelPostUpdate so that
+		// levels using per-frame score recalculation (e.g. city_paint)
+		// have correct CurrentScore when the session manager checks it.
+		CSessionManager::getInstance().update();
 		
 		checkServicePaused();
 		updateConnectedClients();
@@ -183,9 +186,9 @@ NLNET_SERVICE_MAIN(CMtpTargetService, "MTS", "mtp_target_service", 0, EmptyCallb
 uint myGetThreadId()
 {
 #ifdef NL_OS_UNIX
-	return (int)pthread_self();
+	return (uint)(uintptr_t)pthread_self();
 #else
-	return getThreadId();
+	return (uint)getThreadId();
 #endif
 }
 

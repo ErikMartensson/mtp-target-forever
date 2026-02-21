@@ -206,14 +206,41 @@ void CModule::enabled(bool b)
 	nlinfo("%s %s",b?"show":"hide",name().c_str());
 }
 
-void  CModule::color(const NLMISC::CRGBA &col) 
-{ 
+void  CModule::color(const NLMISC::CRGBA &col)
+{
 	if(Color==col || Mesh.empty()) return;
-	
-	Color = col; 
+
+	Color = col;
 	for(uint i = 0; i < Mesh.getNumMaterials(); i++)
 	{
 		Mesh.getMaterial(i).setDiffuse(Color);
 		Mesh.getMaterial(i).setAmbient(Color);
+	}
+}
+
+void  CModule::setTexture(uint layer, const std::string &textureName)
+{
+	if(Mesh.empty()) return;
+
+	std::string texFile = textureName + ".dds";
+	std::string resolved = CResourceManager::getInstance().get(texFile);
+	if(resolved.empty())
+	{
+		// Try .tga fallback
+		texFile = textureName + ".tga";
+		resolved = CResourceManager::getInstance().get(texFile);
+	}
+	if(resolved.empty())
+	{
+		nlwarning("CModule::setTexture: texture '%s' not found", textureName.c_str());
+		return;
+	}
+
+	for(uint i = 0; i < Mesh.getNumMaterials(); i++)
+	{
+		if(layer < Mesh.getMaterial(i).getLastTextureStage() + 1)
+		{
+			Mesh.getMaterial(i).setTextureFileName(resolved, layer);
+		}
 	}
 }

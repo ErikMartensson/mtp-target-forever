@@ -48,7 +48,49 @@ using namespace NLMISC;
 
 const char CLuaVector::className[] = "CVector";
 
+int CLuaVector::getX(lua_State *L)
+{
+	lua_pushnumber(L, (lua_Number)this->x);
+	return 1;
+}
+
+int CLuaVector::getY(lua_State *L)
+{
+	lua_pushnumber(L, (lua_Number)this->y);
+	return 1;
+}
+
+int CLuaVector::getZ(lua_State *L)
+{
+	lua_pushnumber(L, (lua_Number)this->z);
+	return 1;
+}
+
+int CLuaVector::setX(lua_State *L)
+{
+	this->x = (float)luaL_checknumber(L, 1);
+	return 0;
+}
+
+int CLuaVector::setY(lua_State *L)
+{
+	this->y = (float)luaL_checknumber(L, 1);
+	return 0;
+}
+
+int CLuaVector::setZ(lua_State *L)
+{
+	this->z = (float)luaL_checknumber(L, 1);
+	return 0;
+}
+
 Lunar<CLuaVector>::RegType CLuaVector::methods[] = {
+	bind_method(CLuaVector, getX),
+	bind_method(CLuaVector, getY),
+	bind_method(CLuaVector, getZ),
+	bind_method(CLuaVector, setX),
+	bind_method(CLuaVector, setY),
+	bind_method(CLuaVector, setZ),
 	{0,0}
 };
 

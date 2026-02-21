@@ -9,6 +9,7 @@ local teamRedScore = 0;
 local teamBlueScore = 0;
 local currentTeamRedScore = 0;
 local currentTeamBlueScore = 0;
+local scoringHappenedThisFrame = false;
 
 ---------------------- Entity ----------------------
 CEntity = {}
@@ -46,6 +47,8 @@ function CEntity:setTeamScore( score )
   if(self.base:getCurrentScore() and score==0) then
     self.bonusTime = 0;
   end
+
+  scoringHappenedThisFrame = true;
 
   if(self.team==0) then
     currentTeamRedScore = currentTeamRedScore + score;
@@ -222,9 +225,16 @@ function levelPreUpdate()
   -- Reset current frame scores (will be accumulated via collisions)
   currentTeamRedScore = 0;
   currentTeamBlueScore = 0;
+  scoringHappenedThisFrame = false;
 end
 
 function levelPostUpdate()
+  -- Only update team scores if a scoring collision happened this frame
+  -- This prevents the score from being reset to 0 when entity stops moving
+  if not scoringHappenedThisFrame then
+    return
+  end
+
   if(currentTeamRedScore~=teamRedScore) then
     displayTextToAll(0,7,1,255,0,0,currentTeamRedScore,40);
     teamRedScore = currentTeamRedScore;
@@ -239,7 +249,7 @@ end
 
 function levelEndSession()
   local entityCount = getEntityCount();
-  for i=0,entityCount do
+  for i=0,entityCount-1 do
     entity = getEntity(i);
     entity:parent():setFinalScore();
     --TODO we can remove the following line when version >= 1.2.2 is out

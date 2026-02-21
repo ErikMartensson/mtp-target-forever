@@ -219,6 +219,22 @@ void CLuaEngine::entitySceneCollideEvent(CEntity *entity, CModule *module)
 		return;
 	}
 	Lunar<CEntityProxy>::push(session(), entity->luaProxy);
+
+	// Phase 4: Metatable integrity verification for Issue #1 debugging
+	// Check that the entity userdata has the correct metatable after push
+#ifdef _DEBUG
+	if (lua_getmetatable(session(), -1)) {
+		luaL_getmetatable(session(), "Entity");
+		int same = lua_rawequal(session(), -1, -2);
+		lua_pop(session(), 2);
+		if (!same) {
+			nlwarning("[BUG-ISSUE1] Entity has WRONG metatable in entitySceneCollideEvent!");
+		}
+	} else {
+		nlwarning("[BUG-ISSUE1] Entity has NO metatable in entitySceneCollideEvent!");
+	}
+#endif
+
 	Lunar<CModuleProxy>::push(session(), module->luaProxy);
 	res = lua_pcall (session(),2,0,0);
     if (res) {

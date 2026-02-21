@@ -49,7 +49,7 @@ public:
 	void onLogin(const std::string &name);
 	void onLogout(const std::string &name);
 
-	uint32 count() {return tocList.size();};
+	uint32 count() {return (uint32)tocList.size();};
 
 private:
 	std::vector<CGuiToc *> tocList;

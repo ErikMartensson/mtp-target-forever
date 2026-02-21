@@ -60,7 +60,7 @@ using namespace NLMISC;
 // Variables
 //
 
-bool DisplayDebug = false;
+uint8 DisplayDebug = 0;
 bool FollowEntity = false;
 string ReplayFile;
 sint32 AutoServerId = -1;
@@ -184,7 +184,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 		bool found = false;
 		if(success)
 		{
-			int l = strlen(exePath);
+			int l = (int)strlen(exePath);
 			for(int i=l;i>=0;i--)
 			{
 				if(exePath[i]=='\\')
@@ -242,7 +242,7 @@ int main(int argc, char **argv)
 	nlinfo("PRC: %s", Proc.c_str());
 	nlinfo("MEM: %s", Mem.c_str());
 
-	TaskManagerThreadId = getThreadId();
+	TaskManagerThreadId = (uint)getThreadId();
 	// add the main task
 	CTaskManager::instance().add(CMtpTarget::instance(), 70);
 

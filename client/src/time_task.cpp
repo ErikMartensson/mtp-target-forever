@@ -25,6 +25,7 @@
 
 #include "stdpch.h"
 
+#include "graph.h"
 #include "time_task.h"
 
 
@@ -56,28 +57,36 @@ void CTimeTask::reset()
 	OldTime = 1;
 	Time = 1;
 	DeltaTime = 0;
+	RealDeltaTime = 0;
+	TimeSpeed = 1.0;
 	FirstUpdate = true;
 }
 
 void CTimeTask::update()
 {
-	OldTime = Time;
-
-	
 	double newTime = NLMISC::CTime::ticksToSecond(NLMISC::CTime::getPerformanceTime());
 
 	if(FirstUpdate)
-		FirstTime = newTime - 1; //-1 for replay 
-	
-	Time = newTime - FirstTime;
+		FirstTime = newTime - 1; //-1 for replay
 
 	if(FirstUpdate)
 	{
 		DeltaTime = 0;
+		RealDeltaTime = 0;
+		Time = 0;
 		FirstUpdate = false;
 	}
 	else
-		DeltaTime = Time - OldTime;
-	
-	DeltaTimeSmooth.addValue(DeltaTime);
+	{
+		RealDeltaTime = newTime - OldTime;
+		DeltaTime = RealDeltaTime * TimeSpeed;
+		Time += DeltaTime;
+	}
+
+	OldTime = newTime;
+	DeltaTimeSmooth.addValue(RealDeltaTime);
+
+	// Update performance graphs
+	FpsGraph.addValue(1.0f);
+	MSpfGraph.addOneValue(float(RealDeltaTime * 1000.0f));
 }

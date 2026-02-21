@@ -70,7 +70,7 @@ Modules =
 	{ Position = CVector(0,-0.16,3), Scale = CVector(8, 8, 1), Rotation = CAngleAxis(1,0,0,0), Color = CRGBA(255,64,64,255), Lua="team_target_100_red", Shape="box_sol", Score = 100, Friction = 10 },
 	{ Position = CVector(0,-0.04,3), Scale = CVector(4, 4, 1), Rotation = CAngleAxis(1,0,0,0), Color = CRGBA(255,0,0,255), Lua="team_target_300_red", Shape="box_sol", Score = 300, Friction = 10 },
 	-- Blue team targets (positive Y side) - outermost to innermost
-	{ Position = CVector(0,0.40,3), Scale = CVector(16, 16, 1), Rotation = CAngleAxis(1,0,0,0), Color = CRGBA(255,255,255,255), Lua="team_target_50_blue", Shape="box_sol", Score = 50, Friction = 25 },
+	{ Position = CVector(0,0.40,3), Scale = CVector(16, 16, 1), Rotation = CAngleAxis(1,0,0,0), Color = CRGBA(128,128,255,255), Lua="team_target_50_blue", Shape="box_sol", Score = 50, Friction = 25 },
 	{ Position = CVector(0,0.16,3), Scale = CVector(8, 8, 1), Rotation = CAngleAxis(1,0,0,0), Color = CRGBA(64,64,255,255), Lua="team_target_100_blue", Shape="box_sol", Score = 100, Friction = 10 },
 	{ Position = CVector(0,0.04,3), Scale = CVector(4, 4, 1), Rotation = CAngleAxis(1,0,0,0), Color = CRGBA(0,0,255,255), Lua="team_target_300_blue", Shape="box_sol", Score = 300, Friction = 10 },
 	-- Ramps

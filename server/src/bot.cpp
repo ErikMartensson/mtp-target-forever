@@ -143,7 +143,8 @@ void CBot::loadBotReplay()
 		}
 
 		Commands.clear();
-					
+
+		bool isFallbackReplay = false;
 		if(!levels.empty())
 		{
 			level = levels[rand()%levels.size()];
@@ -151,8 +152,9 @@ void CBot::loadBotReplay()
 		else
 		{
 			nlwarning("There's no replay matching start pos id %hu trying to use default one", (uint16)StartingPointId);
+			isFallbackReplay = true;
 		}
-		
+
 		if(level.empty())
 		{
 			nlwarning("There's no replay file for the level",CurrentLevel.c_str());
@@ -160,14 +162,14 @@ void CBot::loadBotReplay()
 		}
 
 		nlinfo("Loading replay file (startposid = %d) : %s", StartingPointId, level.c_str());
-		
+
 		FILE *fp = fopen(level.c_str(),"rt");
 		if(!fp)
 		{
 			nlwarning("Replay file '%s' can't be open", level.c_str());
 			return;
 		}
-		
+
 		char cmd[10]="deadbeef";
 		float t;
 		CVector force, pos;
@@ -206,7 +208,22 @@ void CBot::loadBotReplay()
 			CFile::deleteFile(level);
 			nlwarning("deleting invalid replay (bad file format): %s",level.c_str());
 		}
-		else 
+		else if(isFallbackReplay && !Commands.empty())
+		{
+			// Validate fallback replay: check if first position is near our starting point
+			// This prevents bots from using replays recorded from the opposite team's side
+			CVector startPos = CLevelManager::getInstance().currentLevel().getStartPoint(StartingPointId)->position();
+			CVector firstReplayPos = Commands.front().Pos;
+			float dist = (startPos - firstReplayPos).norm();
+			if(dist > 5.0f)
+			{
+				nlwarning("Fallback replay too far from start point (%.1f units), discarding: %s", dist, level.c_str());
+				Commands.clear();
+				return;
+			}
+			return;
+		}
+		else
 			return;
 	}
 	nlwarning("Give up finding a valid replay");

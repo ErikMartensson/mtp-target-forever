@@ -49,14 +49,21 @@ public:
 	CLuaVector(NLMISC::CVector v):CVector(v) { }
 	CLuaVector() { }
 	CLuaVector(float	_x, float _y, float _z):CVector(_x,_y,_z) { }
-	
+
 	CLuaVector(lua_State *L)
 	{
 		x = (float)luaL_checknumber(L, 1);
 		y = (float)luaL_checknumber(L, 2);
 		z = (float)luaL_checknumber(L, 3);
 	}
-	
+
+	int getX(lua_State *L);
+	int getY(lua_State *L);
+	int getZ(lua_State *L);
+	int setX(lua_State *L);
+	int setY(lua_State *L);
+	int setZ(lua_State *L);
+
 	static const char className[];
 	static Lunar<CLuaVector>::RegType methods[];
 };
@@ -91,7 +98,7 @@ public:
 		R = (uint8)luaL_checknumber(L, 1);
 		G = (uint8)luaL_checknumber(L, 2);
 		B = (uint8)luaL_checknumber(L, 3);
-		A = (uint8)luaL_checknumber(L, 4);
+		A = (uint8)luaL_optnumber(L, 4, 255);
 	}
 	
 	static const char className[];

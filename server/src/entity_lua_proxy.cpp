@@ -260,7 +260,7 @@ int CEntityProxy::getName(lua_State *luaSession)
 int CEntityProxy::setCurrentScore(lua_State *luaSession)
 {
 	lua_Number score = luaL_checknumber(luaSession,1);
-	_entity->CurrentScore = ((uint32)score); 
+	_entity->CurrentScore = ((sint32)score);
 
 	static int oldscore = 0;
 	if(oldscore != _entity->CurrentScore)

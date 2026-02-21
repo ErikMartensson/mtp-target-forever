@@ -68,7 +68,7 @@ public:
 	enum TEntity { Unknown, Player };	// Player is bot or client
 	
 	void		update();
-	void		renderName() const;
+	void		renderName(float fontScale = 1.0f) const;
 	void		close();
 	void		swapOpenClose();
 	void		collideWhenFly(NLMISC::CVector &pos);
@@ -98,6 +98,7 @@ public:
 	void				 spectator(bool b) { Spectator = b; }
 	bool				 ready() const { return Ready; }
 	void				 ready(bool b) { Ready = b; }
+	bool				 collided() const { return Collided; }  // True when crashed or hit water
 	
 	void				 load3d();
 
@@ -184,6 +185,7 @@ private:
 	bool	Spectator;
 	bool    Ready;
 	bool    WasInWater;  // For client-side water collision detection
+	bool    Collided;    // True when entity has crashed or hit water (for external camera filtering)
 
 	friend class CEntityManager;
 };

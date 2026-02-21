@@ -44,13 +44,14 @@ const char CModuleProxy::className[] = "Module";
 
 Lunar<CModuleProxy>::RegType CModuleProxy::methods[] = 
 {
-	bind_method(CModuleProxy, setMetatable),	
-		bind_method(CModuleProxy, getUserData),	
-		bind_method(CModuleProxy, setUserData),	
-		bind_method(CModuleProxy, getName),	
-		bind_method(CModuleProxy, setColor),	
-		bind_method(CModuleProxy, setPos),	
-		bind_method(CModuleProxy, getPos),	
+	bind_method(CModuleProxy, setMetatable),
+		bind_method(CModuleProxy, getUserData),
+		bind_method(CModuleProxy, setUserData),
+		bind_method(CModuleProxy, getName),
+		bind_method(CModuleProxy, setColor),
+		bind_method(CModuleProxy, setPos),
+		bind_method(CModuleProxy, getPos),
+		bind_method(CModuleProxy, setTexture),
 	{0,0}
 };
 
@@ -130,6 +131,16 @@ int CModuleProxy::setPos(lua_State *luaSession)
 {
 	CLuaVector pos  = *Lunar<CLuaVector>::check(luaSession,-1);
 	_module->position(pos);
+	return 0;
+}
+
+int CModuleProxy::setTexture(lua_State *luaSession)
+{
+	uint layer = (uint)luaL_checknumber(luaSession, 1);
+	size_t len;
+	const char *texName = luaL_checklstring(luaSession, 2, &len);
+	std::string textureName(texName);
+	_module->setTexture(layer, textureName);
 	return 0;
 }
 

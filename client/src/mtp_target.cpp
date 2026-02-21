@@ -65,6 +65,7 @@
 #include "background_task.h"
 #include "resource_manager2.h"
 #include "config_file_task.h"
+#include "external_camera_task.h"
 
 //
 // Namespaces
@@ -112,6 +113,7 @@ void CMtpTarget::init()
 	CTaskManager::instance().add(CResourceManager::instance(), 30);
 	CTaskManager::instance().add(CResourceManagerLan::instance(), 30);
 	CTaskManager::instance().add(C3DTask::instance(), 110);
+	CTaskManager::instance().add(CExternalCameraTask::instance(), 115);
 	CTaskManager::instance().add(CGuiTask::instance(), 1050);
 	CTaskManager::instance().add(CEditorTask::instance(), 120);
 	CTaskManager::instance().add(CSwap3DTask::instance(), 10000);
@@ -661,7 +663,7 @@ void mtpTarget::renderInterface()
 	*/
 	
 	
-	if (DisplayDebug)
+	if (DisplayDebug == 1)
 	{
 		CFontManager::getInstance().littlePrintf(0, 6, "pos %.2f %.2f %.2f", C3DTask::getInstance().scene().getCam().getMatrix().getPos().x, C3DTask::getInstance().scene().getCam().getMatrix().getPos().y, C3DTask::getInstance().scene().getCam().getMatrix().getPos().z);
 		CQuat q = C3DTask::getInstance().scene().getCam().getMatrix().getRot();
@@ -696,7 +698,7 @@ void mtpTarget::endSession()
 {
 	// end of a session
 	CMtpTarget::getInstance().State = CMtpTarget::eEndSession;
-	C3DTask::getInstance().EnableExternalCamera = false;
+	CExternalCameraTask::getInstance().setExternalCamera(false);
 	CHudTask::getInstance().messages.clear();
 }
 
@@ -795,7 +797,7 @@ std::string	CMtpTarget::loadReplayFile()
 			{
 				char chatLine[1024];
 				fgets(chatLine,1024,fp);
-				uint l = strlen(chatLine);
+				uint l = (uint)strlen(chatLine);
 				if(l>0 && chatLine[l-1]=='\n')
 					chatLine[l-1] = '\0';
 				//fscanf (fp, "%s\n",&chatLine);

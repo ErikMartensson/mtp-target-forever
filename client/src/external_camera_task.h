@@ -18,66 +18,42 @@
  * MA 02111-1307, USA.
  */
 
-
-//
-// This is the main class that manages all other classes
-//
-
-#ifndef MTPT_SKY_TASK_H
-#define MTPT_SKY_TASK_H
+#ifndef MTPT_EXTERNAL_CAMERA_TASK_H
+#define MTPT_EXTERNAL_CAMERA_TASK_H
 
 
 //
 // Includes
 //
 
+#include <nel/misc/singleton.h>
 
-
-//
-// Externs
-//
-
-namespace NL3D
-{
-	class UScene;
-	class UInstance;
-	class UCloudScape;
-	class CWaterShape;
-	class CWaterModel;
-}
 
 //
 // Classes
 //
 
-class CSkyTask : public NLMISC::CSingleton<CSkyTask>, public ITask
+class CExternalCameraTask : public NLMISC::CSingleton<CExternalCameraTask>, public ITask
 {
 public:
 
+	CExternalCameraTask() { }
+
 	virtual void init();
-	virtual void update();
+	virtual void update() { }
 	virtual void render();
-	virtual void release();
+	virtual void release() { }
 
-	virtual std::string name() const { return "CSkyTask"; }
+	virtual std::string name() const { return "CExternalCameraTask"; }
 
-	void shapeName(std::string shapeName);
-	std::string shapeName();
+	void setExternalCamera(bool on, bool followEntities = true) { EnableExternalCamera = on; FollowEntities = followEntities; }
+	void switchExternalCamera() { EnableExternalCamera = !EnableExternalCamera; }
+	bool isEnabled() const { return EnableExternalCamera; }
 
-	// Accessor for sky scene (used by external camera PIP rendering)
-	NL3D::UScene *skyScene() { return nelSkyScene; }
-
-	friend class NLMISC::CSingleton<CSkyTask>;
-protected:
-	CSkyTask();
-	
 private:
 
-	NL3D::UScene			*nelSkyScene;
-	NL3D::UInstance			nelSkyMesh;
-	NL3D::UCloudScape		*nelCloudScape;
-
-	std::string ShapeName;
+	bool EnableExternalCamera;
+	bool FollowEntities;
 };
 
 #endif

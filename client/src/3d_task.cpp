@@ -148,8 +148,6 @@ void C3DTask::init()
 	ScreenWidth = CConfigFileTask::instance().configFile().getVar("ScreenWidth").asInt();
 	ScreenHeight = CConfigFileTask::instance().configFile().getVar("ScreenHeight").asInt();
 
-	EnableExternalCamera = false;
-
 	CConfigFile::CVar v;
 	v = CConfigFileTask::getInstance().configFile().getVar("AmbientColor");
 	nlassert(v.size()==4);
@@ -162,7 +160,7 @@ void C3DTask::init()
 	// Create a driver
 	uint icon = 0;
 #ifdef NL_OS_WINDOWS
-	icon = (uint)LoadIcon(ghInstance,MAKEINTRESOURCE(IDI_ICON1));
+	icon = (uint)(uintptr_t)LoadIcon(ghInstance,MAKEINTRESOURCE(IDI_ICON1));
 #endif
 	bool useD3D = !CConfigFileTask::instance().configFile().getVar("OpenGL").asBool();
 	Driver = UDriver::createDriver(icon, useD3D, exitFunction);
@@ -326,35 +324,7 @@ void C3DTask::render()
 	if(C3DTask::getInstance().kbDown(KeyMENU) && C3DTask::getInstance().kbPressed(KeyF2))
 		takeScreenShot();
 
-	if(EnableExternalCamera && CLevelManager::getInstance().levelPresent() && CLevelManager::getInstance().currentLevel().ExternalCameras.size() > 0)
-	{
-		CMatrix oldmat = C3DTask::getInstance().scene().getCam().getMatrix();
-
-		vp.init(0.69f,0.55f,0.3f,0.3f);
-		s.init(0.69f,0.55f,0.3f,0.3f);
-
-		if(!LevelParticle.empty())
-			LevelParticle.hide();
-		CMatrix m;
-		m.identity();
-		m.setPos(CLevelManager::getInstance().currentLevel().ExternalCameras[0].first);
-		m.setRot(CLevelManager::getInstance().currentLevel().ExternalCameras[0].second);
-		C3DTask::getInstance().scene().getCam().setMatrix(m);
-		Scene->setViewport(vp);
-		Driver->setViewport(vp);
-		Driver->setScissor(s);
-		Driver->clearBuffers();
-		Scene->render();
-		if(!LevelParticle.empty())
-			LevelParticle.show();
-
-		vp.init(0,0,1,1);
-		s.init(0,0,1,1);
-		Scene->setViewport(vp);
-		Driver->setViewport(vp);
-		Driver->setScissor(s);
-		C3DTask::getInstance().scene().getCam().setMatrix(oldmat);
-	}
+	// External camera rendering moved to CExternalCameraTask
 
 	C3DTask::getInstance().driver().enableFog(false);
 

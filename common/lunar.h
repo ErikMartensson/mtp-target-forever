@@ -113,8 +113,6 @@ public:
       static_cast<userdataType*>(pushuserdata(L, obj, sizeof(userdataType)));
     if (ud) {
       ud->pT = obj;  // store pointer to object in userdata
-      lua_pushvalue(L, mt);
-      lua_setmetatable(L, -2);
       if (gc == false) {
         lua_checkstack(L, 3);
         subtable(L, mt, "do not trash", "k");
@@ -124,6 +122,12 @@ public:
         lua_pop(L, 1);
       }
     }
+    // FIX for Issue #1 (Intermittent Scoring Failure):
+    // ALWAYS set metatable, not just for new userdata. This ensures cached
+    // userdata from the weak "v" table always has a valid metatable reference,
+    // preventing intermittent method lookup failures (entity.collideWithModule == nil).
+    lua_pushvalue(L, mt);
+    lua_setmetatable(L, -2);
     lua_replace(L, mt);
     lua_settop(L, mt);
     return mt;  // index of userdata containing pointer to T object

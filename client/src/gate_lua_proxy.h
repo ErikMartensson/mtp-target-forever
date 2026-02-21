@@ -18,59 +18,55 @@
  * MA 02111-1307, USA.
  */
 
-#ifndef _MODULE_LUA_PROXY_H_
-#define _MODULE_LUA_PROXY_H_
+#ifndef _GATE_LUA_PROXY_H_
+#define _GATE_LUA_PROXY_H_
 
 #include "../../common/lunar.h"
 #include "../../common/lua_nel.h"
 
-class CModule;
+class CGate;
 
-class CModuleProxy
+class CGateProxy
 {
-	
+
 public:
-	CModuleProxy(lua_State *luaSession)
+	CGateProxy(lua_State *luaSession)
 	{
-//		nlinfo("new CModuleProxy0 0x%p",this);
-		_module = 0;
+		_gate = 0;
 		LuaUserData = 0;
 		LuaUserDataRef = 0;
 	}
-	
-	CModuleProxy(lua_State *luaSession, CModule *module)
+
+	CGateProxy(lua_State *luaSession, CGate *gate)
 	{
-//		nlinfo("new CModuleProxy1 0x%p(0x%p)",this,module);
-		_module = module;
+		_gate = gate;
 		LuaUserData = 0;
 		LuaUserDataRef = 0;
 	}
-	
-	~CModuleProxy()
+
+	~CGateProxy()
 	{
-//		nlinfo("delete CModuleProxy 0x%p",this);
 	}
-	
-	bool call(std::string funcName);
 
 	int setMetatable(lua_State *L);
 	int getUserData(lua_State *luaSession);
 	int setUserData(lua_State *luaSession);
-	
-	int getName(lua_State *luaSession);
+
 	int getPos(lua_State *luaSession);
 	int setPos(lua_State *luaSession);
-	int setColor(lua_State *luaSession);
-	int setTexture(lua_State *luaSession);
-	
-	
-	static const char className[];	
-	static Lunar<CModuleProxy>::RegType methods[];	
+	int getScale(lua_State *luaSession);
+	int setScale(lua_State *luaSession);
+	int getScore(lua_State *luaSession);
+	int setScore(lua_State *luaSession);
+
+	static const char className[];
+	static Lunar<CGateProxy>::RegType methods[];
 private:
 	void		*LuaUserData;
-	int			 LuaUserDataRef;	
-	CModule *_module;
+	int			 LuaUserDataRef;
+	CGate *_gate;
 	CLuaVector Pos;
+	CLuaVector ScaleVec;
 };
 
 

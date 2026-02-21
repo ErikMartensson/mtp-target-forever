@@ -372,7 +372,7 @@ string CResourceManagerLan::get(const string &filename, bool &ok)
 				CRCReceived = false;
 				bool messageReceived;
 
-				uint tid = getThreadId();
+				uint tid = (uint)getThreadId();
 				nlassert(tid==TaskManagerThreadId || tid==NetworkThreadId);
 				if(tid==TaskManagerThreadId)
 				{
@@ -454,7 +454,7 @@ string CResourceManagerLan::get(const string &filename, bool &ok)
 		string str = toString("Please wait while downloading '%s' part %d", fn.c_str(), part);
 
 		bool messageReceived;
-		uint tid = getThreadId();
+		uint tid = (uint)getThreadId();
 		nlassert(tid==TaskManagerThreadId || tid==NetworkThreadId);
 		if(tid==TaskManagerThreadId)
 		{
@@ -475,7 +475,7 @@ string CResourceManagerLan::get(const string &filename, bool &ok)
 			return unk;
 		}
 
-		nlinfo("Receive an answer of a download request block size %s %d eof %d", Reason.c_str(), Buffer.size(), Eof);
+		nlinfo("Receive an answer of a download request block size %s %d eof %d", Reason.c_str(), (uint)Buffer.size(), Eof);
 
 		FILE *fp = fopen(packedfn.c_str(), "ab");
 		if(!fp)
@@ -491,7 +491,7 @@ string CResourceManagerLan::get(const string &filename, bool &ok)
 		}
 		fclose(fp);
 
-		part += Buffer.size();
+		part += (uint32)Buffer.size();
 		if(FileSize)
 			updatePercent = ((float)part) / FileSize;
 		if(part>FileSize)

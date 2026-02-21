@@ -224,6 +224,17 @@ if exist "%PROJECT_DIR%\data\smiley" (
     xcopy /Y /E /Q "%PROJECT_DIR%\data\smiley\*" "%RELEASE_DIR%\data\smiley\" >nul 2>nul
     echo    + Copied smiley files
 )
+if exist "%PROJECT_DIR%\data\level" (
+    if not exist "%RELEASE_DIR%\data\level" mkdir "%RELEASE_DIR%\data\level"
+    copy /Y "%PROJECT_DIR%\data\level\*.lua" "%RELEASE_DIR%\data\level\" >nul 2>nul
+    for /f %%a in ('dir /b "%RELEASE_DIR%\data\level\*.lua" 2^>nul ^| C:\Windows\System32\find.exe /c /v ""') do set LEVEL_COUNT=%%a
+    echo    + Copied !LEVEL_COUNT! level files
+)
+if exist "%PROJECT_DIR%\data\lua" (
+    if not exist "%RELEASE_DIR%\data\lua" mkdir "%RELEASE_DIR%\data\lua"
+    copy /Y "%PROJECT_DIR%\data\lua\*.lua" "%RELEASE_DIR%\data\lua\" >nul 2>nul
+    echo    + Copied Lua utility scripts
+)
 echo.
 set /a STEP+=1
 

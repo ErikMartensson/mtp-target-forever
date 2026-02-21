@@ -64,12 +64,20 @@ public:
 	// Number of seconds to render a frame (average)
 	double		spf() const { return DeltaTimeSmooth.getSmoothValue(); }
 
+	// Time speed for replay (0.0=paused, 1.0=normal, 2.0=2x speed)
+	void		speedTime(double st) { TimeSpeed = st; }
+	double		getSpeedTime() const { return TimeSpeed; }
+
+	// Delta time without speed adjustment (for UI/input purposes)
+	double		realDeltaTime() const { return RealDeltaTime; }
+
 private:
 
 	NLMISC::CValueSmootherTemplate<double> DeltaTimeSmooth;
 
-	double Time, DeltaTime, OldTime;
+	double Time, DeltaTime, RealDeltaTime, OldTime;
 	double FirstTime;
+	double TimeSpeed;
 	bool   FirstUpdate;
 };
 

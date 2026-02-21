@@ -49,6 +49,7 @@ extern "C"
 #include "entity_manager.h"
 #include "lens_flare_task.h"
 #include "entity_lua_proxy.h"
+#include "gate_lua_proxy.h"
 #include "module_lua_proxy.h"
 #include "particles_lua_proxy.h"
 #include "config_file_task.h"
@@ -102,6 +103,32 @@ CLevel::CLevel(const string &filename)
 		return;
 	}
 
+	// v1.5.19 compatibility: if the level defines CLevel:init(), call it.
+	// This populates global tables (Modules, StartPoints, Cameras, etc.)
+	// from the imperative API used by v1.5.19-style levels.
+	lua_getglobal(LuaState, "CLevel");
+	if (!lua_isnil(LuaState, -1))
+	{
+		lua_getfield(LuaState, -1, "init");
+		if (lua_isfunction(LuaState, -1))
+		{
+			lua_pushvalue(LuaState, -2); // push CLevel table as self
+			int res = lua_pcall(LuaState, 1, 0, 0);
+			if (res != 0)
+			{
+				const char *msg = lua_tostring(LuaState, -1);
+				if (msg == NULL) msg = "(error with no message)";
+				nlwarning("LUA: CLevel:init() failed: %s", msg);
+				lua_pop(LuaState, 1); // pop error message
+			}
+		}
+		else
+		{
+			lua_pop(LuaState, 1); // pop non-function
+		}
+	}
+	lua_pop(LuaState, 1); // pop CLevel or nil
+
 	luaGetGlobalVariable(LuaState, Name);
 	nlinfo("level name '%s'", Name.c_str());
 	
@@ -147,7 +174,7 @@ CLevel::CLevel(const string &filename)
 	if(Cameras.size()>0)
 	{
 		CLuaVector defaultCam = Cameras[0];
-		for(int i=Cameras.size();i<startPositionId;i++)
+		for(int i=(int)Cameras.size();i<startPositionId;i++)
 			Cameras.push_back(defaultCam);
 	}
 	
@@ -241,6 +268,12 @@ CLevel::CLevel(const string &filename)
 
 	// Load modules
 	lua_getglobal(LuaState, "Modules");
+	if (lua_isnil(LuaState, -1))
+	{
+		nlwarning("Modules table not found - level may not have loaded correctly");
+		lua_pop(LuaState, 1);
+		return;
+	}
 	lua_pushnil(LuaState);
 	uint8 moduleId = 0;
 	while(lua_next(LuaState, -2) != 0)
@@ -296,12 +329,35 @@ CLevel::CLevel(const string &filename)
 		nlinfo("Shape %s", Shape.c_str());
 		lua_pop(LuaState, 1);  // removes `value'; keeps `key' for next iteration
 		
+		// Get module Texture0 (optional - used by non-snow themes)
+		string Texture0;
+		lua_pushstring(LuaState,"Texture0");
+		lua_gettable(LuaState, -2);
+		if (!lua_isnil(LuaState, -1))
+			luaGetVariable(LuaState, Texture0);
+		lua_pop(LuaState, 1);
+
+		// Get module Texture1 (optional - used for score labels)
+		string Texture1;
+		lua_pushstring(LuaState,"Texture1");
+		lua_gettable(LuaState, -2);
+		if (!lua_isnil(LuaState, -1))
+			luaGetVariable(LuaState, Texture1);
+		lua_pop(LuaState, 1);
+
 		CModule *module = new CModule();
 		module->init(Lua,Shape,moduleId,Position,Scale,Rotation,Color);
+
+		// Apply textures if specified (v1.5.19 theme support)
+		if (!Texture0.empty())
+			module->setTexture(0, Texture0);
+		if (!Texture1.empty())
+			module->setTexture(1, Texture1);
+
 		moduleId++;
 		if(!DisplayLevel)
 			module->hide();
-	
+
 		Modules.push_back(module);
 		lua_pop(LuaState, 1);
 	}
@@ -449,6 +505,12 @@ CLevel::~CLevel()
 		luaClose(LuaState);
 
 	// removing all stuffs
+	for(uint i = 0; i < Gates.size(); i++)
+	{
+		delete Gates[i];
+	}
+	Gates.clear();
+
 	for(uint i = 0; i < Modules.size(); i++)
 	{
 		delete Modules[i];
@@ -485,7 +547,7 @@ CVector CLevel::cameraPosition(uint32 id)
 
 uint32 CLevel::getCameraCount()
 {
-	return Cameras.size();
+	return (uint32)Cameras.size();
 }
 
 void CLevel::reset()
@@ -546,12 +608,18 @@ void CLevel::reset()
 	
 	// Load modules
 	lua_getglobal(LuaState, "Modules");
+	if (lua_isnil(LuaState, -1))
+	{
+		nlwarning("Modules table not found - level may not have loaded correctly");
+		lua_pop(LuaState, 1);
+		return;
+	}
 	lua_pushnil(LuaState);
 	int j = 0;
 	while(lua_next(LuaState, -2) != 0)
 	{
 		// `key' is at index -2 and `value' at index -1
-		
+
 		// Get module position
 		CLuaVector Position;
 		lua_pushstring(LuaState,"Position");
@@ -586,14 +654,19 @@ void CLevel::reset()
 	lua_pop(LuaState, 1);  // removes `key'
 	*/
 	Lunar<CEntityProxy>::Register(LuaState);
+	Lunar<CGateProxy>::Register(LuaState);
 	Lunar<CModuleProxy>::Register(LuaState);
 	Lunar<CParticlesProxy>::Register(LuaState);
-	lua_register(LuaState, "getEntityByName", getEntityByName);	
-	lua_register(LuaState, "getModuleByName", getModuleByName);	
-	lua_register(LuaState, "getParticlesByName", getParticlesByName);	
-	lua_register(LuaState, "getEntityById", getEntityById);	
-	lua_register(LuaState, "getModuleById", getModuleById);	
-	lua_register(LuaState, "getParticlesById", getParticlesById);	
+	lua_register(LuaState, "getEntityByName", getEntityByName);
+	lua_register(LuaState, "getModuleByName", getModuleByName);
+	lua_register(LuaState, "getParticlesByName", getParticlesByName);
+	lua_register(LuaState, "getEntityById", getEntityById);
+	lua_register(LuaState, "getGateById", getGateById);
+	lua_register(LuaState, "gateById", getGateById);	// v1.5.19 alias
+	lua_register(LuaState, "addGate", addGate);
+	lua_register(LuaState, "getModuleById", getModuleById);
+	lua_register(LuaState, "moduleById", getModuleById);	// v1.5.19 alias
+	lua_register(LuaState, "getParticlesById", getParticlesById);
 	CEntityManager::getInstance().luaInit();
 	for(uint j = 0; j<getModuleCount();j++)
 		if(Modules[j])
@@ -684,12 +757,12 @@ CParticles *CLevel::getParticles(std::string &name)
 
 uint32 CLevel::getParticlesCount()
 {
-	return Particles.size();
+	return (uint32)Particles.size();
 }
 
 uint32 CLevel::getModuleCount()
 {
-	return Modules.size();
+	return (uint32)Modules.size();
 }
 
 void CLevel::updateModule(uint32 id,const CVector &pos,const CVector &rot,uint32 selectedBy)
@@ -707,7 +780,7 @@ CStartPoint *CLevel::getStartPoint(uint32 index)
 uint32 CLevel::getStartPointCount()
 {
 	nlassert(StartPoints.size()<255);
-	return StartPoints.size();
+	return (uint32)StartPoints.size();
 }
 
 void CLevel::updateStartPoint(uint32 id,const CVector &pos,const CVector &rot,uint32 selectedBy)
@@ -842,6 +915,54 @@ int CLevel::getParticlesById(lua_State *L)
 	}
 	Lunar<CParticlesProxy>::push(L, p->LuaProxy);
 	return 1;
+}
+
+
+int CLevel::getGateById(lua_State *L)
+{
+	uint8 id = (uint8)luaL_checknumber(L, 1);
+	CGate *g = 0;
+	if (CLevelManager::getInstance().levelPresent())
+		g = CLevelManager::getInstance().currentLevel().getGate(id);
+	if (g)
+		nlinfo("Lua(0x%p) : getGateById(%d))=0x%p(0x%p)", L, id, g, g->LuaProxy);
+	if (g == 0)
+	{
+		nlwarning("getGateById(%d)==0", id);
+		return 0;
+	}
+	Lunar<CGateProxy>::push(L, g->LuaProxy);
+	return 1;
+}
+
+
+int CLevel::addGate(lua_State *L)
+{
+	if (!CLevelManager::getInstance().levelPresent())
+		return 0;
+
+	CGate *g = new CGate();
+	g->setId((uint8)CLevelManager::getInstance().currentLevel().getGateCount());
+	g->LuaProxy = new CGateProxy(L, g);
+	CLevelManager::getInstance().currentLevel().Gates.push_back(g);
+
+	nlinfo("Lua(0x%p) : addGate()=%d", L, g->id());
+	Lunar<CGateProxy>::push(L, g->LuaProxy);
+	return 1;
+}
+
+
+CGate *CLevel::getGate(uint32 id)
+{
+	if (id >= Gates.size())
+		return 0;
+	return Gates[id];
+}
+
+
+uint32 CLevel::getGateCount()
+{
+	return (uint32)Gates.size();
 }
 
 

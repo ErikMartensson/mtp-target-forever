@@ -83,7 +83,7 @@ CGuiObject *CGuiXml::get(uint index)
 
 uint CGuiXml::count()
 {
-	return objects.size();
+	return (uint)objects.size();
 }
 
 

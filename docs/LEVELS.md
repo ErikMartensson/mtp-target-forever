@@ -2,9 +2,9 @@
 
 This document lists all available levels, their scoring mechanics, and server scripts.
 
-**Status:** 32 playable levels + 5 test levels (ReleaseLevel=0, excluded from counts)
+**Status:** 60 playable levels + 10 test levels
 
-**Testing Progress:** 32 verified working - All playable levels tested!
+**Testing Progress:** 32 snow/original levels verified working. 28 new multi-theme levels added (pending runtime testing).
 
 ---
 
@@ -133,6 +133,29 @@ Both `/v` (vote) and `/forcemap` validate levels immediately and show feedback:
 
 **Note:** Votes are only registered if the level is valid. Invalid votes are rejected with an error message.
 
+### Chat Smileys
+
+Type these codes in chat to display smiley icons. Codes are replaced with images automatically.
+
+| Code | Smiley | Code | Smiley |
+|------|--------|------|--------|
+| `:)` | Laugh | `:))` | Smile |
+| `:)))` | Big grin | `;)` | Wink |
+| `:(` | Cry | `:((` | Sad |
+| `:/` | Doubt | `:s` | Confused |
+| `:p` | Razz | `:O` | Surprised |
+| `:i` | Neutral | `:red:` | Red face |
+| `:roll:` | Eye roll | `:idea:` | Idea |
+| `:mad:` | Mad | `:badgrin:` | Bad grin |
+| `B)` | Cool | `8)` | Shocked |
+| `>(` | Evil | `>)` | Twisted |
+| `->` | Arrow right | `<-` | Arrow left |
+| `lol` | Mr. Green | `gg` | Good game |
+| `bg` | Bad game | `!!!` | Exclaim |
+| `???` | Question | `:mt:` | MTP logo |
+
+**Note:** Short codes like `gg`, `bg`, and `lol` will be replaced even when part of normal words. Use with care.
+
 ---
 
 ## Level Details
@@ -195,14 +218,27 @@ First player to land on a block claims it.
 
 ### Team Levels (4 levels)
 
-Team-based gameplay (simplified in v1.2.2a).
+Team-based gameplay. Players are split into red and blue teams. Team members share a combined score.
 
 | Level | Display Name | Server Script | Notes |
 |-------|--------------|---------------|-------|
-| `level_team_all_on_one` | Team All on one | `level_team_all_on_one_server.lua` | Team variant - shared target. |
+| `level_team_all_on_one` | Team All on one | `level_team_all_on_one_server.lua` | Shared target - both teams score on the same platform. |
 | `level_team_classic` | Team Classic | `level_team_server.lua` | Classic team with colored boxes. Your targets on your side. |
 | `level_team_mirror` | Snow team mirror | `level_team_server.lua` | Mirrored - your targets on enemy side (harder). |
 | `level_team_90` | Team 90 | `level_team_server.lua` | 90-degree rotated targets. Steer sideways to land on your team's side. |
+
+**Team Assignment:**
+- By default, players are randomly and evenly distributed between red and blue teams each round.
+- Players can force team grouping by adding a **team tag** in brackets to their name. Players sharing the same tag are placed on the same team.
+  - Example: `[A]Alice` and `[A]Bob` will always be on the same team.
+  - The tag can be any text: `[Penguins]Alice`, `[1]Bob`, etc.
+  - Players without brackets are distributed to balance team sizes.
+
+**Team Scoring (split-ramp levels):**
+- Landing on your team's colored target: **positive** points
+- Landing on the enemy team's colored target: **negative** points (subtracted from team total)
+- Targets are color-coded: red team = red/salmon platforms, blue team = blue platforms
+- Each side has 3 platforms: 50 points (large, outer), 100 points (medium), 300 points (small, center)
 
 ---
 
@@ -218,17 +254,17 @@ Team-based gameplay (simplified in v1.2.2a).
 | `level_classic_flat_server.lua` | level_classic_flat | Standard targets. |
 | `level_darts_server.lua` | level_darts | Any contact scores (no ball-form requirement). |
 | `level_extra_ball_server.lua` | level_extra_ball | Accumulating: `entity:setCurrentScore(module:getScore() + entity:getCurrentScore())`. Requires stopped velocity. |
-| `level_gates_server.lua` | *(not used by any level)* | Gate passing: accumulate score, gate value decreases by 10 per pass. |
+| `level_gates_server.lua` | level_gates_* (4 levels) | Gate passing: accumulate score, gate value decreases by 10 per pass. |
 | `level_hit_me_server.lua` | level_hit_me | Standard targets. |
 | `level_paint_server.lua` | level_paint | Territory claim: track claimed modules per entity, +100 per claim. |
 | `level_race_server.lua` | level_race | Standard targets. |
 | `level_run_away_server.lua` | level_run_away | Standard targets. |
 | `level_snow_funnel_server.lua` | level_snow_funnel | Standard targets. |
 | `level_stairs_server.lua` | level_stairs, level_stairs2 | Progressive: track visited modules per entity, +50 per unique stair. |
-| `level_sun_extra_ball_server.lua` | *(not used by any level)* | Gate passing: accumulate score from gates. |
+| `level_sun_extra_ball_server.lua` | level_sun_extra_ball | Gate passing: accumulate score from gates. |
 | `level_team_server.lua` | level_team, level_team_mirror | Standard targets (team mode simplified). |
-| `level_bowls1_server.lua` | *(not used by any level)* | Distance-based: closer to center = higher score (max 400, min -200). |
-| `level_city_paint_server.lua` | *(not used by any level)* | Territory claim for city theme. |
+| `level_bowls1_server.lua` | level_bowls1 | Distance-based: closer to center = higher score (max 400, min -200). |
+| `level_city_paint_server.lua` | level_city_paint | Territory claim for city theme. |
 
 ### All Server Scripts Available
 
@@ -236,21 +272,73 @@ All 37 levels have their server scripts in `data/lua/`. Scripts that don't exist
 
 ---
 
-## Unavailable Levels (30 levels)
+## Space Theme Levels (10 playable + 2 test)
 
-These levels exist in `mtp-target-src/` but are not yet converted. They require:
-- **Space theme assets** (space ramps, asteroids, hangars)
-- **Sun theme assets** (sun ramps, sun islands)
-- **City theme assets** (city buildings, city ramps)
-- **Gate mechanics** (gate scoring system)
+Space theme levels use black fog, space sky, and planet/asteroid shapes with runtime textures applied.
 
-| Theme | Levels |
-|-------|--------|
-| Space | `level_space_asteroids`, `level_space_atomium`, `level_space_calbren`, `level_space_cargo_inside`, `level_space_fleet`, `level_space_hangar18`, `level_space_havoc`, `level_space_hotwings`, `level_space_imo_rings`, `level_space_stabilo`, `level_space_test`, `level_team_space` |
-| Sun | `level_sun_cross`, `level_sun_extra_ball`, `level_sun_paint`, `level_sun_shrinker`, `level_sun_target`, `level_sun_test`, `level_snow_line` |
-| City | `level_city_darts`, `level_city_destroy`, `level_city_easy`, `level_city_paint`, `level_city_precision`, `level_city_test` |
-| Gates | `level_gates_easy`, `level_gates_hard`, `level_gates_ramp`, `level_gates_zig_zag` |
-| Other | `level_bowls1`, `level_donuts2`, `level_mtp_paint`, `level_physics_test` |
+**Note:** Space levels use ReleaseLevel 6. Ensure the server config allows ReleaseLevel 6.
+
+| Level | Display Name | ReleaseLevel | Notes |
+|-------|--------------|---|-------|
+| `level_space_asteroids` | Space Asteroids | 6 | Asteroid targets, advanced level |
+| `level_space_atomium` | Space Atomium | 6 | Atomium structure targets |
+| `level_space_calbren` | Space Calbren | 6 | Planet targets |
+| `level_space_cargo_inside` | Space Cargo Inside | 6 | Indoor space station |
+| `level_space_fleet` | Space Fleet | 6 | Space fleet targets |
+| `level_space_hangar18` | Space Hangar 18 | 6 | Hangar targets |
+| `level_space_havoc` | Space Havoc | 6 | Asteroid field |
+| `level_space_hotwings` | Space Hotwings | 6 | Planet targets |
+| `level_space_imo_rings` | Space Imo Rings | 6 | Ring targets |
+| `level_space_stabilo` | Space Stabilo | 6 | Planet targets |
+| `level_space_test` | Space Test | 20 | Test level |
+| `level_team_space` | Team Space | 3 | Team mode in space theme |
+
+## Sun Theme Levels (4 playable + 2 test)
+
+Sun theme levels use sun-colored fog, warm lighting, and material-based textures (ice/sand/wood with different friction).
+
+| Level | Display Name | ReleaseLevel | Notes |
+|-------|--------------|---|-------|
+| `level_sun_target` | Sun Target | 5 | Standard sun targets |
+| `level_sun_cross` | Sun Cross | 5 | Cross pattern layout |
+| `level_sun_extra_ball` | Sun Extra Ball | 5 | Moving target + gates |
+| `level_sun_paint` | Sun Paint | 5 | Territory claim in sun theme |
+| `level_sun_shrinker` | Sun Shrinker | 0 | Test: modules shrink over time |
+| `level_sun_test` | Sun Test | 200 | Test level |
+
+## City Theme Levels (5 playable + 1 test)
+
+City theme levels use city sky, urban fog, and building shapes with city textures.
+
+| Level | Display Name | ReleaseLevel | Notes |
+|-------|--------------|---|-------|
+| `level_city_easy` | City Easy | 5 | Standard city targets |
+| `level_city_darts` | City Darts | 5 | City darts variant |
+| `level_city_paint` | City Paint | 5 | Territory claim in city theme |
+| `level_city_destroy` | City Destroy | 5 | Destructible targets |
+| `level_city_precision` | City Precision | 5 | Precision landing |
+| `level_city_test` | City Test | 200 | Test level |
+
+## Gate Levels (4 playable)
+
+Gate levels use a new game mode: fly through scoring gates that decrease in value each pass. Uses pure Lua AABB collision detection.
+
+| Level | Display Name | ReleaseLevel | Server Script | Notes |
+|-------|--------------|---|---|-------|
+| `level_gates_easy` | Gates Easy | 5 | `level_gates_server.lua` | Easy gate course |
+| `level_gates_hard` | Gates Hard | 5 | `level_gates_server.lua` | Hard gate course |
+| `level_gates_ramp` | Gates Ramp | 5 | `level_gates_server.lua` | Ramp gate course |
+| `level_gates_zig_zag` | Gates Zig Zag | 5 | `level_gates_server.lua` | Zigzag gate course |
+
+## Other New Levels (5 playable + 1 test)
+
+| Level | Display Name | ReleaseLevel | Notes |
+|-------|--------------|---|-------|
+| `level_bowls1` | Bowls | 2 | Distance-based scoring: closer to center = more points (max 400, min -200) |
+| `level_donuts2` | Donuts 2 | 5 | Second donuts variant |
+| `level_mtp_paint` | MTP Paint | 5 | Alternative paint level |
+| `level_snow_line` | Snow Line | 5 | Snow line layout |
+| `level_physics_test` | Physics Test | 200 | Test level |
 
 ---
 
@@ -344,7 +432,7 @@ Some short names match multiple levels. Use longer strings to be specific:
 
 ## Level Files
 
-Levels are stored in `data/level/*.lua` (32 playable + 5 test levels). Each level file defines:
+Levels are stored in `data/level/*.lua` (60 playable + 10 test levels). Each level file defines:
 - `Name` - Display name shown in game
 - `Author` - Level creator
 - `Theme` - Visual theme (snow, city, sun, etc.)

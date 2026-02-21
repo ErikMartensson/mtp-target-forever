@@ -39,6 +39,7 @@
 #include "config_file_task.h"
 #include "resource_manager2.h"
 #include "level_manager.h"
+#include "external_camera_task.h"
 
 
 //
@@ -97,6 +98,8 @@ void CHudTask::render()
 
 	if(CMtpTarget::getInstance().State == CMtpTarget::eStartSession)
 	{
+		// Show external camera during waiting phase (fixed position, no entity following)
+		CExternalCameraTask::getInstance().setExternalCamera(true, false);
 		str = "Waiting for other players";
 		ptdt = 1.0f;
 	}
@@ -107,6 +110,8 @@ void CHudTask::render()
 	}
 	if(CMtpTarget::getInstance().State == CMtpTarget::eReady)
 	{
+		// Show external camera during countdown (fixed position, no entity following)
+		CExternalCameraTask::getInstance().setExternalCamera(true, false);
 		pressControlMessageAdded = false;
 		landClosedMessageAdded = false;
 		landClosedMessageAdded2 = false;
@@ -138,6 +143,8 @@ void CHudTask::render()
 			{
 				oldPartTime = 0;
 				CSoundManager::instance().playGUISound ("ready0");
+				// Disable external camera when game starts ("Go!")
+				CExternalCameraTask::getInstance().setExternalCamera(false);
 			}
 
 			str = "Go";
@@ -177,19 +184,19 @@ void CHudTask::render()
 				str = "Title: " + CLevelManager::getInstance().currentLevel().name();
 			else
 				str = "Level not present";
-			len = str.size();
+			len = (uint32)str.size();
 			CFontManager::getInstance().printf(CRGBA(255, 255, 255, 255), 1 * fontWidth, 10.0f * fontHeight,1, str.c_str());
 			/*
 			str = "File : " + CLevelManager::getInstance().currentLevel().filename();
-			len = str.size();
+			len = (uint32)str.size();
 			CFontManager::getInstance().printf(CRGBA(255, 255, 255, 255), 1 * fontWidth, 11.0f * fontHeight,1, str.c_str());
 			*/
-			if(CLevelManager::getInstance().levelPresent())
+			if(CLevelManager::getInstance().levelPresent() && !CLevelManager::getInstance().currentLevel().author().empty())
+			{
 				str = "Author: " + CLevelManager::getInstance().currentLevel().author();
-			else
-				str = "Level not present";
-			len = str.size();
-			CFontManager::getInstance().printf(CRGBA(255, 255, 255, 255), 1 * fontWidth, 12.0f * fontHeight,1, str.c_str());
+				len = (uint32)str.size();
+				CFontManager::getInstance().printf(CRGBA(255, 255, 255, 255), 1 * fontWidth, 12.0f * fontHeight,1, str.c_str());
+			}
 
 			CFontManager::getInstance().printf(CRGBA(245, 238, 141, 255), 1 * fontWidth, 16.0f * fontHeight,1, CMtpTarget::getInstance().String1.c_str());
 			CFontManager::getInstance().printf(CRGBA(253, 207, 85, 255), 1 * fontWidth, 18.0f * fontHeight,1, CMtpTarget::getInstance().String2.c_str());

@@ -117,8 +117,8 @@ bool CGuiCustom::load(const string &path)
 	for(i=0; i<files.size(); i++)
 	{
 		string fn = files[i];
-		uint32 p = files[i].find(".toc");
-		uint32 pe = files[i].size()-4;
+		uint32 p = (uint32)files[i].find(".toc");
+		uint32 pe = (uint32)files[i].size()-4;
 		if(p==pe)
 		{
 			tocFiles.push_back(files[i]);

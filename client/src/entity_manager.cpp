@@ -276,7 +276,7 @@ uint8 CEntityManager::size()
 	return nb;
 }
 
-void CEntityManager::renderNames()
+void CEntityManager::renderNames(float fontScale)
 {
 	uint renderCount = 0;
 	CVector pos;
@@ -289,7 +289,7 @@ void CEntityManager::renderNames()
 			if(res)
 				renderCount++;
 		}
-	}	
+	}
 
 	if(renderCount<3)
 		for(uint i = 0; i < 256; i++)
@@ -303,9 +303,9 @@ void CEntityManager::renderNames()
 				if(res)
 					renderCount++;
 				*/
-				entities()[i]->renderName();
+				entities()[i]->renderName(fontScale);
 			}
-		}	
+		}
 }
 
 void CEntityManager::render()
