@@ -167,7 +167,7 @@ sint32 CFontManager::strfind(string &str,CReplaceString **found)
 	{
 		string strSearch = (*it)->search;
 		string::size_type pos = str.find(strSearch);
-		if(pos!=string::npos && minFoundPos>pos)
+		if(pos!=string::npos && (pos == 0 || str[pos-1] == ' ') && minFoundPos>pos)
 		{
 			*found = *it;
 			minFoundPos = pos;
@@ -254,6 +254,43 @@ void CFontManager::littlePrintf(float x, float y, const char *format ...)
 		if(remainingCharCount>0)
 			littlePrintf(x+newStrDx+specialWidth,y,str+dx);
 	}
+}
+
+float CFontManager::littleStringWidth(const std::string &str)
+{
+	// Check for smiley replacements — their image width (16px) differs from
+	// the font width of the smiley code text, so we must match what littlePrintf renders
+	string tmp = str;
+	CReplaceString *found;
+	sint32 pos = strfind(tmp, &found);
+
+	if (pos < 0)
+	{
+		// No smileys — simple font measurement
+		UTextContext::CStringInfo si = LittleTextContext->getStringInfo(ucstring(str));
+		return si.StringWidth;
+	}
+
+	// Width of text before smiley
+	float beforeWidth = 0;
+	if (pos > 0)
+	{
+		UTextContext::CStringInfo si = LittleTextContext->getStringInfo(ucstring(str.substr(0, pos)));
+		beforeWidth = si.StringWidth;
+	}
+
+	// Smiley image width (matches drawSpecial imageW in littlePrintf)
+	float smileyWidth = 16.0f;
+
+	// Width of remaining text after smiley (recursive, handles multiple smileys)
+	uint32 afterStart = pos + (uint32)found->search.size();
+	float afterWidth = 0;
+	if (afterStart < str.size())
+	{
+		afterWidth = littleStringWidth(str.substr(afterStart));
+	}
+
+	return beforeWidth + smileyWidth + afterWidth;
 }
 
 void CFontManager::littlePrint(float x, float y, uint32 count, const char *ch)
@@ -381,11 +418,14 @@ void CFontManager::printf3D(const NLMISC::CRGBA &col, const NLMISC::CVector &pos
 			{
 				if (CharOrder[j] == *ptr)
 				{
+					// Scale quad size proportionally to the scale parameter
+					// (default scale is 0.01, so charSize = 0.01 at default)
+					float charSize = scale;
 					CQuadUV q;
-					q.V0.set(p.x+(avx-0.01f)*dt, p.y-0.01f*dt*(4.0f/3.0f), p.z);
-					q.V1.set(p.x+(avx-0.01f)*dt, p.y+0.01f*dt*(4.0f/3.0f), p.z);
-					q.V2.set(p.x+(avx+0.01f)*dt, p.y+0.01f*dt*(4.0f/3.0f), p.z);
-					q.V3.set(p.x+(avx+0.01f)*dt, p.y-0.01f*dt*(4.0f/3.0f), p.z);
+					q.V0.set(p.x+(avx-charSize)*dt, p.y-charSize*dt*(4.0f/3.0f), p.z);
+					q.V1.set(p.x+(avx-charSize)*dt, p.y+charSize*dt*(4.0f/3.0f), p.z);
+					q.V2.set(p.x+(avx+charSize)*dt, p.y+charSize*dt*(4.0f/3.0f), p.z);
+					q.V3.set(p.x+(avx+charSize)*dt, p.y-charSize*dt*(4.0f/3.0f), p.z);
 
 					float rx1 = CharX[j]+3+0.5f;
 					float ry1 = CharY[j]+23+0.5f;

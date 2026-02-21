@@ -31,6 +31,7 @@
 #include "time_task.h"
 #include "game_task.h"
 #include "chat_task.h"
+#include "graph.h"
 #include "mtp_target.h"
 #include "intro_task.h"
 #include "network_task.h"
@@ -58,7 +59,6 @@ using namespace NLMISC;
 #define CHAT_COLUMNS 160
 
 static std::list<std::string> ChatText;
-static std::string ChatInput = "";
 static std::list<std::string>::reverse_iterator CurrentChatLine = ChatText.rbegin();
 
 
@@ -72,6 +72,9 @@ void CChatTask::init()
 	logChat = CConfigFileTask::getInstance().configFile().getVar("LogChat").asInt()!=0;
 	fp = NULL;
 	chatActive = false;
+	// Consume any stale key state from login screen (Enter-to-connect)
+	C3DTask::getInstance().kbPressed(KeyRETURN);
+	C3DTask::getInstance().kbGetString();
 	if(logChat)
 	{
 		fp = fopen ("chat.log", "at");
@@ -92,19 +95,23 @@ void CChatTask::update()
 		{
 			// Activate chat mode
 			chatActive = true;
+			_chatEditor.clear();
+			// Flush any accumulated keyboard input from gameplay or login
+			C3DTask::getInstance().kbGetString();
 		}
 		else
 		{
 			// Send message and deactivate chat mode
-			if (ChatInput.length() > 0)
+			string chatInput = _chatEditor.getText();
+			if (chatInput.length() > 0)
 			{
-				if (ChatInput[0] == '/')
+				if (chatInput[0] == '/')
 				{
-					if(ChatInput.substr(0,7)=="/replay")
+					if(chatInput.substr(0,7)=="/replay")
 					{
 						if(SessionFile)
 						{
-							string comment = ChatInput.substr(8);
+							string comment = chatInput.substr(8);
 							fprintf(SessionFile,"0 CM %s\n",comment.c_str());
 							addLine(">> you marked this replay(" + CMtpTarget::getInstance().sessionFileName()+") : " + comment);
 							CMtpTarget::getInstance().moveReplay(true);
@@ -114,19 +121,19 @@ void CChatTask::update()
 							addLine(">> no replay to mark");
 						}
 					}
-					else if(ChatInput.substr(0,5)=="/help")
+					else if(chatInput.substr(0,5)=="/help")
 					{
-						CNetworkTask::getInstance().command(ChatInput.substr(1));
+						CNetworkTask::getInstance().command(chatInput.substr(1));
 						addLine("/help : this help");
 						addLine("/replay [comment] : mark a replay with the comment");
 					}
 					else
-						CNetworkTask::getInstance().command(ChatInput.substr(1));
+						CNetworkTask::getInstance().command(chatInput.substr(1));
 				}
 				else
-					CNetworkTask::getInstance().chat(ChatInput);
+					CNetworkTask::getInstance().chat(chatInput);
 			}
-			ChatInput = "";
+			_chatEditor.clear();
 			chatActive = false;
 		}
 	}
@@ -134,42 +141,19 @@ void CChatTask::update()
 	// Only capture keyboard input when chat is active
 	if (chatActive)
 	{
-		// Get user input
-		string res = C3DTask::getInstance().kbGetString();
-		for (const char *src = res.c_str(); *src != '\0';src++)
+		_chatEditor.setMaxLength(CHAT_COLUMNS - 10);
+		_chatEditor.processInput(false);
+
+		if (_chatEditor.wasEscPressed())
 		{
-			if (*src == 27)
-			{
-				// Escape - cancel chat mode
-				ChatInput = "";
-				chatActive = false;
-				continue;
-			}
-
-			if (*src == 8)
-			{ // Backspace
-				if (ChatInput.length() > 0)
-				{
-					ChatInput.resize(ChatInput.size()-1);
-				}
-				continue;
-			}
-
-			if (*src == '\r')
-			{
-				// Handled above
-				continue;
-			}
-
-			if (ChatInput.size() >= CHAT_COLUMNS - 10)
-				continue;
-
-			//		if (isprint(*src))
-			if (((uint8)(*src))>=32)
-			{
-				ChatInput += *src;
-			}
+			_chatEditor.clear();
+			chatActive = false;
 		}
+	}
+	else
+	{
+		// Drain keyboard buffer every frame to prevent character accumulation during gameplay
+		C3DTask::getInstance().kbGetString();
 	}
 
 	if (C3DTask::getInstance().kbPressed(KeyPRIOR))
@@ -218,13 +202,49 @@ void CChatTask::render()
 	{
 		CFontManager::getInstance().littlePrintf(0.0f, (float)i, "%s", (*it).c_str());
 	}
+	string chatInput = _chatEditor.getText();
 	if (chatActive)
 	{
-		CFontManager::getInstance().littlePrintf(0.0f, (float)cl, "> %s_", ChatInput.c_str());
+		string prompt = "> ";
+		float promptWidth = CFontManager::getInstance().littleStringWidth(prompt);
+		float lineY = (float)C3DTask::getInstance().screenHeight() - 16 * ((float)cl + 1) - 4;
+
+		// Draw selection highlight
+		if (_chatEditor.hasSelection())
+		{
+			uint selStart = _chatEditor.getSelectionStart();
+			uint selEnd = _chatEditor.getSelectionEnd();
+			string beforeSel = chatInput.substr(0, selStart);
+			string selText = chatInput.substr(selStart, selEnd - selStart);
+
+			float selX = promptWidth + CFontManager::getInstance().littleStringWidth(beforeSel);
+			float selW = CFontManager::getInstance().littleStringWidth(selText);
+			C3DTask::getInstance().driver().drawQuad(selX, lineY, selX + selW, lineY + 14, CRGBA(80, 120, 200, 160));
+		}
+
+		// Draw text
+		CFontManager::getInstance().littlePrintf(0.0f, (float)cl, "> %s", chatInput.c_str());
+
+		// Draw blinking cursor
+		static int cursorBlink = 0;
+		cursorBlink++;
+		if (cursorBlink < 30)
+		{
+			string beforeCursor = chatInput.substr(0, _chatEditor.getCursor());
+			float cursorX = promptWidth + CFontManager::getInstance().littleStringWidth(beforeCursor);
+			C3DTask::getInstance().driver().drawQuad(cursorX, lineY, cursorX + 1, lineY + 14, CRGBA(255, 255, 255, 220));
+		}
+		cursorBlink = cursorBlink % 60;
 	}
 	else
 	{
-		CFontManager::getInstance().littlePrintf(0.0f, (float)cl, "> %s", ChatInput.c_str());
+		CFontManager::getInstance().littlePrintf(0.0f, (float)cl, "> %s", chatInput.c_str());
+	}
+
+	// Debug mode 2: Render performance graphs
+	if (DisplayDebug == 2)
+	{
+		renderGraphs();
 	}
 }
 
@@ -234,7 +254,7 @@ void CChatTask::release()
 
 void CChatTask::addToInput(const string &text)
 {
-	ChatInput += text;
+	_chatEditor.insertText(text);
 }
 
 void CChatTask::addLine(const std::string &text)

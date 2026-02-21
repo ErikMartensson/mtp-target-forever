@@ -128,13 +128,19 @@ void CGuiTextManager::init()
 	_entryMaterial.setBlend(true);
 	_entryMaterial.setZFunc(UMaterial::always);
 	_entryMaterial.setDoubleSided();
-	
+
+	_selectionMaterial = C3DTask::getInstance().createMaterial();
+	_selectionMaterial.setBlend(true);
+	_selectionMaterial.setZFunc(UMaterial::always);
+	_selectionMaterial.setDoubleSided();
+
 	CGuiText::XmlRegister();
 	CGuiTextPercent::XmlRegister();
 }
 	
 void CGuiTextManager::render()
 {
+	CGuiText::clearFocusableList();
 }
 
 void CGuiTextManager::release()
@@ -151,6 +157,11 @@ UMaterial CGuiTextManager::cursorMaterial()
 UMaterial CGuiTextManager::entryMaterial()
 {
 	return _entryMaterial;
+}
+
+UMaterial CGuiTextManager::selectionMaterial()
+{
+	return _selectionMaterial;
 }
 
 //
@@ -182,6 +193,50 @@ void CGuiTextCursor::Render(const CVector &position,int height)
 
 
 //
+// Tab navigation
+//
+std::vector<CGuiText*> CGuiText::_focusableFields;
+
+void CGuiText::clearFocusableList()
+{
+	_focusableFields.clear();
+}
+
+void CGuiText::_registerFocusable()
+{
+	if (isEntry() && isEditable())
+		_focusableFields.push_back(this);
+}
+
+void CGuiText::tabFocusNext()
+{
+	if (_focusableFields.size() < 2) return;
+	for (uint i = 0; i < _focusableFields.size(); i++)
+	{
+		if (_focusableFields[i]->focused())
+		{
+			uint next = (i + 1) % (uint)_focusableFields.size();
+			CGuiObjectManager::getInstance().focus(_focusableFields[next]);
+			return;
+		}
+	}
+}
+
+void CGuiText::tabFocusPrev()
+{
+	if (_focusableFields.size() < 2) return;
+	for (uint i = 0; i < _focusableFields.size(); i++)
+	{
+		if (_focusableFields[i]->focused())
+		{
+			uint prev = (i + (uint)_focusableFields.size() - 1) % (uint)_focusableFields.size();
+			CGuiObjectManager::getInstance().focus(_focusableFields[prev]);
+			return;
+		}
+	}
+}
+
+//
 //
 //
 
@@ -191,9 +246,10 @@ void CGuiText::_init(const string &text)
 	_cursorIndex = 0;	// must be init here becaise cursorIndex() make a if() with this value that is not init the first time
 	cursorIndex(0);
 	_isEditable  = false;
-	_isEntry     = false;	
+	_isEntry     = false;
 	_isPassword  = false;
 	_isMultiline = true;
+	_wasFocused  = false;
 }
 
 CGuiText::CGuiText(const string &text)
@@ -255,6 +311,9 @@ void CGuiText::_render(const CVector &pos,CVector &maxSize)
 
 	CVector expSize = expandSize(maxSize);
 
+	// Register this field for Tab navigation
+	_registerFocusable();
+
 	if(isEntry())
 	{
 		CGuiStretchedQuad quad;
@@ -272,57 +331,82 @@ void CGuiText::_render(const CVector &pos,CVector &maxSize)
 
 	if(focused() && isEntry())
 	{
-		CGuiTextCursor::Render(cursorPos,CFontManager::getInstance().guiFontSize());
+		// Select all text when field gains focus
+		if (!_wasFocused && isEditable())
+		{
+			_editor.setText(text);
+			_editor.selectAll();
+			cursorIndex(_editor.getCursor());
+			_lastSyncedText = text;
+			_wasFocused = true;
+		}
+
+		// Render selection highlight
+		if (_editor.hasSelection())
+		{
+			uint selStart = _editor.getSelectionStart();
+			uint selEnd = _editor.getSelectionEnd();
+			string displayText = strToPassword(text, isPassword());
+
+			string beforeSel = displayText.substr(0, selStart);
+			string selectedStr = displayText.substr(selStart, selEnd - selStart);
+
+			UTextContext::CStringInfo beforeInfo = CFontManager::getInstance().guiTextContext().getStringInfo(ucstring(beforeSel));
+			UTextContext::CStringInfo selInfo = CFontManager::getInstance().guiTextContext().getStringInfo(ucstring(selectedStr));
+
+			float selX = globalPos.x + beforeInfo.StringWidth;
+			float selW = selInfo.StringWidth;
+			float selY = cursorPos.y;
+			float selH = (float)CFontManager::getInstance().guiFontSize();
+
+			CQuad quad;
+			quad.V0.set(selX, selY, 0);
+			quad.V1.set(selX + selW, selY, 0);
+			quad.V2.set(selX + selW, selY + selH, 0);
+			quad.V3.set(selX, selY + selH, 0);
+
+			UMaterial selMat = CGuiTextManager::getInstance().selectionMaterial();
+			selMat.setColor(CRGBA(80, 120, 200, 128));
+			C3DTask::getInstance().driver().drawQuad(quad, selMat);
+		}
+
+		CGuiTextCursor::Render(cursorPos, CFontManager::getInstance().guiFontSize());
 		if(isEditable())
 		{
-			string res = C3DTask::getInstance().kbGetString();
-			if(res.size())
+			// Sync editor from external text changes
+			if (text != _lastSyncedText)
 			{
-				for (const char *src = res.c_str(); *src != '\0';src++)
-				{
-					if (*src == 8)
-					{ // Backspace
-						if (text.length() > 0 && cursorIndex()>0)
-						{
-							text = text.substr(0,cursorIndex()-1) + text.substr(cursorIndex(),text.size());
-							cursorIndex(cursorIndex()-1);
-						}
-						continue;
-					}
-
-					if(isprint(*src))
-						insert(*src);
-					if((*src)==13 && isMultiline())
-						insert('\n');
-				}
-			}
-			
-			if (C3DTask::getInstance().kbPressed(KeyDELETE))
-			{
-				if (text.length() > 0 && cursorIndex()<text.size())
-				{
-					text = text.substr(0,cursorIndex()) + text.substr(cursorIndex()+1,text.size());
-				}
+				_editor.setText(text);
+				_editor.setCursor(cursorIndex());
+				_lastSyncedText = text;
 			}
 
-			if (C3DTask::getInstance().kbPressed(KeyUP))
-				cursorUp();
-			if (C3DTask::getInstance().kbPressed(KeyDOWN))
-				cursorDown();
-			if (C3DTask::getInstance().kbPressed(KeyLEFT))
-				cursorLeft();
-			if (C3DTask::getInstance().kbPressed(KeyRIGHT))
-				cursorRight();
-			if (C3DTask::getInstance().kbPressed(KeyHOME))
-				cursorHome();
-			if (C3DTask::getInstance().kbPressed(KeyEND))
-				cursorEnd();
+			if (_editor.processInput(isMultiline()))
+			{
+				text = _editor.getText();
+				cursorIndex(_editor.getCursor());
+				_lastSyncedText = text;
+				CGuiTextCursor::Reset();
+			}
+
+			// Tab navigation between fields
+			bool shift = C3DTask::getInstance().kbDown(KeySHIFT);
+			if (C3DTask::getInstance().kbPressed(KeyTAB))
+			{
+				if (shift)
+					tabFocusPrev();
+				else
+					tabFocusNext();
+			}
 		}
 	}
-
+	else
+	{
+		_wasFocused = false;
+	}
 
 	maxSize = expSize;
-	
+
 }
 
 
@@ -370,7 +454,7 @@ void CGuiText::cursorEnd()
 			{
 				column = i;
 				line = j;
-				cursorIndex(home + vstr[j].size());
+				cursorIndex(home + (uint)vstr[j].size());
 				return;
 			}
 		}
@@ -403,13 +487,13 @@ void CGuiText::cursorUp()
 	{
 		if( j==(line-1) )
 		{
-			if( column>vstr[j].size() )
-				cursorIndex(pos + vstr[j].size());
+			if( column>(uint)vstr[j].size() )
+				cursorIndex(pos + (uint)vstr[j].size());
 			else
 				cursorIndex(pos + column);
 		}
 		else
-			pos += vstr[j].size()+1;
+			pos += (uint)vstr[j].size()+1;
 	}
 }
 
@@ -439,13 +523,13 @@ void CGuiText::cursorDown()
 	{
 		if( j==(line+1) )
 		{
-			if( column>vstr[j].size() )
-				cursorIndex(pos + vstr[j].size());
+			if( column>(uint)vstr[j].size() )
+				cursorIndex(pos + (uint)vstr[j].size());
 			else
 				cursorIndex(pos + column);
 		}
 		else
-			pos += vstr[j].size()+1;
+			pos += (uint)vstr[j].size()+1;
 	}
 }
 
@@ -461,8 +545,8 @@ void CGuiText::cursorLeft()
 void CGuiText::cursorRight()
 {
 	cursorIndex(cursorIndex()+1);
-	if(cursorIndex()>text.size())
-		cursorIndex(text.size());
+	if(cursorIndex()>(uint)text.size())
+		cursorIndex((uint)text.size());
 	else
 		CGuiTextCursor::Reset();				
 }
@@ -526,6 +610,11 @@ void CGuiText::isMultiline(bool isMultiline)
 bool CGuiText::isMultiline()
 {
 	return _isMultiline;
+}
+
+bool CGuiText::wasReturnPressed()
+{
+	return _editor.wasReturnPressed();
 }
 
 void CGuiText::cursorIndex(int cursorIndex)
@@ -601,7 +690,7 @@ void CGuiTextPercent::_render(const CVector &pos,CVector &maxSize)
 	if(_ptrValue)
 		sprintf(ch,"%.0f%%",*_ptrValue * 100);
 	else
-		sprintf(ch,"0%");
+		sprintf(ch,"0%%");
 	text = ch;
 	CGuiText::_render(pos,maxSize);
 }

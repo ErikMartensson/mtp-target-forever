@@ -31,7 +31,9 @@
 // Includes
 //
 
+#include <vector>
 #include "gui_object.h"
+#include "text_editor.h"
 
 
 
@@ -73,7 +75,9 @@ class CGuiText : public CGuiObject
 	
 	void isMultiline(bool isMultiline);
 	bool isMultiline();
-	
+
+	bool wasReturnPressed();
+
 	void cursorIndex(int cursorIndex);
 	uint cursorIndex();
 	
@@ -93,18 +97,28 @@ class CGuiText : public CGuiObject
 	virtual void init(CGuiXml *xml,xmlNodePtr node);
 
 	virtual void luaPush(lua_State *L);
-	static const char className[];	
-	static Lunar<CGuiText>::RegType methods[];	
+	static const char className[];
+	static Lunar<CGuiText>::RegType methods[];
 	int getName(lua_State *luaSession);
 	int getString(lua_State *luaSession);
 	int setString(lua_State *luaSession);
+
+	// Tab navigation: tracks editable entry fields in render order
+	static void clearFocusableList();
+	static void tabFocusNext();
+	static void tabFocusPrev();
 private:
 	void _init(const std::string &text);
+	void _registerFocusable();
 	uint _cursorIndex;
 	bool _isEditable;
 	bool _isEntry;
 	bool _isPassword;
 	bool _isMultiline;
+	CTextEditor _editor;
+	std::string _lastSyncedText;
+	bool _wasFocused;
+	static std::vector<CGuiText*> _focusableFields;
 };
 
 
@@ -137,12 +151,14 @@ public:
 
 	NL3D::UMaterial cursorMaterial();
 	NL3D::UMaterial entryMaterial();
-	
+	NL3D::UMaterial selectionMaterial();
+
 protected:
 	NL3D::UTextureFile	*_cursorTexture;
 	NL3D::UMaterial _cursorMaterial;
 	NL3D::UTextureFile	*_entryTexture;
 	NL3D::UMaterial _entryMaterial;
+	NL3D::UMaterial _selectionMaterial;
 private:
 	
 };

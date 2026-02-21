@@ -23,6 +23,10 @@ SOURCE_GROUP(Network FILES	../../common/custom_floating_point.cpp
 
 SOURCE_GROUP(Level\\EditableElement FILES	../../common/editable_element_common.cpp
 										../../common/editable_element_common.cpp
+										gate.cpp
+										gate.h
+										gate_lua_proxy.cpp
+										gate_lua_proxy.h
 										module.cpp
 										module.h
 										module_common.cpp
@@ -61,6 +65,8 @@ SOURCE_GROUP(Tasks FILES		3d_task.cpp
 								config_file_task.h
 								editor_task.cpp
 								editor_task.h
+								external_camera_task.cpp
+								external_camera_task.h
 								game_task.cpp
 								game_task.h
 								gui_task.cpp
@@ -131,6 +137,8 @@ SOURCE_GROUP(GUI FILES		gui.h
 							gui_stretched_quad.h
 							gui_text.cpp
 							gui_text.h
+							text_editor.cpp
+							text_editor.h
 							gui_toc.cpp
 							gui_toc.h
 							gui_xml.cpp
@@ -144,6 +152,8 @@ SOURCE_GROUP(Misc FILES		camera.cpp
 							font_manager.cpp
 							font_manager.h
 							global.h
+							graph.cpp
+							graph.h
 							interface.cpp
 							interface.h
 							interpolator.cpp

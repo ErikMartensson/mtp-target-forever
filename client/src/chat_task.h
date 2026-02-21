@@ -31,7 +31,7 @@
 // Includes
 //
 
-
+#include "text_editor.h"
 
 //
 // Classes
@@ -58,6 +58,7 @@ private:
 	bool logChat;
 	FILE *fp;
 	bool chatActive;
+	CTextEditor _chatEditor;
 };
 
 #endif
