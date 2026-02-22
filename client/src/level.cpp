@@ -363,6 +363,25 @@ CLevel::CLevel(const string &filename)
 	}
 	lua_pop(LuaState, 1);  // removes `key'
 
+	// Preload textures listed in PreloadTextures table (prevents loading screen
+	// interruptions when textures are changed dynamically during gameplay)
+	lua_getglobal(LuaState, "PreloadTextures");
+	if (!lua_isnil(LuaState, -1))
+	{
+		lua_pushnil(LuaState);
+		while(lua_next(LuaState, -2) != 0)
+		{
+			if (lua_isstring(LuaState, -1))
+			{
+				string texName = lua_tostring(LuaState, -1);
+				nlinfo("Preloading texture: %s", texName.c_str());
+				CResourceManager::getInstance().get(texName + ".dds");
+			}
+			lua_pop(LuaState, 1);
+		}
+	}
+	lua_pop(LuaState, 1);
+
 	// Load modules
 	lua_getglobal(LuaState, "ExternalCameras");
 	if (!lua_isnil(LuaState, -1))
@@ -405,8 +424,34 @@ CLevel::CLevel(const string &filename)
 	DisplayLevel = true;
 
 	Valid = true;
+
+	// Determine whether to show snow particles for this level.
+	// Default: off for space/city/sun themes (by filename prefix), on for everything else.
+	// Individual levels can override with ShowSnow = 0 or ShowSnow = 1 in their Lua file.
+	bool showSnow = true;
+	string baseName = CFile::getFilenameWithoutExtension(filename);
+	if(baseName.substr(0, 12) == "level_space_" ||
+	   baseName.substr(0, 11) == "level_city_" ||
+	   baseName.substr(0, 10) == "level_sun_")
+	{
+		showSnow = false;
+	}
+	int ShowSnow = -1;
+	luaGetGlobalVariable(LuaState, ShowSnow);
+	if(ShowSnow != -1)
+		showSnow = (ShowSnow != 0);
+
 	if(!C3DTask::getInstance().levelParticle().empty())
-		C3DTask::getInstance().levelParticle().show();
+	{
+		if(showSnow)
+			C3DTask::getInstance().levelParticle().show();
+		else
+			C3DTask::getInstance().levelParticle().hide();
+	}
+
+	float CameraPitch = 0.6f;  // Default downward tilt to see down ramps
+	luaGetGlobalVariable(LuaState, CameraPitch);
+	CameraPitchValue = CameraPitch;
 
 	float cameraMinDistFromStartPointToMove = 0.5f;
 	luaGetGlobalVariable(LuaState, cameraMinDistFromStartPointToMove);
