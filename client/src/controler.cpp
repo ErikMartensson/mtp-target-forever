@@ -171,19 +171,19 @@ void CControler::update()
 			// Don't process arrow keys when chat is active
 			if (!CChatTask::getInstance().isChatActive())
 			{
-				if (C3DTask::getInstance().kbDown(KeyUP))
+				if (C3DTask::getInstance().kbDown(KeyUP) || C3DTask::getInstance().kbDown(KeyW))
 				{
 					dv.y += 1.0f;
 				}
-				if (C3DTask::getInstance().kbDown(KeyDOWN))
+				if (C3DTask::getInstance().kbDown(KeyDOWN) || C3DTask::getInstance().kbDown(KeyS))
 				{
 					dv.y -= 1.0f;
 				}
-				if (C3DTask::getInstance().kbDown(KeyLEFT))
+				if (C3DTask::getInstance().kbDown(KeyLEFT) || C3DTask::getInstance().kbDown(KeyA))
 				{
 					dv.x -= 1.0f;
 				}
-				if (C3DTask::getInstance().kbDown(KeyRIGHT))
+				if (C3DTask::getInstance().kbDown(KeyRIGHT) || C3DTask::getInstance().kbDown(KeyD))
 				{
 					dv.x += 1.0f;
 				}
@@ -241,34 +241,34 @@ void CControler::update()
 					*/
 					if(speed>1.0f)
 					{
-						if (C3DTask::getInstance().kbDown(KeyLEFT))
+						if (C3DTask::getInstance().kbDown(KeyLEFT) || C3DTask::getInstance().kbDown(KeyA))
 							deltaAccel -= right * speed * speedRatio;
-						if (C3DTask::getInstance().kbDown(KeyRIGHT))
+						if (C3DTask::getInstance().kbDown(KeyRIGHT) || C3DTask::getInstance().kbDown(KeyD))
 							deltaAccel += right * speed * speedRatio;
 					}
 					else
 					{
-						if (C3DTask::getInstance().kbDown(KeyLEFT))
+						if (C3DTask::getInstance().kbDown(KeyLEFT) || C3DTask::getInstance().kbDown(KeyA))
 							deltaAccel -= right ;
-						if (C3DTask::getInstance().kbDown(KeyRIGHT))
+						if (C3DTask::getInstance().kbDown(KeyRIGHT) || C3DTask::getInstance().kbDown(KeyD))
 							deltaAccel += right ;
 					}
 
-					if (C3DTask::getInstance().kbDown(KeyUP))
+					if (C3DTask::getInstance().kbDown(KeyUP) || C3DTask::getInstance().kbDown(KeyW))
 						deltaAccel += lookAt;
-					if (C3DTask::getInstance().kbDown(KeyDOWN))
+					if (C3DTask::getInstance().kbDown(KeyDOWN) || C3DTask::getInstance().kbDown(KeyS))
 						deltaAccel -= lookAt;
 				}
 				else
 				{
-					if (C3DTask::getInstance().kbDown(KeyUP))
+					if (C3DTask::getInstance().kbDown(KeyUP) || C3DTask::getInstance().kbDown(KeyW))
 						deltaPique -= PIQUE_SPEED;
-					if (C3DTask::getInstance().kbDown(KeyDOWN))
+					if (C3DTask::getInstance().kbDown(KeyDOWN) || C3DTask::getInstance().kbDown(KeyS))
 						deltaPique += PIQUE_SPEED;
 
-					if (C3DTask::getInstance().kbDown(KeyLEFT))
+					if (C3DTask::getInstance().kbDown(KeyLEFT) || C3DTask::getInstance().kbDown(KeyA))
 						deltaRot += ROT_SPEED_OPEN;
-					if (C3DTask::getInstance().kbDown(KeyRIGHT))
+					if (C3DTask::getInstance().kbDown(KeyRIGHT) || C3DTask::getInstance().kbDown(KeyD))
 						deltaRot -= ROT_SPEED_OPEN;
 				}
 			}
@@ -472,7 +472,10 @@ void CControler::update()
 			*/
 		
 
-		if (C3DTask::getInstance().kbPressed(KeyLCONTROL) || C3DTask::getInstance().kbPressed(KeyRCONTROL) || C3DTask::getInstance().kbPressed(KeyCONTROL) && !C3DTask::getInstance().kbDown(KeyMENU))
+		// Always consume Space press to prevent buffered events from firing after chat closes
+		bool spacePressed = C3DTask::getInstance().kbPressed(KeySPACE) && !CChatTask::getInstance().isChatActive();
+		if (C3DTask::getInstance().kbPressed(KeyLCONTROL) || C3DTask::getInstance().kbPressed(KeyRCONTROL) || C3DTask::getInstance().kbPressed(KeyCONTROL) && !C3DTask::getInstance().kbDown(KeyMENU)
+			|| spacePressed)
 		{
 			//trick to remove all key control pressed event
 			C3DTask::getInstance().kbPressed(KeyLCONTROL);

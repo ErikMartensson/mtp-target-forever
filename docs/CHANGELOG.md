@@ -2,6 +2,118 @@
 
 All notable improvements and changes from the original MTP Target v1.2.2a.
 
+## WASD + Space Alternative Controls (February 22, 2026)
+
+Added WASD and Space as always-on alternative controls alongside the existing arrow keys and Ctrl:
+
+- **W/A/S/D** — alternative to arrow keys for movement, steering, and gliding
+- **Space** — alternative to Ctrl for toggling wings open/closed
+
+Works in all gameplay modes (rolling, flying, free-look camera). All alternative keys are automatically disabled when chat is open (Enter to toggle), so typing is unaffected. Space key events are always consumed to prevent buffered presses from triggering open/close after sending a chat message.
+
+**File changed:** `client/src/controler.cpp`
+
+---
+
+## Paint Level and Bot Replay Fixes (February 22, 2026)
+
+### Fix: level_paint friction and painting broken
+
+The `level_paint` level had two issues: zero friction on the platform (ball slid right off) and paint blocks never changing color when rolled over.
+
+**Root causes:**
+1. **Friction overwrite:** The v1.5.19 compatibility code in `level.cpp` applied C++ property overrides (Friction=0 from the level definition) *after* `module_paint_bloc.lua` had already set Friction=10.0, zeroing it out.
+2. **Painting broken:** Three separate issues:
+   - `level_paint_server.lua` used v1.5.19-style function aliases (`module()`, `moduleCount()`, `entityById()`, `level()`) that are only defined by `utilities.lua`, which isn't loaded for v1.2.2a-style levels
+   - `module_paint_bloc.lua` overwrote the `CModulePaintBloc` class from the ServerLua script with an incompatible version (different method names: `postUdate` vs `postUpdate`)
+   - `loadModuleLuaScript()` overwrote the global `module` variable (aliased to `getModule()`) with the CModuleProxy for each paint_bloc, breaking `CLevel:postUpdate()`'s `module(i)` calls
+   - The `setColor` calls used wrong client API format (`CRGBA()` object instead of 4 separate numbers)
+
+**Fix:**
+- Split `CModule::_luaInit()` so module Lua scripts load *after* C++ property overrides, giving module scripts the last word on friction/accel/etc.
+- Save/restore the `module` global around module Lua script loading to preserve the `getModule()` alias
+- Added missing function aliases to `level_paint_server.lua` (bridge functions normally provided by `utilities.lua`)
+- Fixed `setColor` client API calls in `level_paint_server.lua` to use correct 4-number format
+- Guarded `CModulePaintBloc` definition in `module_paint_bloc.lua` to not overwrite the ServerLua version
+- Fixed method name typos in the fallback definition (`postUdate` -> `postUpdate`, `finalScore` -> `updateScore`)
+
+**Files changed:**
+- `server/src/module.cpp` / `.h` - Split `_luaInit()` into proxy creation + `loadModuleLuaScript()` with global save/restore
+- `server/src/level.cpp` - Call `loadModuleLuaScript()` after C++ property overrides
+- `data/lua/level_paint_server.lua` - Added function aliases, fixed client API calls
+- `data/module/module_paint_bloc.lua` - Guarded class definition, fixed method names
+
+### Fix: Bots loading wrong level replays (regression)
+
+Bots were loading replay files from other levels whose names contained the current level name as a substring. For example, level "Paint" would match "City Paint" replay files, causing bots to follow nonsensical paths.
+
+**Root cause:** `bot.cpp` used `string::find()` for replay file matching, which does substring matching. `"City Paint.4.000.mtr".find("Paint")` succeeds because "Paint" appears within "City Paint".
+
+**Fix:** Changed to exact prefix matching on the filename — replay files must START with the level name followed by a period.
+
+**Files changed:**
+- `server/src/bot.cpp` - Use `CFile::getFilename()` + prefix match (`find() == 0`) instead of substring match
+
+---
+
+## Camera Improvements (February 22, 2026)
+
+### Initial camera pitch and free-look mouse mode
+
+Two camera improvements to address spawn visibility and mouse control:
+
+**Default downward camera pitch:**
+- Camera now starts tilted ~17 degrees downward (0.3 radians) when spawning, so players can see down ramps instead of looking straight into ramp geometry
+- Previously the camera started at horizon level, which on most levels put it inside the starting ramp/slope. Snow ramps were transparent from inside but city ramps blocked the entire view with gray
+- Levels can override this default via `CameraPitch` in their Lua file (e.g., `CameraPitch = 0.0` for flat levels)
+
+**New mouse mode 4 (now default):**
+- Camera always tracks mouse movement without holding left-click
+- Hold left-click to lock the camera in place (inverted from old behavior)
+- Previous default (mode 2) required holding left-click to look around, which was unintuitive for new players
+- Old mouse modes (1-3) still available via `AllowMouse` config setting
+
+**Files changed:**
+- `client/src/mouse_listener.cpp` / `.h` - Added mode 4, default pitch on reset
+- `client/src/level.cpp` / `.h` - Read optional `CameraPitch` from level Lua
+- `client/src/mtp_target.cpp` - Apply per-level camera pitch after level load
+- `client/mtp_target_default.cfg`, `data/config/mtp_target_default.cfg` - Default AllowMouse changed to 4
+
+---
+
+## City Paint Texture Preloading (February 21, 2026)
+
+### Fix: Loading screen interruption during city_paint gameplay
+
+When playing `level_city_paint`, the first time any player touched a platform, the paint mechanic changed the module's texture (from `city_building_orange` to `city_building_ocre` or `city_building_blue`). Since these textures weren't loaded during level init, the client triggered a download/resource fetch mid-gameplay, showing a "Please wait while downloading" GUI that interrupted the player's view for up to 1 second.
+
+**Root cause:** The paint server script (`level_city_paint_server.lua`) uses `execLuaOnAllClient(...:setTexture(...))` to dynamically change module textures during gameplay. The textures `city_building_ocre`, `city_building_blue`, and `empty` aren't referenced by any module at level load time (everything starts as `city_building_orange`), so they aren't fetched until first use.
+
+**Fix:**
+- `client/src/module.cpp` — Changed `CModule::setTexture()` to try `CPath::lookup()` first for instant local file resolution. Only falls back to `CResourceManager::get()` (which involves CRC checks and network round-trips) if the file isn't found locally. This prevents the loading dialog from appearing for any locally available texture.
+- Added `PreloadTextures` level table support to the client level loader (`client/src/level.cpp`). Levels can declare textures to preload during level initialization, ensuring they're fetched before gameplay starts (useful for textures that need to be downloaded from a remote server).
+- Added `PreloadTextures = { "city_building_ocre", "city_building_blue", "empty" }` to `level_city_paint.lua`.
+
+---
+
+## Darts Level Scoring Fix (February 21, 2026)
+
+### Fix: level_city_darts always scoring 0 points
+
+The darts level has a long flat runway (`snow_box`) that launches players toward a platform with street sign targets on poles. Players fly off the runway and crash into sign faces for points. ODE's sphere-trimesh collision detection unreliably detects the thin sign meshes — the entity sphere stops on the platform surface (`city_target_zero`, score=0) instead of registering a hit on the sign above it.
+
+**Root cause:** ODE sphere-trimesh collision misses thin sign meshes. Server logs confirmed that entities nearly always collide with only `city_target_zero` (the platform, score=0), even when visually hitting a sign face dead-on. The thin sign trimeshes are occasionally detected (giving correct scores), but most hits land on the larger platform mesh underneath.
+
+**Fixes applied:**
+- `data/lua/level_darts_server.lua` — Added Z-height-gated proximity fallback. When an entity collides with a score-0 module (the platform), the script checks if the entity is elevated above the platform surface (Z > 0.03 above the module). If so, it finds the closest scoring module by XY distance and awards that score. This distinguishes sign-face hits (entity elevated at sign height, Z ~0.12 above platform) from empty platform hits (entity at platform level, Z ~0.01 above). Direct hits on scoring sign meshes (when ODE does detect them) still use the module's own score.
+- `server/src/physics.cpp` — Crash-in-fly `CurrentScore = 0` reset now only fires on the first crash frame (moved inside `if(!FreezeCommand)` guard). Previously it fired every frame, wiping the score set by the Lua callback.
+- `server/src/level.cpp` — Now reads the `Collide` property from the Lua Modules table (alongside Score, Friction, Accel, Bounce). Allows levels to explicitly disable module collision.
+- `data/lua/helpers.lua` — Ultimate fallback scoring uses higher-score-wins logic.
+
+**Known limitation:** The very bottom edge of the smallest/lowest sign may occasionally not register a score, because the entity's Z height at that point is barely above the platform threshold.
+
+---
+
 ## Modern Text Input (February 9, 2026)
 
 ### Full Text Editing for GUI Fields and Chat

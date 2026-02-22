@@ -20,20 +20,20 @@ MTP Target Forever is a penguin bowling/curling game. You roll down slopes and t
 
 ### Movement
 
-| Key | Closed (Rolling) | Open (Flying) |
-|-----|------------------|---------------|
-| **Left/Right Arrow** | Steer left/right | Rotate/bank |
-| **Up Arrow** | Accelerate forward | Pitch down (dive) |
-| **Down Arrow** | Brake/slow down | Pitch up (climb) |
+| Action | Primary Key | Alternative |
+|--------|-------------|-------------|
+| Steer left/right | **Left/Right Arrow** | **A/D** |
+| Accelerate / Pitch down | **Up Arrow** | **W** |
+| Brake / Pitch up | **Down Arrow** | **S** |
 
 ### Wings
 
-| Key | Action |
-|-----|--------|
-| **Ctrl** (Left or Right) | Toggle wings open/closed |
+| Action | Primary Key | Alternative |
+|--------|-------------|-------------|
+| Toggle wings open/closed | **Ctrl** (Left or Right) | **Space** |
 
-- **Closed**: You're a rolling ball with momentum. Use arrow keys to steer.
-- **Open**: You're a gliding penguin. Use arrow keys to control pitch and roll.
+- **Closed**: You're a rolling ball with momentum. Use arrow keys or WASD to steer.
+- **Open**: You're a gliding penguin. Use arrow keys or WASD to control pitch and roll.
 
 **Tip**: Open your wings when you want to aim for a specific target. Close them to pick up speed on slopes.
 
@@ -64,28 +64,7 @@ When chat is open, arrow keys type in the chat box. Press Enter to send or Escap
 
 ### Chat Commands
 
-Commands start with `/` and are typed in chat.
-
-#### Player Commands (Everyone)
-
-| Command | Description |
-|---------|-------------|
-| `/help` | Show available commands |
-| `/v <mapname>` | Vote for next level (short form) |
-| `/votemap <mapname>` | Vote for next level |
-
-#### Admin Commands
-
-These require admin privileges (configured in server's `mtp_target_service.cfg`).
-
-| Command | Description |
-|---------|-------------|
-| `/forcemap <mapname>` | Set the next level |
-| `/forceend` | Force end current session and show scores |
-| `/reset` | Hard reset of session (use with caution) |
-| `/kick <name>` | Kick a player |
-| `/ban <name> <duration>` | Ban a player |
-| `/playerList` | List connected players |
+See [CHAT.md](CHAT.md) for the full chat reference (commands, smileys).
 
 ---
 
@@ -112,23 +91,19 @@ These are developer tools for testing and debugging. Some require admin privileg
 | **F4** | Toggle editor mode | Non-functional |
 | **Ctrl+F4** | Toggle debug info overlay | Non-functional |
 
+### Music Controls
+
+| Key | Action |
+|-----|--------|
+| **F5** | Pause/resume music |
+| **F6** | Previous track |
+
 ### Session Control (Admin Required)
 
 | Key | Action |
 |-----|--------|
 | **Ctrl+F5** | Force end session (same as `/forceend`) |
 | **Ctrl+F6** | Reset session (same as `/reset`) |
-
-**Known Issue**: Ctrl+F6 (`/reset`) currently behaves identically to Ctrl+F5 (`/forceend`) - it advances to the next level instead of restarting the current session. This is a bug to be fixed in a future update.
-
-### Bot Management (Disabled)
-
-| Key | Action |
-|-----|--------|
-| **F5** | ~~Add bot~~ - **DISABLED** (caused server crashes) |
-| **F6** | ~~Kick a bot~~ - **DISABLED** (caused server crashes) |
-
-**Note**: Both F5 and F6 have been disabled because they caused server crashes. The bot system requires replay data and proper session state that isn't available during active gameplay.
 
 ### Camera / Spectator
 
