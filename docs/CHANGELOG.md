@@ -2,6 +2,20 @@
 
 All notable improvements and changes from the original MTP Target v1.2.2a.
 
+## Auto-Reset Camera on Round Start (February 24, 2026)
+
+### Fix: Camera stays on spectated player after round ends
+
+When spectating another player with F9/F10 after crashing or landing, the camera would remain on that player when the next round started. Players wouldn't notice until after the countdown, losing valuable positioning time.
+
+**Root cause:** The existing `resetFollowedEntity()` call in `loadNewSession()` fired early (during session loading), but could be overridden if the player pressed F9/F10 during the waiting period before the countdown began.
+
+**Fix:** Added a `resetFollowedEntity()` call in `everybodyReady()`, which fires when the countdown starts. This ensures the camera snaps back to the player's own penguin right as the "3... 2... 1..." countdown begins, regardless of who they were spectating. F9/F10 spectating still works normally during gameplay.
+
+**File changed:** `client/src/mtp_target.cpp`
+
+---
+
 ## Level Info Text and Space Texture Fix (February 23, 2026)
 
 ### Feature: Display level info text during countdown

@@ -308,7 +308,11 @@ void CMtpTarget::loadNewSession()
 	controler().Camera.reset();
 
 	if(CLevelManager::getInstance().levelPresent())
+	{
 		CLevelManager::getInstance().currentLevel().reset();
+		// Apply per-level camera pitch (overrides default from mouseListener reset)
+		C3DTask::instance().mouseListener().MouseY = CLevelManager::getInstance().currentLevel().cameraPitch();
+	}
 	else
 		nlwarning("there is no level");
 
@@ -692,6 +696,10 @@ void mtpTarget::everybodyReady()
 	// everybody is ok, let s count down
 	CMtpTarget::getInstance().State = CMtpTarget::eReady;
 	CEntityManager::getInstance().everybodyReady(true);
+
+	// Reset camera to follow player's own penguin at the start of each round,
+	// in case they were spectating another player (F9/F10) from the previous round
+	CMtpTarget::getInstance().resetFollowedEntity();
 }
 	
 void mtpTarget::endSession()
