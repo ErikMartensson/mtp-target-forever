@@ -368,6 +368,23 @@ void CFontManager::printf(const NLMISC::CRGBA &col, float x, float y, float scal
 }
 
 
+void CFontManager::printfCentered(const NLMISC::CRGBA &col, float y, const char *format, ...)
+{
+	H_AUTO(printfCentered);
+
+	char *str;
+	NLMISC_CONVERT_VARGS (str, format, 256);
+
+	for (char *ptr = str; *ptr; ptr++)
+		*ptr = toupper(*ptr);
+
+	BigTextContext->setColor(col);
+	BigTextContext->setHotSpot(NL3D::UTextContext::MiddleTop);
+	BigTextContext->printfAt(0.5f, 1.0f - y / (float)C3DTask::getInstance().screenHeight(), str);
+	BigTextContext->setHotSpot(NL3D::UTextContext::BottomLeft);
+}
+
+
 void CFontManager::printf3D(const NLMISC::CRGBA &col, const NLMISC::CVector &pos, float scale, const char *format, ...)
 {
 	H_AUTO(printf3D);

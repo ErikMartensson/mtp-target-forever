@@ -71,6 +71,7 @@ public:
 	void littlePrint(float x, float y, uint32 count, const char *ch);
 	float littleStringWidth(const std::string &str);
 	void printf(const NLMISC::CRGBA &col, float x, float y, float scale, const char *format, ...);
+	void printfCentered(const NLMISC::CRGBA &col, float y, const char *format, ...);
 	void printf3D(const NLMISC::CRGBA &col, const NLMISC::CVector &pos, float scale, const char *format, ...);
 	
 	uint32 fontWidth() const { return FontWidth; }

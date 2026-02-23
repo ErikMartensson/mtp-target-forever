@@ -201,6 +201,18 @@ void CHudTask::render()
 			CFontManager::getInstance().printf(CRGBA(245, 238, 141, 255), 1 * fontWidth, 16.0f * fontHeight,1, CMtpTarget::getInstance().String1.c_str());
 			CFontManager::getInstance().printf(CRGBA(253, 207, 85, 255), 1 * fontWidth, 18.0f * fontHeight,1, CMtpTarget::getInstance().String2.c_str());
 
+			// Level info text (e.g. "You can open your wings more than once")
+			// Centered on screen, 40% down (just above the penguin)
+			if(CLevelManager::getInstance().levelPresent())
+			{
+				string infoText = CLevelManager::getInstance().currentLevel().info();
+				if (!infoText.empty())
+				{
+					float infoY = (float)C3DTask::getInstance().screenHeight() * 0.4f;
+					CFontManager::getInstance().printfCentered(CRGBA(255, 200, 0, 255), infoY, infoText.c_str());
+				}
+			}
+
 			/*
 			CFontManager::getInstance().printf(CRGBA(245, 238, 141, 255), 1 * fontWidth, 14 * fontHeight,1, "Best score:");
 			CFontManager::getInstance().printf(CRGBA(253, 207, 85, 255), 3 * fontWidth, 15 * fontHeight,1, string1.c_str());

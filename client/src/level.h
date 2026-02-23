@@ -59,6 +59,8 @@ public:
 	std::string		filename() const { return FileName; }
 	std::string		name() const { return Name; }
 	std::string		author() const { return Author; }
+	std::string		info() const { return Info; }
+	float			cameraPitch() const { return CameraPitchValue; }
 	
 	bool			displayStartPositions() const { return DisplayStartPositions; }
 	void			displayStartPositions(bool sp);
@@ -115,6 +117,7 @@ private:
 	// Level name
 	std::string						Name;
 	std::string						Author;
+	std::string						Info;
 	
 	// Path + File name of this level
 	std::string						FileName;
@@ -132,6 +135,7 @@ private:
 	bool							DisplayStartPositions;
 	bool							DisplayLevel;
 	bool							_changed;
+	float							CameraPitchValue;
 
 };
 

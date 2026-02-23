@@ -2,6 +2,29 @@
 
 All notable improvements and changes from the original MTP Target v1.2.2a.
 
+## Level Info Text and Space Texture Fix (February 23, 2026)
+
+### Feature: Display level info text during countdown
+
+Ported the v1.5.19 level info text feature. Levels can now display contextual hints during the countdown phase (e.g., "You can open your wings more than once on this level"). Text is rendered centered on screen at 40% height in yellow, using the BigTextContext TrueType renderer with MiddleTop hot spot for pixel-perfect centering.
+
+- Added `Info` field to client `CLevel` class, read from Lua global
+- Added `CFontManager::printfCentered()` using `UTextContext::MiddleTop` hot spot
+- Added info text lookup table in `utilities.lua` (replacing v1.5.19's CI18N localization)
+- Renders during countdown in `hud_task.cpp`
+
+**Files changed:** `client/src/level.h`, `client/src/level.cpp`, `client/src/font_manager.h`, `client/src/font_manager.cpp`, `client/src/hud_task.cpp`, `data/lua/utilities.lua`
+
+### Fix: Missing textures on space crate targets
+
+Space levels with crate-style targets (cargo_inside, fleet, hangar18, etc.) showed pink/white checker patterns instead of the correct crate textures. The `addSpaceTarget` helper was setting texture layer 0 to `"space_crate"` but the actual texture file is `space_target_crate.dds`.
+
+**Fix:** Changed texture prefix in `addSpaceTarget` from `"space_"` to `"space_target_"` to match the actual filenames.
+
+**File changed:** `data/lua/utilities_space.lua`
+
+---
+
 ## WASD + Space Alternative Controls (February 22, 2026)
 
 Added WASD and Space as always-on alternative controls alongside the existing arrow keys and Ctrl:

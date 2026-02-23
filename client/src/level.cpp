@@ -134,7 +134,11 @@ CLevel::CLevel(const string &filename)
 	
 	luaGetGlobalVariable(LuaState, Author);
 	nlinfo("author name '%s'", Author.c_str());
-	
+
+	luaGetGlobalVariable(LuaState, Info);
+	if (!Info.empty())
+		nlinfo("level info '%s'", Info.c_str());
+
 	Cameras.clear();
 	luaGetGlobalVector(LuaState, Cameras);
 
