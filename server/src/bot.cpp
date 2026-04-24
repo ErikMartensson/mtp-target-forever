@@ -134,11 +134,15 @@ void CBot::loadBotReplay()
 		string level = "";
 		string CurrentLevel = CLevelManager::getInstance().currentLevel().name();
 		string wantedFilename = CurrentLevel + "." + toString(StartingPointId);
+		string levelPrefix = CurrentLevel + ".";
 		for(uint i = 0; i < res.size(); i++)
 		{
-			if(res[i].find(wantedFilename) != string::npos)
+			// Use exact prefix matching on the filename to avoid
+			// "Paint" matching "City Paint" replays etc.
+			string fname = CFile::getFilename(res[i]);
+			if(fname.find(wantedFilename) == 0)
 				levels.push_back(res[i]);
-			if(res[i].find(CurrentLevel) != string::npos)
+			else if(fname.find(levelPrefix) == 0)
 				level = res[i];
 		}
 

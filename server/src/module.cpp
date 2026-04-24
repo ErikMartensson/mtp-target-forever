@@ -165,22 +165,39 @@ void CModule::init(const std::string &name, const std::string &shapeName, uint8 
 void CModule::_luaInit()
 {
 	luaProxy = new CModuleProxy(CLuaEngine::getInstance().session(),this);
+}
+
+void CModule::loadModuleLuaScript()
+{
+	if(!luaProxy) return;
 
 	// load the lua code for this module
 	string filename = CPath::lookup("module_" + Name + ".lua", false);
 	if(filename.empty())
 	{
-		nlinfo("MODULE: There's no lua code for module '%s', using default value", filename.c_str());
+		nlinfo("MODULE: There's no lua code for module '%s', using default value", Name.c_str());
 		return;
 	}
-	
+
+	lua_State *L = CLuaEngine::getInstance().session();
+
+	// Save current "module" global - it may be the getModule() alias
+	// set by utilities.lua or level server scripts for v1.5.19 compat.
+	// Module Lua scripts expect "module" to be their CModuleProxy, but
+	// we must restore the previous value afterwards.
+	lua_getglobal(L, "module");
+	int savedModuleRef = lua_ref(L, 1);
 
 	// Set global "module" variable for the Lua script
-	Lunar<CModuleProxy>::push(CLuaEngine::getInstance().session(), luaProxy);
-	lua_setglobal(CLuaEngine::getInstance().session(), "module");
-	
-	luaLoad(CLuaEngine::getInstance().session(),filename);
+	Lunar<CModuleProxy>::push(L, luaProxy);
+	lua_setglobal(L, "module");
 
+	luaLoad(L, filename);
+
+	// Restore previous "module" global
+	lua_getref(L, savedModuleRef);
+	lua_setglobal(L, "module");
+	lua_unref(L, savedModuleRef);
 }
 
 CModule::~CModule()

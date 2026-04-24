@@ -64,6 +64,7 @@ public:
 	
 
 	CModuleProxy		*luaProxy;
+	void loadModuleLuaScript();
 private:
 
 //	virtual void init();

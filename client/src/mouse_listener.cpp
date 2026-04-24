@@ -64,6 +64,7 @@ C3dMouseListener::C3dMouseListener()
 	MouseWheel = 3;  // Default to 2 steps zoomed out for better view
 	_allowMouse = 0;
 	_inverseMouse = false;
+	_defaultPitch = 0.6f;  // Default downward tilt (~34 degrees) to look down ramps
 }
 
 C3dMouseListener::~C3dMouseListener()
@@ -79,7 +80,7 @@ void C3dMouseListener::init()
 void C3dMouseListener::reset()
 {
 	MouseX = 0.0f;
-	MouseY = 0.0f;
+	MouseY = _defaultPitch;
 	MouseWheel = 3;  // Default to 2 steps zoomed out for better view
 }
 
@@ -156,6 +157,31 @@ void C3dMouseListener::operator ()(const CEvent& event)
 			CEventMouseWheel* mouseEvent=(CEventMouseWheel*)&event;
 			MouseWheel += (mouseEvent->Direction? -1 : +1);
 		}
+		break;
+	case 4:
+		// Always track mouse, unless left-click is held (inverted mode 1)
+		// On left-click release, snap camera back to default position
+		if (event==EventMouseMoveId && ((mouseEvent->Button&leftButton)==0 || !FollowEntity))
+		{
+			MouseX += 0.5f - mouseEvent->X;
+			if (_inverseMouse)
+				MouseY -= 0.5f - mouseEvent->Y;
+			else
+				MouseY += 0.5f - mouseEvent->Y;
+		}
+		else if (event == EventMouseDownId)
+		{
+			MouseX = 0.0f;
+			MouseY = _defaultPitch;
+			// Don't reset MouseWheel - keep current zoom level
+		}
+		else if (event==EventMouseWheelId)
+		{
+			CEventMouseWheel* mouseEvent=(CEventMouseWheel*)&event;
+			MouseWheel += (mouseEvent->Direction? -1 : +1);
+		}
+		// Update mouse position
+		C3DTask::getInstance().driver().setMousePos(0.5f, 0.5f);
 		break;
 	default:
 		MouseX = 0.0f;

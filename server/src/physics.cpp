@@ -335,9 +335,14 @@ static void nearCallback(void *data, dGeomID o1, dGeomID o2)
 						entity->SendCollideWhenFly = true;
 						entity->CollideWhenFlyPos = CVector((float)contact[i].geom.pos[0],(float)contact[i].geom.pos[1],(float)contact[i].geom.pos[2]);
 						nlinfo("entity %s just frozen because touch a scene in open mode at pos(%f,%f,%f)", entity->name().c_str(),entity->CollideWhenFlyPos.x,entity->CollideWhenFlyPos.y,entity->CollideWhenFlyPos.z);
+						// Only reset score on the FIRST crash frame.
+						// The Lua callback (entitySceneCollideEvent) runs after physics
+						// and sets the correct score. In subsequent frames, the entity
+						// may only contact zero-score modules (e.g. backdrop), so
+						// resetting here would wipe the valid score set by Lua.
+						entity->CurrentScore = 0;
 					}
 
-					entity->CurrentScore = 0;
 					entity->NbOpenClose = entity->MaxOpenClose;
 					entity->FreezeCommand = true;
 					entity->InGame = false;

@@ -330,6 +330,17 @@ void CLevel::_luaInit()
 		}
 		lua_pop(_luaSession, 1);
 
+		// Get module Collide (default: true)
+		bool ModuleCollide = true;
+		lua_pushstring(_luaSession,"Collide");
+		lua_gettable(_luaSession, -2);
+		if (!lua_isnil(_luaSession, -1))
+		{
+			ModuleCollide = lua_tonumber(_luaSession, -1) != 0;
+			nlinfo("Collide %d", ModuleCollide ? 1 : 0);
+		}
+		lua_pop(_luaSession, 1);
+
 		// Apply default friction to scoring modules that don't specify one.
 		// The v1.5.19 server applied friction to scoring targets automatically;
 		// without this, balls roll across targets without slowing down.
@@ -345,6 +356,11 @@ void CLevel::_luaInit()
 		mod->friction(ModuleFriction);
 		mod->accel(ModuleAccel);
 		mod->bounce(ModuleBounce);
+		mod->collide(ModuleCollide);
+		// Load module Lua script AFTER C++ property overrides, so the
+		// module script (e.g. module_paint_bloc.lua) gets the last word
+		// on friction, accel, etc.
+		mod->loadModuleLuaScript();
 		Modules.push_back(mod);
 		moduleId++;
 		lua_pop(_luaSession, 1);

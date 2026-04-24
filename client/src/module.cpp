@@ -222,13 +222,17 @@ void  CModule::setTexture(uint layer, const std::string &textureName)
 {
 	if(Mesh.empty()) return;
 
-	std::string texFile = textureName + ".dds";
-	std::string resolved = CResourceManager::getInstance().get(texFile);
+	// Try local path lookup first (instant, no CRC check or download dialog).
+	// Fall back to resource manager only if the file isn't found locally.
+	std::string resolved = NLMISC::CPath::lookup(textureName + ".dds", false, false);
+	if(resolved.empty())
+		resolved = NLMISC::CPath::lookup(textureName + ".tga", false, false);
 	if(resolved.empty())
 	{
-		// Try .tga fallback
-		texFile = textureName + ".tga";
-		resolved = CResourceManager::getInstance().get(texFile);
+		// Not found locally — use resource manager (may download from server)
+		resolved = CResourceManager::getInstance().get(textureName + ".dds");
+		if(resolved.empty())
+			resolved = CResourceManager::getInstance().get(textureName + ".tga");
 	}
 	if(resolved.empty())
 	{
