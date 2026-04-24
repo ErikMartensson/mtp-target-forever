@@ -76,7 +76,7 @@ See [Playlist Tooling](#playlist-tooling) below for all the ways to launch.
 | Level                          | Theme | Status | Last Tested | Issue Ref | Notes                                           |
 |--------------------------------|-------|--------|-------------|-----------|-------------------------------------------------|
 | `level_space_asteroids`        | space | ✅     | 2026-02-04  | —         | Asteroid targets, advanced. Maybe too fast.    |
-| `level_space_atomium`          | space | ❓     | —           | —         | Atomium structure targets                       |
+| `level_space_atomium`          | space | ✅     | 2026-04-24  | —         | Atomium structure targets. Bots active (replays saved). |
 | `level_space_calbren`          | space | ❓     | —           | —         | Planet targets                                  |
 | `level_space_cargo_inside`     | space | ❓     | —           | —         | Indoor space station                            |
 | `level_space_fleet`            | space | ❓     | —           | —         | Space fleet targets                             |
@@ -145,10 +145,10 @@ Fly through scoring gates that decrease in value each pass.
 
 | Status | Count |
 |--------|-------|
-| ✅ Working | 39 |
+| ✅ Working | 40 |
 | ⚠️ Has known issue | 1 |
 | 🚫 Broken | 0 |
-| ❓ Untested | 19 |
+| ❓ Untested | 18 |
 | ⏭ Test-only | 11 |
 | **Total** | **70** |
 
