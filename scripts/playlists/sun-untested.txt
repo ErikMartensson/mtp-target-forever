@@ -1,0 +1,6 @@
+# Untested sun-theme levels (per docs/LEVELS.md as of 2026-04-24)
+# Run with: scripts\run-server.bat -p sun-untested
+
+level_sun_cross
+level_sun_extra_ball
+level_sun_paint

@@ -4,12 +4,40 @@ REM
 REM This script starts the game server and rotates log files on startup
 REM to prevent infinite log growth.
 REM
-REM Usage: scripts\run-server.bat
+REM Usage:
+REM   scripts\run-server.bat                          # normal rotation
+REM   scripts\run-server.bat -p level_space_hangar18  # single level
+REM   scripts\run-server.bat -p a,b,c                 # inline playlist
+REM   scripts\run-server.bat -p space-untested        # named preset
+REM   scripts\run-server.bat -p last                  # repeat last session
+REM
+REM Presets live in scripts\playlists\<name>.txt (one level per line, # for comments).
 
 setlocal enabledelayedexpansion
 
 REM Configuration
 set MAX_LOGS=5
+set PLAYLIST_ARG=
+
+REM Parse args
+:parse_args
+if "%~1"=="" goto args_done
+if /I "%~1"=="-p" (
+    set PLAYLIST_ARG=%~2
+    shift
+    shift
+    goto parse_args
+)
+if /I "%~1"=="--playlist" (
+    set PLAYLIST_ARG=%~2
+    shift
+    shift
+    goto parse_args
+)
+echo Warning: ignoring unknown argument "%~1"
+shift
+goto parse_args
+:args_done
 
 REM Determine directories
 set SCRIPT_DIR=%~dp0
@@ -50,6 +78,17 @@ call :rotate_log "mtp_target_service.log"
 call :rotate_log "log.log"
 call :rotate_log "nel_debug.dmp"
 echo.
+
+REM Apply playlist if specified (-p / --playlist)
+if defined PLAYLIST_ARG (
+    echo Applying playlist: %PLAYLIST_ARG%
+    powershell.exe -NoProfile -ExecutionPolicy Bypass -File "%SCRIPT_DIR%set-playlist.ps1" "%PLAYLIST_ARG%"
+    if errorlevel 1 (
+        echo Playlist setup failed. Aborting.
+        exit /b 1
+    )
+    echo.
+)
 
 REM Show server configuration summary
 if exist "%SERVER_DIR%\mtp_target_service.cfg" (

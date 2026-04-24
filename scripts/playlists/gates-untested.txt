@@ -1,0 +1,6 @@
+# Untested gates-theme levels (per docs/LEVELS.md as of 2026-04-24)
+# Run with: scripts\run-server.bat -p gates-untested
+
+level_gates_hard
+level_gates_ramp
+level_gates_zig_zag

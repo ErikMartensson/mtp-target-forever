@@ -1,0 +1,13 @@
+# Untested space-theme levels (per docs/LEVELS.md as of 2026-04-24)
+# Run with: scripts\run-server.bat -p space-untested
+
+level_space_atomium
+level_space_calbren
+level_space_cargo_inside
+level_space_fleet
+level_space_hangar18
+level_space_havoc
+level_space_hotwings
+level_space_imo_rings
+level_space_stabilo
+level_team_space

@@ -1,0 +1,8 @@
+# All paint / territory-claim levels in one batch
+# Useful for testing the paint mechanic across themes
+# Run with: scripts\run-server.bat -p paint-levels
+
+level_paint
+level_mtp_paint
+level_sun_paint
+level_city_paint

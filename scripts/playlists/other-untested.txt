@@ -1,0 +1,6 @@
+# Other untested levels (per docs/LEVELS.md as of 2026-04-24)
+# Run with: scripts\run-server.bat -p other-untested
+
+level_donuts2
+level_mtp_paint
+level_snow_line

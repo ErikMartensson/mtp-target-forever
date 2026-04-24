@@ -1,0 +1,38 @@
+# Regression test playlist - representative levels covering different
+# scoring mechanics, themes, and engine code paths. Run after engine
+# changes (level.cpp, module.cpp, physics.cpp, lua_engine.cpp) to catch
+# breakage before it reaches main.
+#
+# Run with: scripts\run-server.bat -p regression
+
+# Standard scoring + slope steering
+level_classic
+level_dont_go_too_far
+
+# Accumulating score + respawn
+level_extra_ball
+
+# Progressive scoring
+level_stairs
+
+# Territory claim
+level_paint
+level_city_paint
+
+# Team scoring (split-ramp + shared target)
+level_team_classic
+level_team_all_on_one
+
+# Distance-based scoring (negative scores)
+level_bowls1
+
+# Gate passing + AABB collision
+level_gates_easy
+
+# Theme-specific code paths
+level_space_asteroids
+level_sun_target
+level_city_easy
+
+# Special: no ball-form requirement
+level_darts

@@ -76,3 +76,4 @@ Thumbs.db
 
 # Config files with user credentials
 *_user.cfg
+scripts/playlists/last-session.txt
