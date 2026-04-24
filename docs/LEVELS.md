@@ -34,7 +34,7 @@ See [Playlist Tooling](#playlist-tooling) below for all the ways to launch.
 
 ## Unified Checklist (70 levels)
 
-### Snow / Original (32 levels)
+### Snow / Original (33 levels)
 
 | Level                          | Theme | Status | Last Tested | Issue Ref | Notes                                           |
 |--------------------------------|-------|--------|-------------|-----------|-------------------------------------------------|
@@ -67,35 +67,35 @@ See [Playlist Tooling](#playlist-tooling) below for all the ways to launch.
 | `level_team_all_on_one`        | team  | ✅     | 2026-02-09  | —         | Shared target both teams                        |
 | `level_team_classic`           | team  | ✅     | 2026-02-09  | —         | Classic team with colored boxes                 |
 | `level_team_mirror`            | team  | ✅     | 2026-02-09  | —         | Mirrored - your targets on enemy side          |
+| `level_team_space`             | team  | ✅     | 2026-02-09  | —         | Team variant with wider platform spacing (snow theme — "space" = gaps, not visual theme) |
 | `level_the_lane`               | snow  | ✅     | 2026-02-04  | —         | Lane/wall targets                               |
 | `level_the_wall`               | snow  | ✅     | 2026-02-04  | —         | Wall targets                                    |
 | `level_wood`                   | wood  | ✅     | 2026-02-04  | —         | Wood theme                                      |
 
-### Space Theme (10 ports + 2 test)
+### Space Theme (10 ports + 1 test)
 
 | Level                          | Theme | Status | Last Tested | Issue Ref | Notes                                           |
 |--------------------------------|-------|--------|-------------|-----------|-------------------------------------------------|
 | `level_space_asteroids`        | space | ✅     | 2026-02-04  | —         | Asteroid targets, advanced. Maybe too fast.    |
 | `level_space_atomium`          | space | ✅     | 2026-04-24  | —         | Atomium structure targets. Bots active (replays saved). |
-| `level_space_calbren`          | space | ❓     | —           | —         | Planet targets                                  |
-| `level_space_cargo_inside`     | space | ❓     | —           | —         | Indoor space station                            |
-| `level_space_fleet`            | space | ❓     | —           | —         | Space fleet targets                             |
-| `level_space_hangar18`         | space | ❓     | —           | —         | Hangar targets                                  |
-| `level_space_havoc`            | space | ❓     | —           | —         | Asteroid field                                  |
-| `level_space_hotwings`         | space | ❓     | —           | —         | Planet targets                                  |
-| `level_space_imo_rings`        | space | ❓     | —           | —         | Ring targets                                    |
-| `level_space_stabilo`          | space | ❓     | —           | —         | Planet targets                                  |
+| `level_space_calbren`          | space | ✅     | 2026-04-24  | —         | Planet targets                                  |
+| `level_space_cargo_inside`     | space | ✅     | 2026-04-24  | —         | Indoor space station                            |
+| `level_space_fleet`            | space | ✅     | 2026-04-25  | —         | Crate targets on cargo ships (ship hulls are decorative cushions) |
+| `level_space_hangar18`         | space | ✅     | 2026-04-25  | —         | Hangar targets                                  |
+| `level_space_havoc`            | space | ⚠️     | 2026-04-25  | KI #16    | Asteroid field. Bots once seen infinite-bouncing on ship interior (low pri). |
+| `level_space_hotwings`         | space | ✅     | 2026-04-25  | —         | Planet targets                                  |
+| `level_space_imo_rings`        | space | ✅     | 2026-04-25  | —         | Ring targets                                    |
+| `level_space_stabilo`          | space | ✅     | 2026-04-25  | —         | Planet targets                                  |
 | `level_space_test`             | space | ⏭      | —           | —         | ReleaseLevel=20, test only                      |
-| `level_team_space`             | team  | ❓     | —           | —         | Team mode in space theme                        |
 
 ### Sun Theme (4 ports + 2 test)
 
 | Level                          | Theme | Status | Last Tested | Issue Ref | Notes                                           |
 |--------------------------------|-------|--------|-------------|-----------|-------------------------------------------------|
 | `level_sun_target`             | sun   | ✅     | 2026-02-04  | —         | Standard sun targets                            |
-| `level_sun_cross`              | sun   | ❓     | —           | —         | Cross pattern layout                            |
-| `level_sun_extra_ball`         | sun   | ❓     | —           | —         | Moving target + gates                           |
-| `level_sun_paint`              | sun   | ❓     | —           | —         | Territory claim in sun theme                    |
+| `level_sun_cross`              | sun   | ✅     | 2026-04-25  | —         | Cross pattern layout                            |
+| `level_sun_extra_ball`         | sun   | ⚠️     | 2026-04-25  | KI #17    | Gate scoring works but: i18n keys leak to HUD, no live scoreboard updates, score persists into next round |
+| `level_sun_paint`              | sun   | ✅     | 2026-04-25  | —         | Territory claim. Fixed math.mod→% Lua 5.1. Minor Z-fighting between overlapping grid cells (cosmetic). |
 | `level_sun_shrinker`           | sun   | ⏭      | —           | —         | ReleaseLevel=0, modules shrink over time       |
 | `level_sun_test`               | sun   | ⏭      | —           | —         | ReleaseLevel=200, test only                     |
 
@@ -145,10 +145,10 @@ Fly through scoring gates that decrease in value each pass.
 
 | Status | Count |
 |--------|-------|
-| ✅ Working | 40 |
-| ⚠️ Has known issue | 1 |
+| ✅ Working | 48 |
+| ⚠️ Has known issue | 2 |
 | 🚫 Broken | 0 |
-| ❓ Untested | 18 |
+| ❓ Untested | 9 |
 | ⏭ Test-only | 11 |
 | **Total** | **70** |
 

@@ -450,6 +450,66 @@ Despite boxes extending 0.5 units in Z (from Z to Z+0.5), they behave as distinc
 
 ---
 
+### 17. level_sun_extra_ball: i18n keys leaking to HUD, no live score, score persists across rounds
+**Status:** Observed 2026-04-25, not started
+**Severity:** Visual/UX, not blocking — level is playable but confusing
+**Affected Levels:** `level_sun_extra_ball` (and likely the other gate/extra-ball levels using the same pattern)
+
+**Three distinct bugs in `data/lua/level_sun_extra_ball_server.lua`:**
+
+#### a) Localization keys leaking to HUD
+Lines 18-20 and 31 emit raw string keys instead of translated text:
+```lua
+winnerStringMsg = "LevelExtraLanded|"..self:name()
+displayTextToAll(0,12,1,255,200,0,winnerStringMsg, 5)
+self:displayText(0,13,1,0,255,0,"LevelExtraBall", 2)
+```
+These look like keys for an i18n lookup table that doesn't exist in this codebase. Result: player sees `LEVELEXTRALANDED|TESTER` (with `|` rendering as `�` because the font lacks the pipe glyph) and `LEVELEXTRABALL` overlaid on the screen each gate hit / respawn.
+
+**Fix candidates:** Replace the keys with literal English strings, e.g. `self:name() .. " scored!"` and `"Extra ball!"`.
+
+#### b) No live score feedback during round
+Flying through a gate calls `self:setCurrentScore(gate:score()+self:currentScore())` (line 12) — score *is* incrementing — but the scoreboard shows 0 until end of round. The scoreboard apparently polls a different field, or refreshes only on round-end.
+
+**Investigate:** how the HUD scoreboard reads scores for cumulative-score levels. Compare against `level_extra_ball_server.lua` (the original v1.2.2a, which presumably works).
+
+#### c) Score persists into next round
+Previous round's final score is shown as the current round's starting score on the scoreboard. `CEntity:init()` does `self:setCurrentScore(0)` (line 6) but is apparently called only once at level load, not per-round. Standard v1.2.2a uses `Entity:init()` (without `C` prefix) which IS called per-round.
+
+**Fix candidates:** Add a per-round reset in the right hook (`Entity:init()` or `CEntity:preUpdate` checking round state).
+
+**Files Involved:**
+- `data/lua/level_sun_extra_ball_server.lua` - all three issues
+- `data/lua/utilities.lua` / `helpers.lua` - check whether CEntity:init is bridged to per-round Entity:init
+- Possibly `client/src/hud_task.cpp` or score polling code for bug (b)
+
+---
+
+### 16. Bots Infinite-Bouncing on Ship Interior (level_space_havoc)
+**Status:** Observed once, low priority
+**Severity:** Visual quirk, not blocking
+**Affected Levels:** `level_space_havoc` (possibly others with interior geometry)
+
+**Description:**
+Two bots were observed bouncing repeatedly and at significant height on the inside floor of a ship model in `level_space_havoc`, with no apparent velocity loss. Has not yet been reproduced and has not been observed affecting human players.
+
+**Symptoms:**
+- Bot bounces repeatedly without losing height
+- Sustained vertical oscillation, no horizontal drift
+- Eventually stops? (unclear — only seen once)
+
+**Hypothesis:**
+Likely a physics-engine interaction between high `Bounce` factor and low damping on the interior floor geometry of the ship shape. May be specific to bot replay forces hitting an unfortunate angle, or a dContactApprox1 edge case.
+
+**Priority:** Low. Bot-only, intermittent, visual only. Revisit if it affects human players or becomes reproducible.
+
+**Files Involved (if investigating):**
+- `data/level/level_space_havoc.lua` - Module Bounce values
+- `data/lua/utilities_space.lua` - Default surface params for space modules
+- `server/src/physics.cpp` - Contact mode (dContactApprox1)
+
+---
+
 ### 15. Version Compatibility
 **Status:** Mostly Resolved
 **Description:** The current build uses v1.2.2a source code with a Lua compatibility bridge for v1.5.19 levels. All v1.5.19 level files are now loadable.
