@@ -1,90 +1,207 @@
 # MTP Target Forever - Level Reference
 
-This document lists all available levels, their scoring mechanics, and server scripts.
+Single source of truth for level testing status, scoring mechanics, and reference data.
 
-**Status:** 60 playable levels + 10 test levels
-
-**Testing Progress:** 32 snow/original levels verified working. 28 new multi-theme levels added (pending runtime testing).
+**Total:** 70 level files (60 playable + 10 test). Use this checklist to track which levels have been verified, when, and any open issues.
 
 ---
 
-## Testing Status
+## Testing Workflow
 
-### Tested & Verified Working (32 levels)
+```bash
+# 1. Pick a ❓ level from the table below
+# 2. Launch with the playlist tooling (no need to edit any .cfg):
+scripts\run-server.bat -p level_space_hangar18
+# 3. In another terminal:
+scripts\run-client.bat --lan localhost --user tester
+# 4. Play 2-3 rounds. Update the row in this file:
+#    - Status emoji
+#    - Last Tested = today's date (YYYY-MM-DD)
+#    - If broken: file an entry in docs/KNOWN_ISSUES.md, reference its number here
+# 5. Commit just the doc update — small, focused commits
+```
 
-All 32 playable levels have been tested and confirmed working:
+See [Playlist Tooling](#playlist-tooling) below for all the ways to launch.
 
-| Level | Notes |
-|-------|-------|
-| `level_all_on_one` | Fixed CRGBA alpha parameter issue. Single large target gameplay works. |
-| `level_classic` | Standard three-tier target. Works correctly. |
-| `level_classic_easy3` | Classic with flat targets. Works correctly. |
-| `level_classic_easy4` | Classic with multiple targets. Works correctly. |
-| `level_classic_fight` | Players can knock each other off. Works correctly. |
-| `level_classic_flat` | Flat terrain variation. Works correctly. |
-| `level_classic_flat_fight` | Flat fight variant. Works correctly. |
-| `level_darts` | Fixed acceleration (0.001), visibility (dark gray platform), and scoring. Bots work correctly. |
-| `level_dont_go_too_far` | Fixed slope steering, scoring zones (50/100/300), and target colors. |
-| `level_donuts` | Fixed slope steering and spawn point positions. |
-| `level_easy1` | Fixed slope steering. Similar to level_classic. |
-| `level_easy2` | Fixed slope steering. Flat targets. |
-| `level_easy3` | Fixed slope steering. Flat targets, offset. |
-| `level_easy4` | Fixed slope steering. Multiple flat targets. |
-| `level_extra_ball` | Fixed slope steering and fly-mode water respawn. Moving target + respawn gameplay. |
-| `level_extra_ball2` | Fixed slope steering and fly-mode water respawn. Larger yellow target box. |
-| `level_paint` | Fixed slope steering and module Lua loading. Territory claim gameplay works - first to touch claims block. |
-| `level_snow_dual_ramp` | Dual ramp design. Works correctly. |
-| `level_snow_fall` | Standard targets. Works correctly. |
-| `level_snow_pyramid` | Fixed scoring with colored pyramid boxes. Z-offset collision works correctly. |
-| `level_snow_reverse_pyramid` | Fixed slope steering and colored scoring boxes (green/blue/red). Inverted pyramid layout. |
-| `level_snow_tube` | Standard targets. Works correctly. |
-| `level_stairs` | Fixed scoring (Score=50) and friction. Progressive stair scoring with color gradient. |
-| `level_stairs2` | Fixed scoring (Score=50) and friction. Narrower stair variant. |
-| `level_team_90` | Fixed slope steering. 90-degree rotated team targets - steer sideways to land on your team's side. |
-| `level_team_all_on_one` | Fixed Score and Friction on target. Team variant works. |
-| `level_team_classic` | Team-based gameplay. Red/blue targets on your side. Fully working. |
-| `level_team_mirror` | Fixed spawn direction and team scoring. Mirrored layout - your targets on enemy side. |
-| `level_the_lane` | Lane/wall targets. Works correctly. |
-| `level_the_wall` | Wall targets. Works correctly. |
-| `level_wood` | Wood theme. Works correctly. |
-
-### Known Issues (0 levels)
-
-All playable levels are now working correctly.
-
-### Test Levels (5 levels) - ReleaseLevel = 0
-
-These levels have `ReleaseLevel = 0` and are excluded from normal rotation. They require manual testing via `/forcemap` or LevelPlaylist config.
-
-| Level | Display Name | Server Script | Notes |
-|-------|--------------|---------------|-------|
-| `level_arena` | Arena | `level_arena_server.lua` | Standard targets. Not production-ready. |
-| `level_hit_me` | Hit me | `level_hit_me_server.lua` | Entity collision mechanics. Not production-ready. |
-| `level_race` | Race | `level_race_server.lua` | Racing focus. Not production-ready. |
-| `level_run_away` | Run Away | `level_run_away_server.lua` | Evasion gameplay. Not production-ready. |
-| `level_snow_funnel` | Snow funnel | `level_snow_funnel_server.lua` | Funnel terrain. Not production-ready. |
-
-### Known Issues Fixed
-
-| Issue | Affected Levels | Fix |
-|-------|-----------------|-----|
-| Missing CRGBA alpha parameter | `level_all_on_one`, `level_extra_ball2`, `level_pyramid_stairs`, `level_team_90`, `level_team_classic` | Added 4th parameter (255) to all CRGBA calls |
-| Invisible accelerator platform | `level_darts` | Changed color from transparent to dark gray `CRGBA(28,28,28,255)` |
-| No acceleration effect | `level_darts` | Added `Accel` property support in level.cpp, set to 0.001 |
-| Module Lua crash | `level_darts` | Added direct `Accel`/`Bounce` property support in level files to avoid module Lua loading |
-| Can't steer/accelerate on slope | `level_dont_go_too_far`, `level_donuts`, `level_easy1-4`, `level_extra_ball`, `level_extra_ball2`, `level_snow_reverse_pyramid`, `level_team_90` | Added `Bounce = 0, Accel = 0.0001` to snow_ramp modules |
-| Missing scoring zones | `level_dont_go_too_far` | Added Score (50/100/300), Friction, and Color properties to target boxes |
-| Spawn points too far forward | `level_donuts` | Moved StartPoints Y coordinate back ~1.2 units |
-| Fly-mode water no respawn | `level_extra_ball`, `level_extra_ball2` | Fixed `entityWaterCollideEvent` to respawn in both ball and fly mode with `setIsOpen(0)` |
-| Module Lua panic crash | `level_paint` and any level using module Lua | Fixed Lua 5.2+ compatibility in `module.cpp` - changed `lua_settable(L, LUA_GLOBALSINDEX)` to `lua_setglobal(L, "module")` |
+**Status legend:**
+- ✅ Working - Verified playable, no known issues
+- ⚠️ Has known issue - Playable but bugged; see Issue Ref
+- 🚫 Broken - Not playable, blocking issue
+- ❓ Untested - Loads in theory but no human verification yet
+- ⏭ Test-only - `ReleaseLevel = 0/20/200`, excluded from rotation
 
 ---
 
-## LevelPlaylist Config
+## Unified Checklist (70 levels)
 
-Control which levels play and in what order via server config.
+### Snow / Original (32 levels)
 
-**Config file:** `build-server/bin/Release/mtp_target_service.cfg`
+| Level                          | Theme | Status | Last Tested | Issue Ref | Notes                                           |
+|--------------------------------|-------|--------|-------------|-----------|-------------------------------------------------|
+| `level_all_on_one`             | snow  | ✅     | 2026-02-04  | —         | Single large target gameplay                    |
+| `level_classic`                | snow  | ✅     | 2026-02-04  | —         | Standard three-tier target                      |
+| `level_classic_easy3`          | snow  | ✅     | 2026-02-04  | —         | Classic with flat targets                       |
+| `level_classic_easy4`          | snow  | ✅     | 2026-02-04  | —         | Classic with multiple targets                   |
+| `level_classic_fight`          | snow  | ✅     | 2026-02-04  | —         | Players can knock each other off                |
+| `level_classic_flat`           | snow  | ✅     | 2026-02-04  | —         | Flat terrain variation                          |
+| `level_classic_flat_fight`     | snow  | ✅     | 2026-02-04  | —         | Flat fight variant                              |
+| `level_darts`                  | snow  | ✅     | 2026-02-04  | —         | Acceleration platform, dark gray visibility    |
+| `level_dont_go_too_far`        | snow  | ✅     | 2026-02-04  | —         | Three scoring zones (50/100/300)               |
+| `level_donuts`                 | snow  | ✅     | 2026-02-04  | —         | Standard targets                                |
+| `level_easy1`                  | snow  | ✅     | 2026-02-04  | —         | Standard targets, easy layout                  |
+| `level_easy2`                  | snow  | ✅     | 2026-02-04  | —         | Flat targets                                    |
+| `level_easy3`                  | snow  | ✅     | 2026-02-04  | —         | Flat targets, offset                            |
+| `level_easy4`                  | snow  | ✅     | 2026-02-04  | —         | Multiple flat targets                           |
+| `level_extra_ball`             | snow  | ✅     | 2026-02-04  | —         | Moving target + respawn gameplay                |
+| `level_extra_ball2`            | snow  | ✅     | 2026-02-04  | —         | Larger yellow target box                        |
+| `level_paint`                  | snow  | ✅     | 2026-02-04  | —         | Territory claim, +100 per block                 |
+| `level_pyramid_stairs`         | snow  | ✅     | 2026-02-04  | —         | Pyramid of stairs                               |
+| `level_snow_dual_ramp`         | snow  | ✅     | 2026-02-04  | —         | Dual ramp design                                |
+| `level_snow_fall`              | snow  | ✅     | 2026-02-04  | —         | Standard targets                                |
+| `level_snow_pyramid`           | snow  | ✅     | 2026-02-04  | —         | Z-offset collision works correctly              |
+| `level_snow_reverse_pyramid`   | snow  | ✅     | 2026-02-04  | —         | Inverted pyramid layout                         |
+| `level_snow_tube`              | snow  | ✅     | 2026-02-04  | —         | Standard targets                                |
+| `level_stairs`                 | snow  | ✅     | 2026-02-04  | —         | Progressive +50 per unique stair                |
+| `level_stairs2`                | snow  | ✅     | 2026-02-04  | —         | Narrower stair variant                          |
+| `level_team_90`                | team  | ✅     | 2026-02-09  | —         | 90° rotated team targets                        |
+| `level_team_all_on_one`        | team  | ✅     | 2026-02-09  | —         | Shared target both teams                        |
+| `level_team_classic`           | team  | ✅     | 2026-02-09  | —         | Classic team with colored boxes                 |
+| `level_team_mirror`            | team  | ✅     | 2026-02-09  | —         | Mirrored - your targets on enemy side          |
+| `level_the_lane`               | snow  | ✅     | 2026-02-04  | —         | Lane/wall targets                               |
+| `level_the_wall`               | snow  | ✅     | 2026-02-04  | —         | Wall targets                                    |
+| `level_wood`                   | wood  | ✅     | 2026-02-04  | —         | Wood theme                                      |
+
+### Space Theme (10 ports + 2 test)
+
+| Level                          | Theme | Status | Last Tested | Issue Ref | Notes                                           |
+|--------------------------------|-------|--------|-------------|-----------|-------------------------------------------------|
+| `level_space_asteroids`        | space | ✅     | 2026-02-04  | —         | Asteroid targets, advanced. Maybe too fast.    |
+| `level_space_atomium`          | space | ❓     | —           | —         | Atomium structure targets                       |
+| `level_space_calbren`          | space | ❓     | —           | —         | Planet targets                                  |
+| `level_space_cargo_inside`     | space | ❓     | —           | —         | Indoor space station                            |
+| `level_space_fleet`            | space | ❓     | —           | —         | Space fleet targets                             |
+| `level_space_hangar18`         | space | ❓     | —           | —         | Hangar targets                                  |
+| `level_space_havoc`            | space | ❓     | —           | —         | Asteroid field                                  |
+| `level_space_hotwings`         | space | ❓     | —           | —         | Planet targets                                  |
+| `level_space_imo_rings`        | space | ❓     | —           | —         | Ring targets                                    |
+| `level_space_stabilo`          | space | ❓     | —           | —         | Planet targets                                  |
+| `level_space_test`             | space | ⏭      | —           | —         | ReleaseLevel=20, test only                      |
+| `level_team_space`             | team  | ❓     | —           | —         | Team mode in space theme                        |
+
+### Sun Theme (4 ports + 2 test)
+
+| Level                          | Theme | Status | Last Tested | Issue Ref | Notes                                           |
+|--------------------------------|-------|--------|-------------|-----------|-------------------------------------------------|
+| `level_sun_target`             | sun   | ✅     | 2026-02-04  | —         | Standard sun targets                            |
+| `level_sun_cross`              | sun   | ❓     | —           | —         | Cross pattern layout                            |
+| `level_sun_extra_ball`         | sun   | ❓     | —           | —         | Moving target + gates                           |
+| `level_sun_paint`              | sun   | ❓     | —           | —         | Territory claim in sun theme                    |
+| `level_sun_shrinker`           | sun   | ⏭      | —           | —         | ReleaseLevel=0, modules shrink over time       |
+| `level_sun_test`               | sun   | ⏭      | —           | —         | ReleaseLevel=200, test only                     |
+
+### City Theme (5 ports + 1 test)
+
+| Level                          | Theme | Status | Last Tested | Issue Ref | Notes                                           |
+|--------------------------------|-------|--------|-------------|-----------|-------------------------------------------------|
+| `level_city_easy`              | city  | ✅     | 2026-02-04  | —         | Standard city targets                           |
+| `level_city_darts`             | city  | ✅     | 2026-02-04  | —         | Z-height-gated proximity scoring                |
+| `level_city_paint`             | city  | ✅     | 2026-02-21  | —         | Painting + texture preloading fixed             |
+| `level_city_destroy`           | city  | ❓     | —           | —         | Destructible targets                            |
+| `level_city_precision`         | city  | ❓     | —           | —         | Precision landing                               |
+| `level_city_test`              | city  | ⏭      | —           | —         | ReleaseLevel=200, test only                     |
+
+### Gate Levels (4 ports)
+
+Fly through scoring gates that decrease in value each pass.
+
+| Level                          | Theme | Status | Last Tested | Issue Ref | Notes                                           |
+|--------------------------------|-------|--------|-------------|-----------|-------------------------------------------------|
+| `level_gates_easy`             | gates | ✅     | 2026-02-04  | —         | Easy gate course                                |
+| `level_gates_hard`             | gates | ❓     | —           | —         | Hard gate course                                |
+| `level_gates_ramp`             | gates | ❓     | —           | —         | Ramp gate course                                |
+| `level_gates_zig_zag`          | gates | ❓     | —           | —         | Zigzag gate course                              |
+
+### Other New Ports (4 + 1 test)
+
+| Level                          | Theme | Status | Last Tested | Issue Ref | Notes                                           |
+|--------------------------------|-------|--------|-------------|-----------|-------------------------------------------------|
+| `level_bowls1`                 | other | ⚠️     | 2026-02-08  | KI #1     | Intermittent scoring failure (fix in testing)  |
+| `level_donuts2`                | snow  | ❓     | —           | —         | Second donuts variant                           |
+| `level_mtp_paint`              | snow  | ❓     | —           | —         | Alternative paint level                         |
+| `level_snow_line`              | snow  | ❓     | —           | —         | Snow line layout                                |
+| `level_physics_test`           | other | ⏭      | —           | —         | ReleaseLevel=200, test only                     |
+
+### Test-Only / Unfinished (5 levels, ReleaseLevel = 0)
+
+| Level                          | Theme | Status | Last Tested | Issue Ref | Notes                                           |
+|--------------------------------|-------|--------|-------------|-----------|-------------------------------------------------|
+| `level_arena`                  | snow  | ⏭      | —           | —         | Standard targets, not production-ready          |
+| `level_hit_me`                 | snow  | ⏭      | —           | —         | Entity collision mechanics                      |
+| `level_race`                   | snow  | ⏭      | —           | —         | Racing focus, not production-ready              |
+| `level_run_away`               | snow  | ⏭      | —           | —         | Evasion gameplay                                |
+| `level_snow_funnel`            | snow  | ⏭      | —           | —         | Funnel terrain                                  |
+
+### Summary
+
+| Status | Count |
+|--------|-------|
+| ✅ Working | 39 |
+| ⚠️ Has known issue | 1 |
+| 🚫 Broken | 0 |
+| ❓ Untested | 19 |
+| ⏭ Test-only | 11 |
+| **Total** | **70** |
+
+---
+
+## Playlist Tooling
+
+The server's `LevelPlaylist` setting controls which levels play and in what order. Editing `mtp_target_service.cfg` directly is fragile because the server reformats it on each run. The tooling below sidesteps that by regenerating the .cfg from a template every time.
+
+### Quick reference
+
+```bash
+# Single level
+scripts\run-server.bat -p level_space_hangar18
+
+# Inline comma-separated playlist (no spaces)
+scripts\run-server.bat -p level_space_fleet,level_space_atomium,level_space_calbren
+
+# Named preset (file in scripts/playlists/)
+scripts\run-server.bat -p space-untested
+
+# Re-run last session's playlist
+scripts\run-server.bat -p last
+
+# Normal rotation (uses ReleaseLevel filter, ignores playlist)
+scripts\run-server.bat
+```
+
+### Named presets
+
+Named presets live in `scripts/playlists/<name>.txt` — one level name per line, `#` for comments. They're version-controlled, so improvements you make benefit everyone.
+
+Starter presets:
+- `space-untested` - The 9 untested space levels
+- `sun-untested` - The 3 untested sun levels
+- `city-untested` - The 2 untested city levels
+- `gates-untested` - The 3 untested gates levels
+- `regression` - Sample of tricky levels to retest after engine changes
+- `paint-levels` - All paint/territory variants in one batch
+
+Add your own: drop a `.txt` file in `scripts/playlists/`. To use ad-hoc on the fly, use the comma-separated form (`-p a,b,c`) — no file needed.
+
+### How it works
+
+`scripts/set-playlist.ps1` resolves the `-p` argument, reads `server/mtp_target_service_default.cfg`, replaces the `LevelPlaylist = {...}` block, and writes the result to `build-server/bin/mtp_target_service.cfg`. The server then reads that file as normal.
+
+The script also writes the resolved playlist to `scripts/playlists/last-session.txt` so you can replay with `-p last`.
+
+---
+
+## LevelPlaylist Config (manual editing, if needed)
+
+If you want to set up a long-running playlist by hand, edit `server/mtp_target_service_default.cfg` (the template — survives across runs):
 
 ```cfg
 // Single level on repeat (for testing)
@@ -101,198 +218,15 @@ LevelPlaylist = { };
 - LevelPlaylist overrides ReleaseLevel filter
 - Uses substring matching (e.g., "classic" matches "level_classic")
 - Levels play in the order specified
+- The runtime file at `build-server/bin/mtp_target_service.cfg` gets reformatted by the server. Edit the template instead.
 
 ---
 
 ## Chat Commands
 
-See [CHAT.md](CHAT.md) for the full chat reference (commands, smileys, keyboard shortcuts).
+See [CHAT.md](CHAT.md) for the full chat reference.
 
 **Quick reference:** `/v <name>` to vote, `/forcemap <name>` to force (admin), `/forceend` to end session (admin).
-
----
-
-## Level Details
-
-### Standard Target Levels (15 levels)
-
-These levels use classic scoring: land on colored targets (50/100/300 points).
-
-| Level | Display Name | Server Script | Notes |
-|-------|--------------|---------------|-------|
-| `level_classic` | Snow classic | `level_classic_server.lua` | Classic three-tier target. |
-| `level_classic_flat` | Snow classic flat | `level_classic_flat_server.lua` | Flat terrain variation. |
-| `level_dont_go_too_far` | Dont go too far | `level_dont_go_too_far_server.lua` | Standard targets. |
-| `level_donuts` | Give me the donuts | `level_donuts_server.lua` | Standard targets. |
-| `level_snow_dual_ramp` | Snow dual ramp | `level_snow_dual_ramp_server.lua` | Dual ramp design. |
-| `level_snow_fall` | Snow fall | `level_snow_fall_server.lua` | Standard targets. |
-| `level_snow_tube` | Snow tube land | `level_snow_tube_server.lua` | Standard targets. |
-| `level_the_lane` | The Lane | `level_default_server.lua` | Lane/wall targets. |
-| `level_the_wall` | The Wall | `level_default_server.lua` | Wall targets. |
-| `level_wood` | Wood | `level_wood_server.lua` | Wood theme. |
-| `level_snow_pyramid` | Snow Pyramid | `level_default_server.lua` | **NEW** Pyramid of scoring boxes. |
-| `level_snow_reverse_pyramid` | Snow Reverse Pyramid | `level_default_server.lua` | **NEW** Inverted pyramid. |
-| `level_all_on_one` | All On One | `level_default_server.lua` | **NEW** Single large target. |
-| `level_extra_ball2` | Extra Ball 2 | `level_extra_ball_server.lua` | **NEW** Same as Extra Ball - moving target with respawn. Larger yellow target box. |
-| `level_pyramid_stairs` | Pyramid Stairs | `level_stairs_server.lua` | **NEW** Pyramid of stairs. |
-
-### Easy Levels (8 levels)
-
-Beginner-friendly levels with standard or flat targets.
-
-| Level | Display Name | Server Script | Notes |
-|-------|--------------|---------------|-------|
-| `level_easy1` | Snow Easy 1 | `level_default_server.lua` | **NEW** Standard targets, easy layout. |
-| `level_easy2` | Snow Easy 2 | `level_default_server.lua` | **NEW** Flat targets. |
-| `level_easy3` | Snow Easy 3 | `level_default_server.lua` | **NEW** Flat targets, offset. |
-| `level_easy4` | Snow Easy 4 | `level_default_server.lua` | **NEW** Multiple flat targets. |
-| `level_classic_easy3` | Snow Classic Easy 3 | `level_default_server.lua` | **NEW** Classic with flat targets. |
-| `level_classic_easy4` | Snow Classic Easy 4 | `level_default_server.lua` | **NEW** Classic with multiple targets. |
-| `level_classic_flat_fight` | Snow Classic Flat Fight | `level_classic_fight_server.lua` | **NEW** Flat fight variant. |
-| `level_classic_fight` | Snow Classic Fight | `level_classic_fight_server.lua` | Players can knock each other off. |
-
-### Special Scoring Levels (4 levels)
-
-These levels have unique scoring mechanics.
-
-| Level | Display Name | Server Script | Scoring |
-|-------|--------------|---------------|---------|
-| `level_darts` | Snow darts | `level_darts_server.lua` | Any contact scores (no ball-form needed). |
-| `level_extra_ball` | Extra ball | `level_extra_ball_server.lua` | **Moving target + respawn:** Single target that moves when hit. Players respawn immediately after landing/crashing for multiple attempts. Score accumulates across all successful landings. |
-| `level_stairs` | Stairs | `level_stairs_server.lua` | **Progressive:** +50 per unique stair. |
-| `level_stairs2` | Stairs 2 | `level_stairs_server.lua` | Different stair layout. |
-
-### Paint/Claim Levels (1 level)
-
-First player to land on a block claims it.
-
-| Level | Display Name | Server Script | Scoring |
-|-------|--------------|---------------|---------|
-| `level_paint` | Paint | `level_paint_server.lua` | **Territory claim:** +100 per block claimed. |
-
-### Team Levels (4 levels)
-
-Team-based gameplay. Players are split into red and blue teams. Team members share a combined score.
-
-| Level | Display Name | Server Script | Notes |
-|-------|--------------|---------------|-------|
-| `level_team_all_on_one` | Team All on one | `level_team_all_on_one_server.lua` | Shared target - both teams score on the same platform. |
-| `level_team_classic` | Team Classic | `level_team_server.lua` | Classic team with colored boxes. Your targets on your side. |
-| `level_team_mirror` | Snow team mirror | `level_team_server.lua` | Mirrored - your targets on enemy side (harder). |
-| `level_team_90` | Team 90 | `level_team_server.lua` | 90-degree rotated targets. Steer sideways to land on your team's side. |
-
-**Team Assignment:**
-- By default, players are randomly and evenly distributed between red and blue teams each round.
-- Players can force team grouping by adding a **team tag** in brackets to their name. Players sharing the same tag are placed on the same team.
-  - Example: `[A]Alice` and `[A]Bob` will always be on the same team.
-  - The tag can be any text: `[Penguins]Alice`, `[1]Bob`, etc.
-  - Players without brackets are distributed to balance team sizes.
-
-**Team Scoring (split-ramp levels):**
-- Landing on your team's colored target: **positive** points
-- Landing on the enemy team's colored target: **negative** points (subtracted from team total)
-- Targets are color-coded: red team = red/salmon platforms, blue team = blue platforms
-- Each side has 3 platforms: 50 points (large, outer), 100 points (medium), 300 points (small, center)
-
----
-
-## Server Script Reference
-
-### Scripts with Custom Logic
-
-| Script | Used By | Scoring Mechanism |
-|--------|---------|-------------------|
-| `level_default_server.lua` | Fallback for missing scripts | Standard: `entity:setCurrentScore(module:getScore())` when ball form + module has score. |
-| `level_arena_server.lua` | level_arena | Standard targets (extends default). |
-| `level_classic_fight_server.lua` | level_classic_fight | Standard targets + entity collision handling. |
-| `level_classic_flat_server.lua` | level_classic_flat | Standard targets. |
-| `level_darts_server.lua` | level_darts | Any contact scores (no ball-form requirement). |
-| `level_extra_ball_server.lua` | level_extra_ball | Accumulating: `entity:setCurrentScore(module:getScore() + entity:getCurrentScore())`. Requires stopped velocity. |
-| `level_gates_server.lua` | level_gates_* (4 levels) | Gate passing: accumulate score, gate value decreases by 10 per pass. |
-| `level_hit_me_server.lua` | level_hit_me | Standard targets. |
-| `level_paint_server.lua` | level_paint | Territory claim: track claimed modules per entity, +100 per claim. |
-| `level_race_server.lua` | level_race | Standard targets. |
-| `level_run_away_server.lua` | level_run_away | Standard targets. |
-| `level_snow_funnel_server.lua` | level_snow_funnel | Standard targets. |
-| `level_stairs_server.lua` | level_stairs, level_stairs2 | Progressive: track visited modules per entity, +50 per unique stair. |
-| `level_sun_extra_ball_server.lua` | level_sun_extra_ball | Gate passing: accumulate score from gates. |
-| `level_team_server.lua` | level_team, level_team_mirror | Standard targets (team mode simplified). |
-| `level_bowls1_server.lua` | level_bowls1 | Distance-based: closer to center = higher score (max 400, min -200). |
-| `level_city_paint_server.lua` | level_city_paint | Territory claim for city theme. |
-
-### All Server Scripts Available
-
-All 37 levels have their server scripts in `data/lua/`. Scripts that don't exist fall back to `level_default_server.lua`.
-
----
-
-## Space Theme Levels (10 playable + 2 test)
-
-Space theme levels use black fog, space sky, and planet/asteroid shapes with runtime textures applied.
-
-**Note:** Space levels use ReleaseLevel 6. Ensure the server config allows ReleaseLevel 6.
-
-| Level | Display Name | ReleaseLevel | Notes |
-|-------|--------------|---|-------|
-| `level_space_asteroids` | Space Asteroids | 6 | Asteroid targets, advanced level |
-| `level_space_atomium` | Space Atomium | 6 | Atomium structure targets |
-| `level_space_calbren` | Space Calbren | 6 | Planet targets |
-| `level_space_cargo_inside` | Space Cargo Inside | 6 | Indoor space station |
-| `level_space_fleet` | Space Fleet | 6 | Space fleet targets |
-| `level_space_hangar18` | Space Hangar 18 | 6 | Hangar targets |
-| `level_space_havoc` | Space Havoc | 6 | Asteroid field |
-| `level_space_hotwings` | Space Hotwings | 6 | Planet targets |
-| `level_space_imo_rings` | Space Imo Rings | 6 | Ring targets |
-| `level_space_stabilo` | Space Stabilo | 6 | Planet targets |
-| `level_space_test` | Space Test | 20 | Test level |
-| `level_team_space` | Team Space | 3 | Team mode in space theme |
-
-## Sun Theme Levels (4 playable + 2 test)
-
-Sun theme levels use sun-colored fog, warm lighting, and material-based textures (ice/sand/wood with different friction).
-
-| Level | Display Name | ReleaseLevel | Notes |
-|-------|--------------|---|-------|
-| `level_sun_target` | Sun Target | 5 | Standard sun targets |
-| `level_sun_cross` | Sun Cross | 5 | Cross pattern layout |
-| `level_sun_extra_ball` | Sun Extra Ball | 5 | Moving target + gates |
-| `level_sun_paint` | Sun Paint | 5 | Territory claim in sun theme |
-| `level_sun_shrinker` | Sun Shrinker | 0 | Test: modules shrink over time |
-| `level_sun_test` | Sun Test | 200 | Test level |
-
-## City Theme Levels (5 playable + 1 test)
-
-City theme levels use city sky, urban fog, and building shapes with city textures.
-
-| Level | Display Name | ReleaseLevel | Notes |
-|-------|--------------|---|-------|
-| `level_city_easy` | City Easy | 5 | Standard city targets |
-| `level_city_darts` | City Darts | 5 | City darts variant |
-| `level_city_paint` | City Paint | 5 | Territory claim in city theme |
-| `level_city_destroy` | City Destroy | 5 | Destructible targets |
-| `level_city_precision` | City Precision | 5 | Precision landing |
-| `level_city_test` | City Test | 200 | Test level |
-
-## Gate Levels (4 playable)
-
-Gate levels use a new game mode: fly through scoring gates that decrease in value each pass. Uses pure Lua AABB collision detection.
-
-| Level | Display Name | ReleaseLevel | Server Script | Notes |
-|-------|--------------|---|---|-------|
-| `level_gates_easy` | Gates Easy | 5 | `level_gates_server.lua` | Easy gate course |
-| `level_gates_hard` | Gates Hard | 5 | `level_gates_server.lua` | Hard gate course |
-| `level_gates_ramp` | Gates Ramp | 5 | `level_gates_server.lua` | Ramp gate course |
-| `level_gates_zig_zag` | Gates Zig Zag | 5 | `level_gates_server.lua` | Zigzag gate course |
-
-## Other New Levels (5 playable + 1 test)
-
-| Level | Display Name | ReleaseLevel | Notes |
-|-------|--------------|---|-------|
-| `level_bowls1` | Bowls | 2 | Distance-based scoring: closer to center = more points (max 400, min -200) |
-| `level_donuts2` | Donuts 2 | 5 | Second donuts variant |
-| `level_mtp_paint` | MTP Paint | 5 | Alternative paint level |
-| `level_snow_line` | Snow Line | 5 | Snow line layout |
-| `level_physics_test` | Physics Test | 200 | Test level |
 
 ---
 
@@ -328,141 +262,108 @@ function Module:collide(entity)
 end
 ```
 
-**Rules:**
-- Score adds to current total
-- Water collision typically resets to 0
-
 ### Progressive Scoring (stairs)
 
-```lua
-local entityProgress = {}
-
-function Module:collide(entity)
-    local name = entity:getName()
-    if entityProgress[name][moduleId] == nil then
-        entityProgress[name][moduleId] = true
-        entity:setCurrentScore(entity:getCurrentScore() + 50)
-    end
-end
-```
-
-**Rules:**
-- Each unique module can only be scored once per entity
-- Progress tracked per-entity
+Each unique module can only be scored once per entity; +50 per new stair.
 
 ### Territory Claim (paint)
 
+First entity to land on a module claims it; +100 per claim.
+
+### Distance-Based (bowls1)
+
+Closer to center = higher score (max 400, min -200). Negative scores supported.
+
+---
+
+## Team Levels
+
+Team-based gameplay. Players are split into red and blue teams; team members share a combined score.
+
+**Team Assignment:**
+- By default, players are randomly and evenly distributed each round.
+- Force grouping with a **team tag** in brackets (e.g., `[A]Alice`, `[A]Bob` end up on the same team).
+
+**Team Scoring (split-ramp levels):**
+- Landing on your team's target: **positive** points
+- Landing on the enemy team's target: **negative** points
+- Color-coded: red team = red/salmon platforms, blue team = blue platforms
+- Each side has 3 platforms: 50 (large/outer), 100 (medium), 300 (small/center)
+
+---
+
+## Server Script Reference
+
+Server scripts in `data/lua/*_server.lua` define scoring per level. Levels reference their script via `ServerLua = "..."` (or fall back to `level_default_server.lua`).
+
+| Script                              | Used By                              | Mechanism                                       |
+|-------------------------------------|--------------------------------------|-------------------------------------------------|
+| `level_default_server.lua`          | Fallback                             | Standard target scoring                         |
+| `level_classic_fight_server.lua`    | classic_fight, classic_flat_fight    | Standard + entity collision handling           |
+| `level_darts_server.lua`            | darts                                | Any contact scores (no ball-form required)     |
+| `level_extra_ball_server.lua`       | extra_ball, extra_ball2              | Accumulating + stop-velocity check             |
+| `level_gates_server.lua`            | gates_*                              | Gate passing, value decreases per pass         |
+| `level_paint_server.lua`            | paint, sun_paint, mtp_paint          | Territory claim                                 |
+| `level_city_paint_server.lua`       | city_paint                           | Territory claim, city-themed                   |
+| `level_stairs_server.lua`           | stairs, stairs2                      | Progressive, +50 per unique stair              |
+| `level_team_server.lua`             | team_classic, team_mirror, team_90   | Team scoring with negative for enemy targets   |
+| `level_team_all_on_one_server.lua`  | team_all_on_one                      | Shared-target team variant                     |
+| `level_bowls1_server.lua`           | bowls1                               | Distance-based scoring                          |
+| `level_sun_extra_ball_server.lua`   | sun_extra_ball                       | Gate passing for sun theme                     |
+
+---
+
+## Level File Format
+
+Levels are Lua files in `data/level/*.lua`. Required globals:
+
 ```lua
-local claimedModules = {}
+Name         = "Display Name"
+Author       = "Creator"
+ReleaseLevel = 1   -- 1-6 = playable, 0/20/200 = test-only
+ServerLua    = "level_custom_server.lua"  -- optional
+CameraPitch  = 0.6  -- optional, default 0.6 rad
 
-function Module:collide(entity)
-    if claimedModules[moduleId] == nil then
-        claimedModules[moduleId] = entityName
-        entity:setCurrentScore(entity:getCurrentScore() + 100)
-    end
-end
-```
+Modules = {
+    { Position = CVector(0, 0, 0),
+      Rotation = CAngleAxis(0, 0, 1, 0),
+      Scale    = CVector(1, 1, 1),
+      Color    = CRGBA(255, 255, 255, 255),
+      Lua      = "module_name",
+      Shape    = "shape_name",
+      Score    = 100,
+      Friction = 1,
+      Accel    = 0,
+      Bounce   = 0,
+      Collide  = 1     -- default 1
+    },
+}
 
-**Rules:**
-- First to land claims the module
-- Only the claimant scores from that module
-
----
-
-## Ambiguous Names
-
-Some short names match multiple levels. Use longer strings to be specific:
-
-| Short Name | Matches |
-|------------|---------|
-| `classic` | level_classic, level_classic_easy3, level_classic_easy4, level_classic_fight, level_classic_flat, level_classic_flat_fight |
-| `easy` | level_easy1, level_easy2, level_easy3, level_easy4, level_classic_easy3, level_classic_easy4 |
-| `team` | level_team, level_team_90, level_team_all_on_one, level_team_classic, level_team_mirror |
-| `stairs` | level_stairs, level_stairs2, level_pyramid_stairs |
-| `pyramid` | level_snow_pyramid, level_snow_reverse_pyramid, level_pyramid_stairs |
-| `extra` | level_extra_ball, level_extra_ball2 |
-
----
-
-## Level Files
-
-Levels are stored in `data/level/*.lua` (60 playable + 10 test levels). Each level file defines:
-- `Name` - Display name shown in game
-- `Author` - Level creator
-- `Theme` - Visual theme (snow, city, sun, etc.)
-- `ServerLua` - Server-side script for game logic
-- `Modules` - 3D objects and platforms
-
-Server scripts are in `data/lua/*_server.lua` and handle:
-- Scoring logic via `entitySceneCollideEvent()`
-- Friction settings via `levelInit()`
-- Special game modes
-
----
-
-## Debugging Levels
-
-### Check Which Script a Level Uses
-
-```bash
-grep "ServerLua" data/level/level_NAME.lua
-```
-
-### Check if Script Exists
-
-```bash
-ls data/lua/level_NAME_server.lua
-```
-
-If missing, the level falls back to `level_default_server.lua`.
-
-### Watch Server Logs
-
-```bash
-tail -f mtp_target_service.log
-```
-
-Look for Lua errors when a level loads.
-
-### Force a Specific Level
-
-```
-/forcemap NAME
+StartPoints = {
+    { Position = CVector(0, 10, 5), Rotation = 0 },
+}
 ```
 
 ---
 
 ## Adding Custom Levels
 
-To add a custom level:
 1. Create a `.lua` file in `data/level/`
-2. Define required fields (Name, Theme, Modules)
+2. Define required fields
 3. Set `ServerLua` to your custom script or use `level_default_server.lua`
-4. Create a `*_server.lua` script for custom scoring logic
-5. Restart the server to load the new level
+4. Restart the server (`scripts\run-server.bat`) to load the new level
+5. Add a row to the [Unified Checklist](#unified-checklist-70-levels)
 
 ### Minimal Server Script Template
 
 ```lua
-function Entity:init()
-    self:setCurrentScore(0)
-end
+function Entity:init() self:setCurrentScore(0) end
+function Entity:preUpdate() end
+function Entity:update() end
 
-function Entity:preUpdate()
-end
-
-function Entity:update()
-end
-
-function entitySceneCollideEvent(entity, module)
-    module:collide(entity)
-end
-
-function entityEntityCollideEvent(entity1, entity2)
-end
-
-function entityWaterCollideEvent(entity)
-end
+function entitySceneCollideEvent(entity, module) module:collide(entity) end
+function entityEntityCollideEvent(entity1, entity2) end
+function entityWaterCollideEvent(entity) end
 
 function Module:collide(entity)
     if entity:getIsOpen() == 0 and self:getScore() ~= 0 then
@@ -470,3 +371,19 @@ function Module:collide(entity)
     end
 end
 ```
+
+---
+
+## Ambiguous Names
+
+Some short names match multiple levels. Use longer strings to be specific:
+
+| Short Name | Matches                                                                                               |
+|------------|-------------------------------------------------------------------------------------------------------|
+| `classic`  | classic, classic_easy3, classic_easy4, classic_fight, classic_flat, classic_flat_fight, team_classic |
+| `easy`     | easy1-4, classic_easy3, classic_easy4, city_easy, gates_easy                                          |
+| `team`     | team_90, team_all_on_one, team_classic, team_mirror, team_space                                       |
+| `stairs`   | stairs, stairs2, pyramid_stairs                                                                       |
+| `pyramid`  | snow_pyramid, snow_reverse_pyramid, pyramid_stairs                                                    |
+| `extra`    | extra_ball, extra_ball2, sun_extra_ball                                                               |
+| `paint`    | paint, mtp_paint, sun_paint, city_paint                                                               |
