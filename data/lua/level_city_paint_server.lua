@@ -1,41 +1,7 @@
--- Provide function aliases normally defined by utilities.lua
--- (needed when loaded via ServerLua without utilities.lua)
+-- Ensure tables exist (needed when loaded via ServerLua without utilities.lua)
 CEntity = CEntity or Entity or {}
 CModule = CModule or Module or {}
 CLevel = CLevel or Level or {}
-
-if getModule then module = module or getModule end
-if getModuleCount then moduleCount = moduleCount or getModuleCount end
-if getEntityById then entityById = entityById or getEntityById end
-
--- Entity method aliases (v1.5.19 -> v1.2.2a)
-if Entity then
-	Entity.isOpen       = Entity.isOpen or Entity.getIsOpen
-	Entity.currentScore = Entity.currentScore or Entity.getCurrentScore
-end
-
--- level() returns the CLevel table
-if not level then
-	function level() return CLevel end
-end
-
--- CLevel:teamMode() checks if any entity name starts with "["
-if not CLevel.teamMode then
-	function CLevel:teamMode()
-		if not getEntityCount then return false end
-		local count = getEntityCount()
-		for i = 0, count - 1 do
-			local e = getEntity(i)
-			if e then
-				local n = e:getName()
-				if n and string.sub(n, 1, 1) == "[" then
-					return true
-				end
-			end
-		end
-		return false
-	end
-end
 
 ---------------------- Entity ----------------------
 
@@ -81,16 +47,21 @@ function CModulePaintBloc:postUpdate()
 		if(self.touchCount == 1) then
 			if(level():teamMode()) then
 				if(entityById(self.touchEntityId):team() == 0) then
-					execLuaOnAllClient("moduleById("..self.son:getId().."):setColor(255,0,0,255)")
+					execLuaOnAllClient("moduleById("..self.son:getId().."):setTexture(0, 'city_building_ocre')")
+					--execLuaOnAllClient("moduleById("..self.son:getId().."):setColor(CRGBA(255,0,0))")
 				else
-					execLuaOnAllClient("moduleById("..self.son:getId().."):setColor(0,0,255,255)")
+					execLuaOnAllClient("moduleById("..self.son:getId().."):setTexture(0, 'city_building_blue')")
+					--execLuaOnAllClient("moduleById("..self.son:getId().."):setColor(CRGBA(0,0,255))")
 				end
 			else
-				execLuaOnAllButOneClient(self.touchEntityId,"moduleById("..self.son:getId().."):setColor(255,0,0,255)")
-				execLuaOnOneClient(self.touchEntityId,"moduleById("..self.son:getId().."):setColor(0,255,0,255)")
+				execLuaOnAllButOneClient(self.touchEntityId,"moduleById("..self.son:getId().."):setTexture(0, 'city_building_ocre')")
+				execLuaOnOneClient(self.touchEntityId,"moduleById("..self.son:getId().."):setTexture(0, 'city_building_blue')")
+				execLuaOnAllClient("moduleById("..self.son:getId().."):setTexture(1, 'empty')")
+--				execLuaOnAllButOneClient(self.touchEntityId,"moduleById("..self.son:getId().."):setColor(CRGBA(255,0,0))")
+--				execLuaOnOneClient(self.touchEntityId,"moduleById("..self.son:getId().."):setColor(CRGBA(0,255,0))")
 			end
 		else
-			execLuaOnAllClient("moduleById("..self.son:getId().."):setColor(255,255,255,255)")
+			execLuaOnAllClient("moduleById("..self.son:getId().."):setTexture(0, 'city_building_orange')")
 		end
 	end
 	self.oldTouchEntityId = self.touchEntityId

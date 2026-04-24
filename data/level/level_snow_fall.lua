@@ -2,6 +2,7 @@ Name = "Snow fall"
 Author = "Ace"
 ServerLua = "data/lua/level_snow_fall_server.lua"
 ReleaseLevel = 2
+CameraPitch = 1.47
 
 skyShapeFileName = "sky.shape";
 sunAmbientColor = CRGBA(82, 100, 133, 255);
