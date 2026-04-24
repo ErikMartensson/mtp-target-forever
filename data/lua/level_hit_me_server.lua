@@ -104,7 +104,7 @@ function Entity:init()
   print("clientId");
   print(clientId);
   --self:setStartPointId(clientId+getSessionId()*2);
-  local t = math.mod(clientId,2);
+  local t = clientId % 2;
 
   self:displayText(0,4,1,255,255,255,"warning : Team share the score",10);
   if(t==0) then

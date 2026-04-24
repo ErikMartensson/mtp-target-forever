@@ -13,7 +13,7 @@ function CLevel:init()
 
 	for x = 0, 6 do
 		for y = 0, 6 do
-			if math.mod(x,2) == 0 or math.mod(y,2) == 0 then
+			if x % 2 == 0 or y % 2 == 0 then
 				local m = self:addModuleNPSS("snow_box", CVector(x*0.04, y*0.04-15.12, 0.5), 0, CVector(2,2,1))
 				m:setColor(CRGBA(255,255,120))
 				m:setBounce(0)
