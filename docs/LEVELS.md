@@ -106,55 +106,9 @@ LevelPlaylist = { };
 
 ## Chat Commands
 
-| Command | Description |
-|---------|-------------|
-| `/v <name>` | Vote for a level - shows immediate feedback |
-| `/votemap <name>` | Vote for a level - shows immediate feedback |
-| `/forcemap <name>` | Force next level (admin) - shows immediate feedback |
-| `/forceend` | End current session (admin) |
-| `/help` | Show available commands |
+See [CHAT.md](CHAT.md) for the full chat reference (commands, smileys, keyboard shortcuts).
 
-**Notes:**
-- Commands are case-insensitive
-- Level matching uses **substring search** on the filename
-- Use unique substrings to avoid matching multiple levels
-- Vote requires enough players to agree (1/3 + 1 of human players)
-- Admin commands work immediately (everyone is admin by default in local play)
-
-### Level Command Feedback
-
-Both `/v` (vote) and `/forcemap` validate levels immediately and show feedback:
-
-| Situation | Response |
-|-----------|----------|
-| Level found and valid | `Vote registered: Arena (level_arena.lua)` or `Next level: Arena (level_arena.lua)` |
-| No matching level | `No level found matching 'xyz'` |
-| Level invalid (e.g., wrong ReleaseLevel) | `Level level_xyz.lua is invalid: ReleaseLevel 0 not in allowed list` |
-
-**Note:** Votes are only registered if the level is valid. Invalid votes are rejected with an error message.
-
-### Chat Smileys
-
-Type these codes in chat to display smiley icons. Codes are replaced with images automatically.
-
-| Code | Smiley | Code | Smiley |
-|------|--------|------|--------|
-| `:)` | Laugh | `:))` | Smile |
-| `:)))` | Big grin | `;)` | Wink |
-| `:(` | Cry | `:((` | Sad |
-| `:/` | Doubt | `:s` | Confused |
-| `:p` | Razz | `:O` | Surprised |
-| `:i` | Neutral | `:red:` | Red face |
-| `:roll:` | Eye roll | `:idea:` | Idea |
-| `:mad:` | Mad | `:badgrin:` | Bad grin |
-| `B)` | Cool | `8)` | Shocked |
-| `>(` | Evil | `>)` | Twisted |
-| `->` | Arrow right | `<-` | Arrow left |
-| `lol` | Mr. Green | `gg` | Good game |
-| `bg` | Bad game | `!!!` | Exclaim |
-| `???` | Question | `:mt:` | MTP logo |
-
-**Note:** Short codes like `gg`, `bg`, and `lol` will be replaced even when part of normal words. Use with care.
+**Quick reference:** `/v <name>` to vote, `/forcemap <name>` to force (admin), `/forceend` to end session (admin).
 
 ---
 

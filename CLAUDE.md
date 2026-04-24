@@ -102,10 +102,7 @@ LevelPlaylist = { };                   # Empty = normal rotation
 3. Start server: `.\scripts\run-server.bat`
 4. Start client: `.\scripts\run-client.bat --lan localhost --user tester`
 
-**Chat commands:**
-- `/forcemap <name>` - Force next level (admin)
-- `/v <name>` - Vote for a level
-- `/forceend` - End current session
+**Quick commands:** `/forcemap <name>`, `/v <name>`, `/forceend` — see [docs/CHAT.md](docs/CHAT.md) for full list
 
 ## Branches
 
@@ -118,7 +115,7 @@ LevelPlaylist = { };                   # Empty = normal rotation
 
 ### Server
 - `server/src/level.cpp` - Loads Score, Friction, Accel, Bounce from level modules
-- `server/src/module.cpp` - Lua 5.2+ compatibility for module scripts
+- `server/src/module.cpp` - Module Lua proxy, script loading (deferred after C++ property overrides)
 - `server/src/physics.cpp` - ODE physics, momentum preservation (dContactApprox1)
 - `server/src/network.cpp` - Network tick rate (line 142)
 
@@ -157,53 +154,43 @@ LevelPlaylist = { };                   # Empty = normal rotation
 
 ### Log File Locations
 
-| Component | Running Directly | After Exit (via run script) |
-|-----------|------------------|----------------------------|
-| **Client** | `build-client/bin/log.log` | `build-client/bin/logs/log.log` |
-| **Server** | `build-server/bin/mtp_target_service.log` | `build-server/bin/logs/mtp_target_service.log` |
+The server produces **two** log files per session; the client produces one main log plus a chat log.
 
-**Log rotation behavior:**
-- When running executables directly, logs accumulate in `build-*/bin/log.log`
-- When using `scripts/run-client.bat` or `scripts/run-server.bat`:
-  - Logs are written to the same path while the game is running
-  - On exit/crash, logs are moved to `build-*/bin/logs/` directory
-  - Previous logs are rotated (`.log` → `.log.1` → `.log.2`, etc., up to 5 files)
+| Component | While Running | After Exit (via run script) |
+|-----------|---------------|----------------------------|
+| **Server** | `build-server/bin/log.log` | `build-server/bin/logs/log.log` |
+| **Server** | `build-server/bin/mtp_target_service.log` | `build-server/bin/logs/mtp_target_service.log` |
+| **Client** | `build-client/bin/log.log` | `build-client/bin/logs/log.log` |
+| **Client** | `build-client/bin/chat.log` | `build-client/bin/logs/chat.log` |
+
+Both server log files contain game-level messages (Lua errors, level loading, collisions, etc.). Either one works for debugging. `log.log` additionally has early module/driver init; `mtp_target_service.log` has service-layer startup.
+
+**Log rotation** (handled by `run-client.bat` / `run-server.bat`):
+- On startup, existing logs in `logs/` are rotated: `.log` → `.log.1` → `.log.2` (up to 5)
+- On exit, active logs are moved from `build-*/bin/` into `build-*/bin/logs/`
 
 **Watch logs in real-time:**
 ```bash
-tail -f build-server/bin/mtp_target_service.log  # Server
-tail -f build-client/bin/log.log                  # Client
+tail -f build-server/bin/log.log                  # Server (while running)
+tail -f build-server/bin/mtp_target_service.log   # Server (while running, alt)
+tail -f build-client/bin/log.log                  # Client (while running)
+```
+
+**After exit, check:**
+```bash
+cat build-server/bin/logs/log.log                 # Server
+cat build-client/bin/logs/log.log                 # Client
 ```
 
 **Common log patterns:**
 - `Loading level: level_name` - Level loading started
+- `pcall error` - Lua script errors (search for this first when debugging)
 - `Lua error:` - Script problems
 - `Module score:` - Scoring events (if debug enabled)
 
 ### Debug/Developer Keys
 
-Client debug keys defined in `client/src/controler.cpp`:
-
-| Key | Action | Status |
-|-----|--------|--------|
-| ESC | Open pause menu | Works |
-| F1 | Toggle level view | Works |
-| F3 | Cycle polygon mode (solid/wireframe/points) | Works |
-| F7 | Toggle free look camera mode | Works |
-| F8 | Release/capture mouse cursor | Works |
-| F9 | View previous entity | Works |
-| F10 | View next entity | Works |
-| F11 | Reset followed entity | Works |
-| F12 | Print camera position to log | Works |
-| Alt+A | Toggle external camera | Works |
-| Alt+F2 | Take screenshot | Works |
-| Ctrl+F5 | Force end session (`/forceend`) | Works |
-| Ctrl+F6 | Reset session (`/reset`) | Buggy (acts like /forceend) |
-| F5 | Add bot | DISABLED (crash) |
-| F6 | Kick bot | DISABLED (crash) |
-| Shift+F1 | Toggle start positions display | Non-functional |
-| F4 | Toggle editor mode | Non-functional |
-| Ctrl+F4 | Toggle debug display | Non-functional |
+See [docs/CONTROLS.md](docs/CONTROLS.md) for the full key reference. Defined in `client/src/controler.cpp`.
 
 ### Network Latency Investigation
 
@@ -222,6 +209,7 @@ Author = "Creator"
 Theme = "snow"                           -- Visual theme
 ServerLua = "level_custom_server.lua"    -- Scoring script
 ReleaseLevel = 3                         -- 1-5 = playable, 0 = test only
+CameraPitch = 0.6                        -- Initial camera tilt in radians (default 0.6, 0=horizon)
 
 Modules = {
     { Position = CVector(0, 0, 0),
@@ -233,7 +221,8 @@ Modules = {
       Score = 100,                       -- Points for landing
       Friction = 1,                      -- Surface friction
       Accel = 0,                         -- Acceleration boost
-      Bounce = 0                         -- Bounce factor
+      Bounce = 0,                        -- Bounce factor
+      Collide = 1                        -- Collision enabled (default 1)
     },
 }
 
@@ -260,7 +249,8 @@ The `reference/mtp-target-v1.5.19/` directory contains the last official release
 | [docs/BUILDING.md](docs/BUILDING.md) | Build prerequisites and steps |
 | [docs/CHANGELOG.md](docs/CHANGELOG.md) | All improvements from original v1.2.2a |
 | [docs/KNOWN_ISSUES.md](docs/KNOWN_ISSUES.md) | Issue tracker with priorities |
-| [docs/LEVELS.md](docs/LEVELS.md) | Level list, scoring mechanics, chat commands |
+| [docs/CHAT.md](docs/CHAT.md) | Chat commands, smileys, keyboard shortcuts |
+| [docs/LEVELS.md](docs/LEVELS.md) | Level list and scoring mechanics |
 | [docs/MODIFICATIONS.md](docs/MODIFICATIONS.md) | Source code changes for modern compatibility |
 | [docs/RUNTIME_FIXES.md](docs/RUNTIME_FIXES.md) | Runtime issue solutions |
 

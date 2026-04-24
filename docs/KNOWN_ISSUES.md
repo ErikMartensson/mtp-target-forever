@@ -196,8 +196,8 @@ The metatable fix in lunar.h should eliminate the intermittent failure. Silent c
 | `level_sun_extra_ball` | ? | ? | ? | ? | |
 | `level_sun_paint` | ? | ? | ? | ? | |
 | `level_city_easy` | ✓ | ✓ | ✓ | Passive | Fixed with engine-level friction |
-| `level_city_darts` | ? | ? | ? | ? | |
-| `level_city_paint` | ✓ | ✓ | ✓ | Passive | Painting and scoring work (fixed with main loop reorder) |
+| `level_city_darts` | ✓ | ✓ | ✓ | Passive | Fixed: Z-height-gated proximity scoring for thin sign meshes |
+| `level_city_paint` | ✓ | ✓ | ✓ | Passive | Painting and scoring work (fixed with main loop reorder, texture preloading) |
 | `level_city_destroy` | ? | ? | ? | ? | |
 | `level_city_precision` | ? | ? | ? | ? | |
 | `level_gates_easy` | ✓ | ✓ | ✓ | Passive | Works fine, gate scoring works |
@@ -510,6 +510,7 @@ Despite boxes extending 0.5 units in Z (from Z to Z+0.5), they behave as distinc
 - [x] **Fix external camera entity filtering** (February 8, 2026) - External camera's 10m entity-following mode now correctly excludes crashed/water-collided entities. Added `Collided` flag to CEntity.
 - [x] **Fix PIP font scaling** (February 8, 2026) - Player names in PIP window had wrong letter spacing. Fixed printf3D to scale quad size with the scale parameter in `font_manager.cpp`.
 - [x] **Fix team level issues** (February 9, 2026) - Six fixes: cached team assignment (consistent & balanced), random tied-team selection, bot replay distance validation, off-by-one fix in levelEndSession, scoringHappenedThisFrame guard for level_team_all_on_one, blue 50-point platform color.
+- [x] **Fix city_paint texture loading interruption** (February 21, 2026) - Paint mechanic dynamically set textures (`city_building_ocre`, `city_building_blue`) via `setTexture()` during gameplay, triggering a CRC check/download dialog on first touch. Fixed `CModule::setTexture()` to use `CPath::lookup()` for instant local resolution, falling back to resource manager only for missing files. Also added `PreloadTextures` level table support for server-hosted textures.
 
 ---
 
