@@ -6,7 +6,7 @@
 
 > A free multiplayer online action game where you roll down a giant ramp and delicately land on platforms to score points. Fight with and against players in this mix of action, dexterity, and strategy - inspired by Monkey Target from Super Monkey Ball.
 
-**Status:** 🎮 Playable - Version 1.2.2a client and server working with 32 of 62 levels
+**Status:** 🎮 Playable - Version 1.2.2a client and server with 60 levels (32 fully tested + 28 ported from v1.5.19, in testing)
 
 ### Download Latest Build
 
@@ -71,7 +71,7 @@ The v1.5.19 client source code is preserved in [`reference/mtp-target-v1.5.19/`]
 ### What Works ✅
 
 - ✅ **Build System:** Full Windows build with Visual Studio 2022 and automated scripts
-- ✅ **Game Server:** Compiles and runs on Windows, 32 playable levels working
+- ✅ **Game Server:** Compiles and runs on Windows, 60 levels loaded (32 verified, 28 in per-level testing)
 - ✅ **Game Client:** Compiles and runs on Windows with OpenGL/OpenAL drivers
 - ✅ **Login Service:** Modern TypeScript/Deno implementation handles authentication
 - ✅ **Database:** SQLite-based user and shard management
@@ -86,16 +86,14 @@ The v1.5.19 client source code is preserved in [`reference/mtp-target-v1.5.19/`]
 
 See [docs/KNOWN_ISSUES.md](docs/KNOWN_ISSUES.md) for the complete issue tracker.
 
-**Medium Priority:**
-- ⚠️ **30 levels unavailable** - Require missing theme assets (space/sun/city)
-- ⚠️ **Bot AI limited** - Bots learn from player replays, don't play independently
-- ⚠️ **High ping on localhost** - 17-19ms instead of near-zero
-- ⚠️ **Input delay** - Noticeable lag between steering input and penguin response
+See [docs/KNOWN_ISSUES.md](docs/KNOWN_ISSUES.md) for the up-to-date list of open and fixed issues. Highlights:
 
-**Low Priority:**
-- ⚠️ **Water rendering disabled** - Falls back gracefully when textures missing
+- ⚠️ **Intermittent scoring failure** investigation (high priority, fix applied — needs verification)
+- ⚠️ **28 ported v1.5.19 levels** — engine-level fixes applied, per-level testing in progress
+- ⚠️ **High ping / input delay on localhost** — not yet investigated
+- ⚠️ **Water rendering disabled** — falls back gracefully when textures missing
 
-**The game is fully playable!** All 32 snow-theme levels work with proper scoring and physics.
+**The game is fully playable.** All 32 original levels work with proper scoring and physics.
 
 See [docs/RUNTIME_FIXES.md](docs/RUNTIME_FIXES.md) for detailed fix documentation.
 
@@ -185,6 +183,7 @@ For detailed build instructions and troubleshooting, see **[docs/BUILDING.md](do
 
 | Document | Description |
 |----------|-------------|
+| [**CURRENT_FOCUS.md**](docs/CURRENT_FOCUS.md) | Where I left off and what's next (rolling snapshot) |
 | [**BUILDING.md**](docs/BUILDING.md) | Complete build guide for Windows (NeL, ODE, client, server) |
 | [**RUNTIME_FIXES.md**](docs/RUNTIME_FIXES.md) | Runtime crashes and fixes (water, levels, controls, files) |
 | [**KNOWN_ISSUES.md**](docs/KNOWN_ISSUES.md) | Issue tracker with planned fixes and priorities |
@@ -292,17 +291,19 @@ We'd love your help! This is a community effort to preserve a fun open-source ga
 ### Completed
 - [x] Windows build system with Visual Studio 2022
 - [x] Automated builds (GitHub Actions CI)
-- [x] Game server running with 32 playable levels
+- [x] Game server running with all 60 levels loadable
 - [x] Game client compiled from source
 - [x] Full network protocol working
 - [x] Modern Lua 5.x compatibility
 - [x] Physics fixes (momentum preservation, steering)
 - [x] Scoring system fully functional
+- [x] v1.5.19 level engine support (Lua compatibility bridge)
+- [x] All space/sun/city/gates theme assets ported
 
 ### In Progress
-- [ ] Import missing theme assets (space/sun/city - 30 levels)
-- [ ] Improve bot AI
-- [ ] Reduce network latency
+- [ ] Per-level testing of the 28 ported v1.5.19 levels
+- [ ] Investigate intermittent scoring failure (fix applied, needs verification)
+- [ ] Reduce network latency / input delay
 
 ### Future
 - [ ] Docker containers for easy deployment
@@ -314,25 +315,7 @@ We'd love your help! This is a community effort to preserve a fun open-source ga
 
 ## Known Issues
 
-See [docs/KNOWN_ISSUES.md](docs/KNOWN_ISSUES.md) for the complete issue tracker.
-
-### Open Issues
-- **30 levels unavailable** - Require missing theme assets (space/sun/city)
-- **Bot AI limited** - Bots learn from player replays, don't play independently
-- **High ping on localhost** - 17-19ms instead of near-zero
-- **Input delay** - Noticeable lag between steering and response
-- **Water rendering disabled** - Falls back gracefully when textures missing
-
-### Fixed Issues
-- Build system - Full Windows compilation with automated scripts and CI
-- All 32 snow-theme levels working with proper scoring
-- Physics steering and momentum preservation
-- Keyboard controls with chat toggle mode
-- Camera controls with persistent zoom
-- Team level scoring (red/blue detection)
-- Lua 5.x compatibility throughout
-
-See [docs/RUNTIME_FIXES.md](docs/RUNTIME_FIXES.md) for fix documentation.
+See [docs/KNOWN_ISSUES.md](docs/KNOWN_ISSUES.md) for the complete, up-to-date issue tracker (open issues, fixes applied, per-level testing checklist).
 
 ---
 

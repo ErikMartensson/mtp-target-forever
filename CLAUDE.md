@@ -246,6 +246,7 @@ The `reference/mtp-target-v1.5.19/` directory contains the last official release
 
 | Doc | Contents |
 |-----|----------|
+| [docs/CURRENT_FOCUS.md](docs/CURRENT_FOCUS.md) | Where I left off and what's next (update when stopping for the day) |
 | [docs/BUILDING.md](docs/BUILDING.md) | Build prerequisites and steps |
 | [docs/CHANGELOG.md](docs/CHANGELOG.md) | All improvements from original v1.2.2a |
 | [docs/KNOWN_ISSUES.md](docs/KNOWN_ISSUES.md) | Issue tracker with priorities |
