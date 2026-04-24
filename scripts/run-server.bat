@@ -15,6 +15,10 @@ REM Presets live in scripts\playlists\<name>.txt (one level per line, # for comm
 
 setlocal enabledelayedexpansion
 
+REM Capture script path BEFORE any shift (shift corrupts %~dp0 in cmd.exe)
+set SCRIPT_DIR=%~dp0
+set PROJECT_DIR=%SCRIPT_DIR%..
+
 REM Configuration
 set MAX_LOGS=5
 set PLAYLIST_ARG=
@@ -38,10 +42,6 @@ echo Warning: ignoring unknown argument "%~1"
 shift
 goto parse_args
 :args_done
-
-REM Determine directories
-set SCRIPT_DIR=%~dp0
-set PROJECT_DIR=%SCRIPT_DIR%..
 
 REM Check for server (Ninja outputs to bin/, VS outputs to bin/Release/)
 set SERVER_DIR=%PROJECT_DIR%\build-server\bin
