@@ -2,6 +2,22 @@
 
 All notable improvements and changes from the original MTP Target v1.2.2a.
 
+## Gate Trigger Volume + Visual Sync (April 25, 2026)
+
+### Fix: Gates scored on frame hits and near-misses; visible gate didn't move when AABB teleported (KI #20)
+
+Two combined bugs in the gate-collision system on `level_sun_extra_ball` (and the four `level_gates_*` levels): the trigger volume was 14×3×14 — many times larger than the actual visible opening — so brushing the frame or flying past close enough triggered a score. Compounding this, `CGateProxy:setPosition` only updated the level-load entry table (a no-op on a loaded level) so the visible gate mesh never actually moved when the AABB teleported, making bouncing-the-frame yield repeated +300 hits as the invisible AABB landed in the bouncer's trajectory.
+
+**Fix:**
+- `CGateProxy:setPosition` now also calls the runtime `Module:setPos(pos)`, which moves the ODE physics geom and broadcasts `UpdateElement` to clients so the rendered mesh re-renders at the new position
+- Added explicit `OpeningHalfExtents = CVector(0.05, 0.05, 0.05)` to the gate table (default for `addGatePS` and `addGate90PS`, override per-gate via `CGateProxy:setOpeningHalfExtents`); `_isInsideGateAABB` uses it instead of the legacy `Scale/2`
+
+**Deployment trap also discovered:** stale shadow copies of `helpers.lua`, `level_bowls1_server.lua`, and `level_team_server.lua` at `build-server/bin/data/` (root) were being loaded by the server's `CPath::lookup` ahead of the canonical `data/lua/` versions. Multiple iterations of the AABB fix appeared to have no effect for this reason. Shadows have been overwritten to match — a cleanup pass to delete them outright is worth doing.
+
+**Files changed:** `data/lua/utilities.lua`, `data/lua/helpers.lua`
+
+---
+
 ## Live Scoreboard Updates (April 25, 2026)
 
 ### Fix: Scoreboard didn't update mid-round and showed stale scores from previous round (KI #17b/c)

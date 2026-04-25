@@ -92,10 +92,17 @@ end
 
 local function _isInsideGateAABB(pos, gate)
 	local gp = gate.Position
-	local gs = gate.Scale
-	local halfX = gs:getX() / 2
-	local halfY = gs:getY() / 2
-	local halfZ = gs:getZ() / 2
+	-- Prefer the explicit opening half-extents (tight trigger volume around
+	-- the actual passable opening). Fall back to Scale/2 for any caller that
+	-- predates OpeningHalfExtents — that gives the legacy oversized AABB.
+	local halfX, halfY, halfZ
+	if gate.OpeningHalfExtents then
+		local h = gate.OpeningHalfExtents
+		halfX, halfY, halfZ = h:getX(), h:getY(), h:getZ()
+	else
+		local gs = gate.Scale
+		halfX, halfY, halfZ = gs:getX() / 2, gs:getY() / 2, gs:getZ() / 2
+	end
 	local px, py, pz = pos:getX(), pos:getY(), pos:getZ()
 	local gpx, gpy, gpz = gp:getX(), gp:getY(), gp:getZ()
 	return px >= gpx - halfX and px <= gpx + halfX

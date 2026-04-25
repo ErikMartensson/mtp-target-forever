@@ -450,6 +450,37 @@ Despite boxes extending 0.5 units in Z (from Z to Z+0.5), they behave as distinc
 
 ---
 
+### ~~20. Gate AABB scores on frame hits and near-misses~~ (FIXED)
+**Status:** ✅ FIXED April 25, 2026
+**Severity:** Scoring correctness — verified on `level_sun_extra_ball`; still want a sanity-check pass on the other 4 gate levels
+**Affected Levels:** `level_sun_extra_ball`, `level_gates_easy`, `level_gates_hard`, `level_gates_ramp`, `level_gates_zig_zag`
+
+**Two distinct bugs combined to make this hard to diagnose:**
+
+#### a) Visual gate didn't move when the AABB teleported
+`CGateProxy:setPosition` (`data/lua/utilities.lua`) only mutated the `CLevelModule._entry.Position` field. That field is part of the level-load description and is only consulted at level load — after the level is loaded, the C++ side's physics geom and rendered mesh are detached from the Lua entry. So calling `setPosition` mid-game silently teleported the AABB collision check while leaving the visible frame untouched.
+
+**Fix:** Augmented `CGateProxy:setPosition` to also call the runtime `Module:setPos(pos)` (via `getModule(_moduleProxy:getId())`). That maps to `CModule::changePosition` which calls `dGeomSetPosition` on the ODE physics geom **and** broadcasts a `UpdateElement` network message so all clients re-render the mesh at the new spot.
+
+#### b) AABB trigger volume was 14×3×14 — much larger than the actual opening
+The default trigger box covered `±7×±1.5×±7` units around the gate centre, so approaching anywhere near the visible gate triggered the score before the player ever passed through the opening. Combined with bug (a), the AABB would teleport to a random new position the player happened to fly through, awarding multiple +300s per pass and creating the "extra points by bouncing the frame" exploit.
+
+**Fix:** Added an explicit `OpeningHalfExtents` field on the gate table (default `CVector(0.05, 0.05, 0.05)` for `addGatePS`, same shape for `addGate90PS`). `_isInsideGateAABB` in `helpers.lua` uses it when present, falling back to the legacy `Scale/2` for any non-gate-PS callers. Per-gate override available via `CGateProxy:setOpeningHalfExtents()`.
+
+**Tunneling note:** at 0.1 units deep on the flight axis, a very-fast entity could in theory skip the trigger between two physics ticks. Acceptable at typical play speeds; if "fly cleanly through at full speed, no points" ever shows up, bump the flight-axis half-extent back up.
+
+#### Deployment trap discovered during this fix
+Two stale shadow copies of `helpers.lua`, `level_bowls1_server.lua`, and `level_team_server.lua` existed at `build-server/bin/data/` (root) in addition to the canonical copies at `build-server/bin/data/lua/`. The server's `CPath::lookup("helpers.lua")` (`server/src/lua_engine.cpp:154`) returned the root-level shadow first, so multiple iterations of the AABB tightening had no effect at all — the running server kept using the old code. Overwriting the shadows with the current contents fixed this. Worth a follow-up cleanup to delete the shadows entirely once we're confident nothing else relies on them.
+
+**Files Modified:**
+- `data/lua/utilities.lua` — `CGateProxy:setPosition` runtime mesh move; `OpeningHalfExtents` default + per-gate setter
+- `data/lua/helpers.lua` — `_isInsideGateAABB` reads `OpeningHalfExtents` with `Scale/2` fallback
+- `build-server/bin/data/helpers.lua` (and `level_bowls1_server.lua`, `level_team_server.lua`) — refreshed to match the canonical `data/lua/` versions, killing the shadow effect
+
+The **real** fix needed both (a) the runtime mesh move AND (b) the tightened opening — neither alone was sufficient.
+
+---
+
 ### ~~19. Snow particles render on `level_gates_*` (sun-themed)~~ (FIXED)
 **Status:** ✅ FIXED (April 25, 2026) — Lua-only opt-out applied to all four files
 **Severity:** Visual mismatch, not blocking

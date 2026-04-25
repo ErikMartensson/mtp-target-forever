@@ -305,12 +305,26 @@ function CGateProxy:score()      return self._gate.Score end
 function CGateProxy:setScore(s)  self._gate.Score = s end
 function CGateProxy:setPosition(pos)
 	self._gate.Position = pos
-	-- Also move the linked visual module if one exists
+	-- Also move the linked visual module. CLevelModule:setPosition only
+	-- mutates the level-load entry table (a no-op once the level is loaded),
+	-- so we must additionally call setPos() on the runtime CModuleProxy.
+	-- That call relocates the ODE physics geom AND broadcasts an
+	-- UpdateElement message so the client re-renders the mesh at the new
+	-- position. Without this, the AABB silently teleports while the visible
+	-- gate stays put — players see the gate at its original location but
+	-- only score by passing through an invisible volume elsewhere.
 	if self._gate._moduleProxy then
 		self._gate._moduleProxy:setPosition(pos)
+		if getModule then
+			local mod = getModule(self._gate._moduleProxy:getId())
+			if mod and mod.setPos then
+				mod:setPos(pos)
+			end
+		end
 	end
 end
 function CGateProxy:setScale(scale) self._gate.Scale = scale end
+function CGateProxy:setOpeningHalfExtents(h) self._gate.OpeningHalfExtents = h end
 function CGateProxy:setModule(m) self._gate._moduleProxy = m end
 function CGateProxy:setEnabled(e)
 	self._gate._enabled = (e ~= 0)
@@ -330,6 +344,13 @@ function CLevel:addGate()
 	local gate = {
 		Position = CVector(0, 0, 0),
 		Scale = CVector(14, 3, 14),
+		-- Trigger-volume half-extents covering the gate *opening* only, not
+		-- the visible frame. The Scale above (14×3×14) is the legacy size
+		-- used by the visual mesh; the trigger uses these tighter bounds so
+		-- approaching anywhere near the gate doesn't score before the
+		-- player has actually passed through it. Tune these values via
+		-- gate:setOpeningHalfExtents(CVector(...)) per level if needed.
+		OpeningHalfExtents = CVector(0.05, 0.05, 0.05),
 		Score = 0,
 		_moduleProxy = nil,
 		_enabled = true
@@ -355,6 +376,8 @@ function CLevel:addGate90PS(pos, score)
 	local g = self:addGate()
 	g:setPosition(pos)
 	g:setScale(CVector(3,14,14))
+	-- 90°-rotated gate: opening lies in the YZ plane, narrow axis is X.
+	g._gate.OpeningHalfExtents = CVector(0.05, 0.05, 0.05)
 	g:setScore(score)
 	return g
 end
