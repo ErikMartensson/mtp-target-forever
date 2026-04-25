@@ -125,6 +125,8 @@ public:
 
 	sint32				 CurrentScore;		// the current score of the current session
 	sint32				 Score;				// the total score off all session
+	sint32				 LastSentScore;		// last CurrentScore broadcast via ScoreUpdate (drives change detection)
+	bool				 LastSentScoreValid;// false until first broadcast, forces an initial push
 	float				 ArrivalTime;				// time in second before total stop
 	NLMISC::CVector		 Pos;				// position of the client
 	NLMISC::CVector		 Force;				// the current client force received

@@ -2,6 +2,26 @@
 
 All notable improvements and changes from the original MTP Target v1.2.2a.
 
+## Live Scoreboard Updates (April 25, 2026)
+
+### Fix: Scoreboard didn't update mid-round and showed stale scores from previous round (KI #17b/c)
+
+The Tab scoreboard never updated during a round on cumulative-scoring levels (`level_gates_*`, `level_sun_extra_ball`, `level_donuts2`), and at the start of each new round it still displayed the previous round's final score. Standard-scoring levels (e.g. `level_classic`) appeared to work only because rounds end quickly there.
+
+**Root cause:** `EndSession` (sent at round-end) was the only server→client message carrying score data. Cumulative levels run the full timer, so the client never learned about scoring during the round, and the previous round's `EndSession` value lingered on the scoreboard until the next one arrived.
+
+**Fix:** Added a new lightweight `ScoreUpdate` network message that carries `(eid, currentScore)` pairs. The server broadcasts it from its existing 50 Hz network tick whenever an entity's `CurrentScore` differs from a new `LastSentScore` field — catching every writer (Lua proxy, physics resets, end-of-round bonuses, per-round `Entity:init` resets) via comparison rather than setter wrapping. Per-round reset propagation is automatic.
+
+**Files changed:** `common/net_message.h`, `server/src/entity.h`, `server/src/entity.cpp`, `server/src/network.cpp`, `client/src/net_callbacks.cpp`
+
+### Polish: Bottom-right HUD score now shows current round score
+
+The bottom-right corner used to show `totalScore` (cumulative session total), which was both easy to confuse with the Tab scoreboard's per-round `score` column and rarely the number players cared about mid-round. Switched to `currentScore` so the HUD ticks up live per scoring event. The session total is still visible in the Tab scoreboard's `total` column.
+
+**File changed:** `client/src/hud_task.cpp`
+
+---
+
 ## Sun-Themed Level Polish (April 25, 2026)
 
 ### Fix: Snow particles on sun-themed gates levels (KI #19)

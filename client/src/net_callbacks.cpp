@@ -684,6 +684,24 @@ static void cbExecLua(CNetMessage &msgin)
 		CLevelManager::getInstance().currentLevel().execLuaCode(luaCode);
 }
 
+// Live mid-round score push from the server. Carries (eid, currentScore)
+// pairs for every entity whose CurrentScore changed since the last broadcast.
+// Updates the client's currentScore field directly so the Tab scoreboard
+// reflects in-flight scoring (e.g. gate fly-throughs, paint coverage), without
+// touching totalScore or triggering endSession side effects.
+static void cbScoreUpdate(CNetMessage &msgin)
+{
+	while(msgin.getPos() < (sint32)msgin.length())
+	{
+		uint8 eid;
+		sint32 currentScore;
+		msgin.serial(eid, currentScore);
+
+		if(CEntityManager::getInstance().exist(eid))
+			CEntityManager::getInstance()[eid].currentScore(currentScore);
+	}
+}
+
 static void cbCollideWhenFly(CNetMessage &msgin)
 {
 	uint8 eid;
@@ -769,7 +787,8 @@ void netCallbacksHandler(CNetMessage &msgin)
 	SWITCH_CASE(ExecLua);
 	SWITCH_CASE(CollideWhenFly);
 	SWITCH_CASE(TimeArrival);
-	
+	SWITCH_CASE(ScoreUpdate);
+
 	default: nlwarning("Received an unknown message type %hu", (uint16)msgin.type()); break;
 	}
 }

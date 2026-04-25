@@ -75,6 +75,8 @@ void CEntity::init ()
 	Id = 255;
 	CurrentScore = 0;
 	Score = 0;
+	LastSentScore = 0;
+	LastSentScoreValid = false;
 	ArrivalTime = 0.0f;
 	OpenClose = false;
 	NbOpenClose = 0;

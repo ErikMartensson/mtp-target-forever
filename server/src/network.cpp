@@ -447,6 +447,33 @@ void CNetwork::update()
 			}
 		}
 	}
+
+	// Live score broadcast: send a ScoreUpdate for any entities whose
+	// CurrentScore has changed since the last push. Catches every writer
+	// (Lua proxy, physics resets, end-of-round bonuses) without wrapping
+	// individual setters. Without this, the client only learns scores
+	// at round-end via EndSession, so cumulative-scoring levels (gates,
+	// sun_extra_ball, donuts2) never showed live updates and the
+	// scoreboard appeared to "persist" the previous round's score.
+	{
+		CNetMessage msgout(CNetMessage::ScoreUpdate);
+		uint8 dirtyCount = 0;
+		for(CEntityManager::EntityConstIt it = CEntityManager::getInstance().entities().begin(); it != CEntityManager::getInstance().entities().end(); it++)
+		{
+			if(!(*it)->LastSentScoreValid || (*it)->CurrentScore != (*it)->LastSentScore)
+			{
+				uint8 eid = (*it)->id();
+				sint32 cur = (*it)->CurrentScore;
+				msgout.serial(eid, cur);
+				(*it)->LastSentScore = cur;
+				(*it)->LastSentScoreValid = true;
+				dirtyCount++;
+			}
+		}
+		if(dirtyCount > 0)
+			CNetwork::getInstance().send(msgout);
+	}
+
 	updateCount++;
 }
 

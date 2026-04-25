@@ -279,8 +279,10 @@ void CHudTask::render()
 	uint8 eid = CMtpTarget::getInstance().controler().Camera.getFollowedEntity();
 	if (eid != 255)
 	{
-		// display our score (bottom right)
-		string totalScoreStr = toString("score %d",CEntityManager::getInstance()[eid].totalScore());
+		// display our score (bottom right) — current round score, ticks live
+		// per scoring event. Session total is still visible in the Tab
+		// scoreboard's "total" column.
+		string totalScoreStr = toString("score %d",CEntityManager::getInstance()[eid].currentScore());
 		CFontManager::getInstance().printf(CRGBA(245, 238, 141, 255), (float) (C3DTask::getInstance().screenWidth() - totalScoreStr.size() * CFontManager::getInstance().fontWidth() - 10), float(C3DTask::getInstance().screenHeight() - 1 * CFontManager::getInstance().fontHeight()), 1, totalScoreStr.c_str());
 
 		// display speed with acceleration color coding (above score)

@@ -79,6 +79,7 @@ public:
 		ExecLua,			// 22    SC
 		CollideWhenFly,		// 23    SC
 		TimeArrival,		// 24    SC
+		ScoreUpdate,		// 25    SC -- live score push during a round
 	};
 
 	CNetMessage(TType type = Unknown, bool inputStream = false);

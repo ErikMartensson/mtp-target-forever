@@ -512,15 +512,13 @@ For comparison, the working 50 target on this level has the same axis but a smal
 
 ---
 
-### 17. level_sun_extra_ball: ~~i18n keys leaking to HUD~~ (a FIXED), no live score, score persists across rounds
-**Status:** (a) ✅ FIXED April 25, 2026; (b)/(c) still open
-**Severity:** Visual/UX, not blocking — level is playable but confusing
-**Affected Levels:** `level_sun_extra_ball` (and likely the other gate/extra-ball levels using the same pattern)
-
-**Three distinct bugs in `data/lua/level_sun_extra_ball_server.lua`:**
+### ~~17. level_sun_extra_ball: i18n keys, no live score, score persists across rounds~~ (FIXED)
+**Status:** ✅ All three sub-issues fixed April 25, 2026
+**Severity:** Visual/UX, not blocking
+**Affected Levels:** `level_sun_extra_ball`, all `level_gates_*`, `level_donuts2` (anything with cumulative scoring / non-standard round-end conditions)
 
 #### ~~a) Localization keys leaking to HUD~~ ✅ FIXED (April 25, 2026)
-Lines 18-20 and 31 emitted raw string keys instead of translated text — players saw garbled `LEVELEXTRALANDED|TESTER` (with `|` rendering as `�` because the font lacks the pipe glyph) and `LEVELEXTRABALL`.
+Lines 18-20 and 31 emitted raw string keys — players saw garbled `LEVELEXTRALANDED|TESTER` and `LEVELEXTRABALL`.
 
 **Fix Applied:** Replaced the keys with literal English strings:
 - `winnerStringMsg = self:name() .. " got an extra ball!"` (broadcast on gate hit)
@@ -528,31 +526,25 @@ Lines 18-20 and 31 emitted raw string keys instead of translated text — player
 
 **File Modified:** `data/lua/level_sun_extra_ball_server.lua`
 
-#### b) No live score feedback during round
-Flying through a gate calls `self:setCurrentScore(gate:score()+self:currentScore())` (line 12) — score *is* incrementing — but the scoreboard shows 0 until end of round. The scoreboard apparently polls a different field, or refreshes only on round-end.
+#### ~~b) No live score feedback during round~~ ✅ FIXED (April 25, 2026)
+#### ~~c) Score persists into next round~~ ✅ FIXED (April 25, 2026)
 
-**Investigate:** how the HUD scoreboard reads scores for cumulative-score levels. Compare against `level_extra_ball_server.lua` (the original v1.2.2a, which presumably works).
+Both (b) and (c) had the **same structural root cause**: there was no server→client message that carried score during gameplay. The only score-bearing message was `EndSession` (`server/src/running_session_state.cpp:209`), sent at round end, which writes both `currentScore` and `totalScore` on the client (`client/src/net_callbacks.cpp:cbEndSession`).
 
-#### c) Score persists into next round
-Previous round's final score is shown as the current round's starting score on the scoreboard. `CEntity:init()` does `self:setCurrentScore(0)` (line 6) but is apparently called only once at level load, not per-round. Standard v1.2.2a uses `Entity:init()` (without `C` prefix, see `level_default_server.lua:8`) which IS called per-round.
+For standard-scoring levels (e.g. `level_classic`), this *appeared* to work because rounds ended quickly (player lands → freeze → EndSession), so the displayed score was always recent. For cumulative-scoring levels (gates, sun_extra_ball, donuts2), rounds last the full timer — so the scoreboard showed the **previous round's** final the entire time the new round was being played, then jumped to the new round's final at round-end. This created the "no live updates" symptom (b) AND the "persists across rounds" symptom (c) — both were the same single bug.
 
-**Confirmed to also affect:**
-- All `level_gates_*` (share `data/lua/level_gates_server.lua` with `CEntity:init`)
-- `level_donuts2` — **important:** this one uses `level_default_server.lua` which has the lowercase `Entity:init()` (verified to work on level_classic etc.). So the bug is NOT exclusively about init style. The donuts2 mechanic requires opening wings multiple times per round, so the round likely doesn't end via the standard velocity-freeze path. That's the more probable common factor across all affected levels: rounds with non-standard end conditions / accumulating gameplay.
+(The earlier hypothesis about init-style mismatch in KI #17 was a false trail — verified that `CEntity:init` IS called per-round and `setCurrentScore(0)` does execute on the server. The reset just never reached the client.)
 
-**False trail (don't repeat):** Adding `function Entity:init()` alongside `function CEntity:init()` is a NO-OP. `CEntity = Entity` in `data/lua/utilities.lua:372` is a shared reference — both names point to the same table, so defining one method just overwrites the other. Verified: server *does* call `Entity:init` per-round (`waiting_ready_session_state.cpp:56` → `level.cpp:373` → `entity_manager.cpp:1494` → `entity.cpp:357` `luaProxy->call("init")`), so init runs and `setCurrentScore(0)` executes. The bug is therefore not in init at all.
+**Fix Applied (architectural):** Added a new `CNetMessage::ScoreUpdate` message that carries `(eid, currentScore)` pairs. Sent from the server's existing 50Hz network tick loop for every entity whose `CurrentScore` differs from a new `LastSentScore` field. Comparison-based dirty detection means *every* writer (Lua proxy, physics resets, end-of-round bonuses, per-round `Entity:init`) is caught for free without setter wrapping. Per-round reset (c) is automatic — when round 2's `Entity:init` calls `setCurrentScore(0)`, that differs from `LastSentScore` (carrying round 1's final), so the reset is broadcast like any other change.
 
-**Real direction to investigate:**
-The scoreboard probably reads from a different field than `CurrentScore` (likely a "last frozen" or "session" score that survives the per-round reset). Needs investigation in:
-- `server/src/entity.cpp` - what fields exist beyond CurrentScore
-- `server/src/entity_manager.cpp` - how the scoreboard list is built
-- Whatever network message carries scores to the client and how the client renders them
-- Difference between how standard-scoring levels (which work correctly) vs accumulating-scoring levels (gates, sun_extra_ball — which exhibit this bug) push their scores
+**Files Modified:**
+- `common/net_message.h` — added `ScoreUpdate` to TType enum
+- `server/src/entity.h` — added `LastSentScore` and `LastSentScoreValid` fields
+- `server/src/entity.cpp` — initialised the new fields in `CEntity::init`
+- `server/src/network.cpp` — appended live-score broadcast block after the existing 50Hz position sync in `CNetwork::update`
+- `client/src/net_callbacks.cpp` — added `cbScoreUpdate` handler and dispatch table entry
 
-**Files Involved:**
-- `data/lua/level_sun_extra_ball_server.lua` - all three issues
-- `data/lua/utilities.lua` / `helpers.lua` - check whether CEntity:init is bridged to per-round Entity:init
-- Possibly `client/src/hud_task.cpp` or score polling code for bug (b)
+**Note on the bottom-right HUD score:** Originally displayed `totalScore()` only. Switched to `currentScore()` so it ticks live per scoring event; the cumulative session total is still visible in the Tab scoreboard's `total` column.
 
 ---
 
