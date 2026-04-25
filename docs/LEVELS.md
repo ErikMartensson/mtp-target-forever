@@ -106,8 +106,8 @@ See [Playlist Tooling](#playlist-tooling) below for all the ways to launch.
 | `level_city_easy`              | city  | ✅     | 2026-02-04  | —         | Standard city targets                           |
 | `level_city_darts`             | city  | ✅     | 2026-02-04  | —         | Z-height-gated proximity scoring                |
 | `level_city_paint`             | city  | ✅     | 2026-02-21  | —         | Painting + texture preloading fixed             |
-| `level_city_destroy`           | city  | ❓     | —           | —         | Destructible targets                            |
-| `level_city_precision`         | city  | ❓     | —           | —         | Precision landing                               |
+| `level_city_destroy`           | city  | ⚠️     | 2026-04-25  | KI #18    | Playable. 50 + 100 targets work; 300 target unlandable due to ~25° tilt (upstream geometry, kept as-is). |
+| `level_city_precision`         | city  | ✅     | 2026-04-25  | —         | Precision landing                               |
 | `level_city_test`              | city  | ⏭      | —           | —         | ReleaseLevel=200, test only                     |
 
 ### Gate Levels (4 ports)
@@ -116,19 +116,19 @@ Fly through scoring gates that decrease in value each pass.
 
 | Level                          | Theme | Status | Last Tested | Issue Ref | Notes                                           |
 |--------------------------------|-------|--------|-------------|-----------|-------------------------------------------------|
-| `level_gates_easy`             | gates | ✅     | 2026-02-04  | —         | Easy gate course                                |
-| `level_gates_hard`             | gates | ❓     | —           | —         | Hard gate course                                |
-| `level_gates_ramp`             | gates | ❓     | —           | —         | Ramp gate course                                |
-| `level_gates_zig_zag`          | gates | ❓     | —           | —         | Zigzag gate course                              |
+| `level_gates_easy`             | gates | ⚠️     | 2026-04-25  | KI #17, #19 | Playable, gate scoring works. Same family bugs: persistent score (KI #17c) + snow particles (KI #19). |
+| `level_gates_hard`             | gates | ⚠️     | 2026-04-25  | KI #17, #19 | Playable. Gate scoring works mechanically. Score persists across rounds (KI #17c). Snow particles on sun theme (KI #19). Balance: final landing platform out-scores running all gates. |
+| `level_gates_ramp`             | gates | ⚠️     | 2026-04-25  | KI #17, #19 | Playable, gate scoring works. Same family bugs: persistent score (KI #17c) + snow particles (KI #19). |
+| `level_gates_zig_zag`          | gates | ⚠️     | 2026-04-25  | KI #17, #19 | Playable, gate scoring works. Same family bugs: persistent score (KI #17c) + snow particles (KI #19). |
 
 ### Other New Ports (4 + 1 test)
 
 | Level                          | Theme | Status | Last Tested | Issue Ref | Notes                                           |
 |--------------------------------|-------|--------|-------------|-----------|-------------------------------------------------|
 | `level_bowls1`                 | other | ⚠️     | 2026-02-08  | KI #1     | Intermittent scoring failure (fix in testing)  |
-| `level_donuts2`                | snow  | ❓     | —           | —         | Second donuts variant                           |
-| `level_mtp_paint`              | snow  | ❓     | —           | —         | Alternative paint level                         |
-| `level_snow_line`              | snow  | ❓     | —           | —         | Snow line layout                                |
+| `level_donuts2`                | snow  | ⚠️     | 2026-04-25  | KI #17    | Playable. Score persists into next round (KI #17c). Note: requires opening wings 2× per round, suggesting the persistent-score bug correlates with non-standard round-end conditions, not just CEntity init style. |
+| `level_mtp_paint`              | sun   | ⚠️     | 2026-04-25  | KI #17    | Playable. Score persists into next round (KI #17c). Sun themed; uses ShowSnow=0 in Lua to suppress snow particles. |
+| `level_snow_line`              | snow  | ✅     | 2026-04-25  | —         | Snow line layout                                |
 | `level_physics_test`           | other | ⏭      | —           | —         | ReleaseLevel=200, test only                     |
 
 ### Test-Only / Unfinished (5 levels, ReleaseLevel = 0)
@@ -145,11 +145,11 @@ Fly through scoring gates that decrease in value each pass.
 
 | Status | Count |
 |--------|-------|
-| ✅ Working | 48 |
-| ⚠️ Has known issue | 2 |
+| ✅ Working | 50 |
+| ⚠️ Has known issue | 10 |
 | 🚫 Broken | 0 |
-| ❓ Untested | 9 |
-| ⏭ Test-only | 11 |
+| ❓ Untested | 0 |
+| ⏭ Test-only | 10 |
 | **Total** | **70** |
 
 ---

@@ -450,6 +450,62 @@ Despite boxes extending 0.5 units in Z (from Z to Z+0.5), they behave as distinc
 
 ---
 
+### 19. Snow particles render on `level_gates_*` (sun-themed)
+**Status:** Trivial fix not yet applied (requires client rebuild)
+**Severity:** Visual mismatch, not blocking
+**Affected Levels:** `level_gates_easy`, `level_gates_hard`, `level_gates_ramp`, `level_gates_zig_zag` (all four use `utilities_sun`)
+
+**Root cause:**
+`client/src/level.cpp:436-442` decides whether to show snow particles by matching filename prefix:
+```cpp
+if(baseName.substr(0, 12) == "level_space_" ||
+   baseName.substr(0, 11) == "level_city_" ||
+   baseName.substr(0, 10) == "level_sun_")
+{
+    showSnow = false;
+}
+```
+This was added in commit `841e448` ("Disable snow particles for non-snow themed levels") but missed the `level_gates_` prefix. All four gates levels include `utilities_sun.lua`, so they're sun-themed and should not show snow.
+
+**Fix:**
+Add `|| baseName.substr(0, 12) == "level_gates_"` to the prefix list. One-line change, requires client rebuild. (Or take the more principled approach of inferring theme from the included utilities file, but that's much bigger.)
+
+**Workaround:** Levels can opt out individually with `ShowSnow = 0` in their Lua file (lines 443-446). Precedent: `level_mtp_paint.lua:2` already does this. Adopting this in the four `level_gates_*.lua` files would resolve the gates instances without any C++ change.
+
+---
+
+### 18. level_city_destroy: 300-point target unlandable (upstream geometry)
+**Status:** Won't fix without altering original geometry
+**Severity:** Cosmetic / scoring imbalance — level is playable, just one target denied
+**Affected Levels:** `level_city_destroy`
+
+**Description:**
+The 300-point target on the "classic" building cannot be landed on. The ball always rolls off, regardless of approach speed or angle. The other two targets (50 on "fun", 100 on "skyscrap") behave normally.
+
+**Root cause (geometry):**
+Lines 27-29 of `data/level/level_city_destroy.lua`:
+```lua
+local m = self:addCityTarget("basic", "orange", 300, CVector(-2.8,-18.615,1.9))
+m:setScale(CVector(3.8,4.6,4))
+m:setRotation(CAngleAxis(0,0.5,2,-4))
+```
+The rotation tilts the landing surface ~25° from horizontal. The "basic" target shape is a flat plate (no rim/walls). With our default friction (engine auto-Friction=10 for scoring modules), the ball's horizontal arrival velocity converts to downhill velocity faster than friction can absorb.
+
+For comparison, the working 50 target on this level has the same axis but a smaller angle (1 rad instead of -4 rad), giving only ~13° tilt — landable.
+
+**Verified upstream:** `diff` against `reference/mtp-target-v1.5.19/data/level/level_city_destroy.lua` shows the only difference is our added `Name` global. Geometry is unchanged.
+
+**Hypothesis:** Forgotten upstream bug. v1.5.19 may have had different physics tuning that allowed it, or the original devs never noticed during development.
+
+**Fix candidates (all rejected to preserve originality):**
+- Change shape from `"basic"` to `"easy"` (matches the working 50 target pattern)
+- Add explicit high friction: `m:setFriction(1000)`
+- Reduce the rotation angle from -4 to ~-2 rad
+
+**Decision:** Keep level as-is, accept the missing 300-point opportunity. Revisit if/when we do a "minimal upstream fixes" pass.
+
+---
+
 ### 17. level_sun_extra_ball: i18n keys leaking to HUD, no live score, score persists across rounds
 **Status:** Observed 2026-04-25, not started
 **Severity:** Visual/UX, not blocking — level is playable but confusing
@@ -474,9 +530,20 @@ Flying through a gate calls `self:setCurrentScore(gate:score()+self:currentScore
 **Investigate:** how the HUD scoreboard reads scores for cumulative-score levels. Compare against `level_extra_ball_server.lua` (the original v1.2.2a, which presumably works).
 
 #### c) Score persists into next round
-Previous round's final score is shown as the current round's starting score on the scoreboard. `CEntity:init()` does `self:setCurrentScore(0)` (line 6) but is apparently called only once at level load, not per-round. Standard v1.2.2a uses `Entity:init()` (without `C` prefix) which IS called per-round.
+Previous round's final score is shown as the current round's starting score on the scoreboard. `CEntity:init()` does `self:setCurrentScore(0)` (line 6) but is apparently called only once at level load, not per-round. Standard v1.2.2a uses `Entity:init()` (without `C` prefix, see `level_default_server.lua:8`) which IS called per-round.
 
-**Fix candidates:** Add a per-round reset in the right hook (`Entity:init()` or `CEntity:preUpdate` checking round state).
+**Confirmed to also affect:**
+- All `level_gates_*` (share `data/lua/level_gates_server.lua` with `CEntity:init`)
+- `level_donuts2` — **important:** this one uses `level_default_server.lua` which has the lowercase `Entity:init()` (verified to work on level_classic etc.). So the bug is NOT exclusively about init style. The donuts2 mechanic requires opening wings multiple times per round, so the round likely doesn't end via the standard velocity-freeze path. That's the more probable common factor across all affected levels: rounds with non-standard end conditions / accumulating gameplay.
+
+**False trail (don't repeat):** Adding `function Entity:init()` alongside `function CEntity:init()` is a NO-OP. `CEntity = Entity` in `data/lua/utilities.lua:372` is a shared reference — both names point to the same table, so defining one method just overwrites the other. Verified: server *does* call `Entity:init` per-round (`waiting_ready_session_state.cpp:56` → `level.cpp:373` → `entity_manager.cpp:1494` → `entity.cpp:357` `luaProxy->call("init")`), so init runs and `setCurrentScore(0)` executes. The bug is therefore not in init at all.
+
+**Real direction to investigate:**
+The scoreboard probably reads from a different field than `CurrentScore` (likely a "last frozen" or "session" score that survives the per-round reset). Needs investigation in:
+- `server/src/entity.cpp` - what fields exist beyond CurrentScore
+- `server/src/entity_manager.cpp` - how the scoreboard list is built
+- Whatever network message carries scores to the client and how the client renders them
+- Difference between how standard-scoring levels (which work correctly) vs accumulating-scoring levels (gates, sun_extra_ball — which exhibit this bug) push their scores
 
 **Files Involved:**
 - `data/lua/level_sun_extra_ball_server.lua` - all three issues
