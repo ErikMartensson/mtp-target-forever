@@ -2,6 +2,18 @@
 
 All notable improvements and changes from the original MTP Target v1.2.2a.
 
+## Sun-Themed Level Polish (April 25, 2026)
+
+### Fix: Snow particles on sun-themed gates levels (KI #19)
+
+The four `level_gates_*` levels (easy, hard, ramp, zig_zag) are sun-themed but rendered snow particles because the client's theme detection in `client/src/level.cpp` matches by filename prefix and only knew about `level_space_`, `level_city_`, and `level_sun_`.
+
+**Fix:** Added `ShowSnow = 0` to each gates level's Lua file (the existing per-level opt-out, used previously by `level_mtp_paint.lua`). No client rebuild required.
+
+**Files changed:** `data/level/level_gates_easy.lua`, `data/level/level_gates_hard.lua`, `data/level/level_gates_ramp.lua`, `data/level/level_gates_zig_zag.lua`
+
+---
+
 ## Auto-Reset Camera on Round Start (February 24, 2026)
 
 ### Fix: Camera stays on spectated player after round ends

@@ -450,8 +450,8 @@ Despite boxes extending 0.5 units in Z (from Z to Z+0.5), they behave as distinc
 
 ---
 
-### 19. Snow particles render on `level_gates_*` (sun-themed)
-**Status:** Trivial fix not yet applied (requires client rebuild)
+### ~~19. Snow particles render on `level_gates_*` (sun-themed)~~ (FIXED)
+**Status:** ✅ FIXED (April 25, 2026) — Lua-only opt-out applied to all four files
 **Severity:** Visual mismatch, not blocking
 **Affected Levels:** `level_gates_easy`, `level_gates_hard`, `level_gates_ramp`, `level_gates_zig_zag` (all four use `utilities_sun`)
 
@@ -465,12 +465,18 @@ if(baseName.substr(0, 12) == "level_space_" ||
     showSnow = false;
 }
 ```
-This was added in commit `841e448` ("Disable snow particles for non-snow themed levels") but missed the `level_gates_` prefix. All four gates levels include `utilities_sun.lua`, so they're sun-themed and should not show snow.
+The list (added in commit `841e448`) missed the `level_gates_` prefix, so the four gates levels — all `utilities_sun.lua` — fell through and snowed.
 
-**Fix:**
-Add `|| baseName.substr(0, 12) == "level_gates_"` to the prefix list. One-line change, requires client rebuild. (Or take the more principled approach of inferring theme from the included utilities file, but that's much bigger.)
+**Fix Applied:**
+Added `ShowSnow = 0` to each gates level's Lua file, using the existing per-level opt-out path (lines 443-446 in `client/src/level.cpp`, precedent: `data/level/level_mtp_paint.lua:2`). Lua-only change, no client rebuild required.
 
-**Workaround:** Levels can opt out individually with `ShowSnow = 0` in their Lua file (lines 443-446). Precedent: `level_mtp_paint.lua:2` already does this. Adopting this in the four `level_gates_*.lua` files would resolve the gates instances without any C++ change.
+**Files Modified:**
+- `data/level/level_gates_easy.lua`
+- `data/level/level_gates_hard.lua`
+- `data/level/level_gates_ramp.lua`
+- `data/level/level_gates_zig_zag.lua`
+
+A future principled fix could either add `level_gates_` to the C++ prefix list or infer theme from the included utilities file, but neither is needed now.
 
 ---
 

@@ -1,4 +1,5 @@
 Name = "Gates Easy"
+ShowSnow = 0
 
 include("utilities_sun.lua")
 include("level_gates_server.lua")
