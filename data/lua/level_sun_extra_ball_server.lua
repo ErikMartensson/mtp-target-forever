@@ -15,9 +15,9 @@ function CEntity:collideWithGate(gate)
 		gate:setPosition(p)
 		nlinfo("****new pos "..p:getX().." "..p:getY().." "..p:getZ())
 		gate:setEnabled(1)
-		winnerStringMsg = "LevelExtraLanded|"..self:name()
+		winnerStringMsg = self:name() .. " got an extra ball!"
 		displayTextToAll(0,12,1,255,200,0,winnerStringMsg, 5)
-		self:displayText(0,13,1,0,255,0,"LevelExtraBall", 2)
+		self:displayText(0,13,1,0,255,0,"Extra ball!", 2)
 	end
 	return false
 end
@@ -28,5 +28,5 @@ function CEntity:collideWithWater()
 	self:setOpenCloseCount(0)
 	self:setFreezCommand(0)
 	self:setIsOpen(0)
-	self:displayText(0,13,1,0,255,0,"LevelExtraBall", 2)
+	self:displayText(0,13,1,0,255,0,"Extra ball!", 2)
 end

@@ -12,6 +12,14 @@ The four `level_gates_*` levels (easy, hard, ramp, zig_zag) are sun-themed but r
 
 **Files changed:** `data/level/level_gates_easy.lua`, `data/level/level_gates_hard.lua`, `data/level/level_gates_ramp.lua`, `data/level/level_gates_zig_zag.lua`
 
+### Fix: i18n keys leaking to HUD on level_sun_extra_ball (KI #17a)
+
+`level_sun_extra_ball` displayed garbled text like `LEVELEXTRALANDED|TESTER` and `LEVELEXTRABALL` on the HUD because the server-side script emitted raw localization keys that have no lookup table in this codebase.
+
+**Fix:** Replaced the keys with literal English strings — broadcast text now reads `<name> got an extra ball!` and the local message reads `Extra ball!`.
+
+**File changed:** `data/lua/level_sun_extra_ball_server.lua`
+
 ---
 
 ## Auto-Reset Camera on Round Start (February 24, 2026)

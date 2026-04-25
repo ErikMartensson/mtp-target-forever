@@ -512,23 +512,21 @@ For comparison, the working 50 target on this level has the same axis but a smal
 
 ---
 
-### 17. level_sun_extra_ball: i18n keys leaking to HUD, no live score, score persists across rounds
-**Status:** Observed 2026-04-25, not started
+### 17. level_sun_extra_ball: ~~i18n keys leaking to HUD~~ (a FIXED), no live score, score persists across rounds
+**Status:** (a) ✅ FIXED April 25, 2026; (b)/(c) still open
 **Severity:** Visual/UX, not blocking — level is playable but confusing
 **Affected Levels:** `level_sun_extra_ball` (and likely the other gate/extra-ball levels using the same pattern)
 
 **Three distinct bugs in `data/lua/level_sun_extra_ball_server.lua`:**
 
-#### a) Localization keys leaking to HUD
-Lines 18-20 and 31 emit raw string keys instead of translated text:
-```lua
-winnerStringMsg = "LevelExtraLanded|"..self:name()
-displayTextToAll(0,12,1,255,200,0,winnerStringMsg, 5)
-self:displayText(0,13,1,0,255,0,"LevelExtraBall", 2)
-```
-These look like keys for an i18n lookup table that doesn't exist in this codebase. Result: player sees `LEVELEXTRALANDED|TESTER` (with `|` rendering as `�` because the font lacks the pipe glyph) and `LEVELEXTRABALL` overlaid on the screen each gate hit / respawn.
+#### ~~a) Localization keys leaking to HUD~~ ✅ FIXED (April 25, 2026)
+Lines 18-20 and 31 emitted raw string keys instead of translated text — players saw garbled `LEVELEXTRALANDED|TESTER` (with `|` rendering as `�` because the font lacks the pipe glyph) and `LEVELEXTRABALL`.
 
-**Fix candidates:** Replace the keys with literal English strings, e.g. `self:name() .. " scored!"` and `"Extra ball!"`.
+**Fix Applied:** Replaced the keys with literal English strings:
+- `winnerStringMsg = self:name() .. " got an extra ball!"` (broadcast on gate hit)
+- `"Extra ball!"` (local message after gate hit and after water reset)
+
+**File Modified:** `data/lua/level_sun_extra_ball_server.lua`
 
 #### b) No live score feedback during round
 Flying through a gate calls `self:setCurrentScore(gate:score()+self:currentScore())` (line 12) — score *is* incrementing — but the scoreboard shows 0 until end of round. The scoreboard apparently polls a different field, or refreshes only on round-end.
