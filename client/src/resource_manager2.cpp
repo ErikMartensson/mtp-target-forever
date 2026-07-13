@@ -108,7 +108,7 @@ bool downloadFile (const string &source, const string &dest, void *data=NULL)
 		return false;
 		//throw Exception ("curl init failed");
 	}
-	curl_easy_setopt(curl, CURLOPT_NOPROGRESS, FALSE);
+	curl_easy_setopt(curl, CURLOPT_NOPROGRESS, 0L);
 	curl_easy_setopt(curl, CURLOPT_PROGRESSFUNCTION, myProgressFunc);
 	curl_easy_setopt(curl, CURLOPT_PROGRESSDATA, data);
 	curl_easy_setopt(curl, CURLOPT_URL, source.c_str());

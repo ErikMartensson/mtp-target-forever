@@ -1,0 +1,22 @@
+services:
+  server:
+    build: .
+    image: mtp-target-forever-server
+    container_name: mtp-target-server
+    ports:
+      - "51574:51574"
+    volumes:
+      # Config, logs and level stats persist in this named volume.
+      # Edit the config with:
+      #   docker compose cp server:/config/mtp_target_service.cfg .
+      #   (edit it)
+      #   docker compose cp mtp_target_service.cfg server:/config/
+      #   docker compose restart server
+      - server-config:/config
+      # Alternative: bind mount a local directory instead (make sure the
+      # container user can write to it, e.g. chmod 777 ./server-config):
+      # - ./server-config:/config
+    restart: unless-stopped
+
+volumes:
+  server-config:

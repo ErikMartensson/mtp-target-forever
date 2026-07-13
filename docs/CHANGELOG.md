@@ -2,6 +2,30 @@
 
 All notable improvements and changes from the original MTP Target v1.2.2a.
 
+## Platform Support
+
+### Linux Build (New)
+Client and server now build and run natively on Linux:
+- New CMake presets `client-linux` / `server-linux` pointing to `ryzomcore/build` (NeL) and `deps/` (ODE)
+- New shell scripts mirroring the Windows workflow: `setup-deps.sh`, `setup-ryzomcore.sh`, `build-client.sh`, `build-server.sh`, `post-build.sh`, `run-client.sh`, `run-server.sh`
+- Most dependencies come from system packages; ODE is built from source (static, double precision) into `deps/ode`
+- Fixed C++ standard flags (removed `-ansi`, now C++17 to match modern NeL headers)
+- Fixed static library link order and added missing libraries (png/jpeg/gif/freetype/vorbis) on Linux
+- `--lan` / `--user` / `--autoconnect` command-line flags now work on Linux (parsing was Windows-only)
+- Fixed exponential slowdown/freeze under XWayland: the mouse listener re-centered the cursor on every event, and each warp generates a new motion event on XWayland, creating a self-sustaining event storm as soon as the mouse moved; the cursor is now only re-centered when it actually left the center
+- Fixed invisible mouse cursor in menus on Linux: NeL's X11 `showCursor(true)` never restored the cursor after it had been hidden (patched via `scripts/patches/ryzomcore-x11-showcursor.patch`)
+- Enabled fullscreen on Linux (was hard-disabled with a stale "no fullscreen on linux" fallback from old NeL)
+- Video settings applied from the main menu now auto-restart the game on Linux too (the restart was Windows-only, so Apply just quit the game)
+- Resolution picker now offers common resolutions on Linux (NeL's XRandR backend only reports the current monitor size, so the list had a single entry and the resolution could never be changed)
+- Applying video settings from the pause menu now shows an on-screen chat message instead of only logging (it looked like the Apply button did nothing)
+
+### Dedicated Server Docker Image (New)
+- Multi-stage `Dockerfile` building a slim Debian image with just the server binary, its data and runtime libraries (runs as a non-root user)
+- `docker-compose.yml` with a persistent `/config` volume for the config file, logs and level stats
+- `--server-only` flag on `setup-deps.sh` / `setup-ryzomcore.sh` for lean headless builds (no sound, no OpenGL/OpenAL drivers, no X11 dependencies)
+- README section on hosting a multiplayer server (Docker, VPS, home hosting via port forwarding or Tailscale)
+- Verified end-to-end: LAN client connects to Linux server, resources sync, session starts
+
 ## Client Improvements
 
 ### Options Menu (New)

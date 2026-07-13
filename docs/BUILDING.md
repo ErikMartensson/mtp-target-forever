@@ -1,12 +1,13 @@
 # Building MTP Target Forever
 
-This guide covers building the MTP Target Forever game server and client from source on Windows.
+This guide covers building the MTP Target Forever game server and client from source on Windows and Linux.
 
 ---
 
 ## Table of Contents
 
 - [Quick Start (Windows)](#quick-start-windows)
+- [Quick Start (Linux)](#quick-start-linux)
 - [Prerequisites](#prerequisites)
 - [Step 1: Setup Dependencies](#step-1-setup-dependencies)
 - [Step 2: Build RyzomCore (NeL)](#step-2-build-ryzomcore-nel)
@@ -34,6 +35,35 @@ This guide covers building the MTP Target Forever game server and client from so
 .\scripts\run-server.bat          # Terminal 1
 .\scripts\run-client.bat --lan localhost --user YourName  # Terminal 2
 ```
+
+---
+
+## Quick Start (Linux)
+
+```bash
+# 1. Check system packages and build ODE into deps/ode
+./scripts/setup-deps.sh
+
+# 2. Clone and build RyzomCore/NeL (one-time, ~5-10 min)
+./scripts/setup-ryzomcore.sh
+
+# 3. Build client and server
+./scripts/build-server.sh
+./scripts/build-client.sh
+
+# 4. Run the game
+./scripts/run-server.sh          # Terminal 1
+./scripts/run-client.sh --lan localhost --user YourName  # Terminal 2
+```
+
+Unlike Windows, most dependencies come from system packages (Lua 5.1, libxml2,
+curl, libpng, libjpeg, giflib, freetype, OpenAL, vorbis/ogg, OpenGL/X11 dev
+headers). Only ODE is built from source into `deps/ode` — static, double
+precision, matching the Windows `ode_doubles.lib`. `setup-deps.sh` verifies
+everything and prints the `pacman`/`apt` install command for anything missing.
+
+The CMake presets `server-linux` and `client-linux` expect NeL in
+`ryzomcore/build` and ODE in `deps/` (both relative to the repo root).
 
 ---
 

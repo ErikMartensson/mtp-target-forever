@@ -1,0 +1,16 @@
+diff --git a/nel/src/3d/driver/opengl/driver_opengl_inputs.cpp b/nel/src/3d/driver/opengl/driver_opengl_inputs.cpp
+index 685a94a..7087677 100644
+--- a/nel/src/3d/driver/opengl/driver_opengl_inputs.cpp
++++ b/nel/src/3d/driver/opengl/driver_opengl_inputs.cpp
+@@ -496,6 +496,11 @@ void CDriverGL::showCursor(bool b)
+ 	else
+ 	{
+ 		_CurrName.clear();
++
++		// updateCursor() below early-returns when no named cursor is set,
++		// so restore the default X cursor here or the window keeps the
++		// blank cursor forever after a hide/show cycle
++		XUndefineCursor(_dpy, _win);
+ 	}
+ 
+ 	// update current hardware icon to avoid to have the plain arrow

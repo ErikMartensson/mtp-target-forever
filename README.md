@@ -6,7 +6,7 @@
 
 > A free multiplayer online action game where you roll down a giant ramp and delicately land on platforms to score points. Fight with and against players in this mix of action, dexterity, and strategy - inspired by Monkey Target from Super Monkey Ball.
 
-**Status:** 🎮 Playable - Version 1.2.2a client and server working with 32 of 62 levels
+**Status:** 🎮 Playable - Version 1.2.2a client and server working with 32 of 62 levels, on Windows and Linux
 
 ### Download Latest Build
 
@@ -25,6 +25,8 @@
 - [About This Project](#about-this-project)
 - [Current Status](#current-status)
 - [Quick Start (Windows)](#quick-start-windows)
+- [Quick Start (Linux)](#quick-start-linux)
+- [Hosting a Multiplayer Server](#hosting-a-multiplayer-server)
 - [Documentation](#documentation)
 - [Architecture](#architecture)
 - [What We've Fixed](#what-weve-fixed)
@@ -46,6 +48,7 @@
 2. ✅ **Creating a modern login service** - TypeScript/Deno replacement for authentication
 3. ✅ **Compiling the client** - Build from source for debugging and modifications
 4. ✅ **Windows support** - Full Windows build with Visual Studio 2022
+5. ✅ **Linux support** - Native Linux build of client and server (GCC/Ninja, system packages)
 
 ### Version Strategy
 
@@ -70,9 +73,9 @@ The v1.5.19 client source code is preserved in [`reference/mtp-target-v1.5.19/`]
 
 ### What Works ✅
 
-- ✅ **Build System:** Full Windows build with Visual Studio 2022 and automated scripts
-- ✅ **Game Server:** Compiles and runs on Windows, 32 playable levels working
-- ✅ **Game Client:** Compiles and runs on Windows with OpenGL/OpenAL drivers
+- ✅ **Build System:** Full Windows (Visual Studio 2022) and Linux (GCC/Ninja) builds with automated scripts
+- ✅ **Game Server:** Compiles and runs on Windows and Linux, 32 playable levels working
+- ✅ **Game Client:** Compiles and runs on Windows and Linux with OpenGL/OpenAL drivers (XWayland supported)
 - ✅ **Login Service:** Modern TypeScript/Deno implementation handles authentication
 - ✅ **Database:** SQLite-based user and shard management
 - ✅ **Physics:** ODE 0.16.5 engine with Lua 5.x scripting
@@ -160,6 +163,88 @@ cmake --build . --config Release --parallel 2 --target nel_drv_opengl_win nel_dr
 .\scripts\run-client.bat --lan localhost --user YourName
 ```
 
+## Quick Start (Linux)
+
+Most dependencies come from system packages (Lua 5.1, libxml2, curl, libpng,
+libjpeg, giflib, freetype, OpenAL, vorbis/ogg, OpenGL/X11 dev headers).
+
+```bash
+# 1. Check system packages and build ODE into deps/ode
+./scripts/setup-deps.sh
+
+# 2. Clone and build RyzomCore/NeL into ryzomcore/ (one-time)
+./scripts/setup-ryzomcore.sh
+
+# 3. Build
+./scripts/build-server.sh
+./scripts/build-client.sh
+
+# 4. Run
+./scripts/run-server.sh                                   # Terminal 1
+./scripts/run-client.sh --lan localhost --user YourName   # Terminal 2
+```
+
+See [docs/BUILDING.md](docs/BUILDING.md) for details.
+
+---
+
+## Hosting a Multiplayer Server
+
+The game server is lightweight (~20 MB RAM, a few % of one core, no GPU) and
+only needs **TCP port 51574** reachable by the players. Clients connect
+directly with "Play on LAN" (or `--lan <host> --user <name>`) — despite the
+name this is a plain TCP connection that works over the internet; the Deno
+login service is only needed for the account-based "Play Online" mode.
+
+### With Docker (recommended)
+
+```bash
+docker compose up -d          # builds the image (~15 min the first time) and starts the server
+docker compose logs -f        # watch the server logs
+```
+
+Config, logs and level stats persist in the `server-config` volume. To change
+settings (level playlist, bots, port...):
+
+```bash
+docker compose cp server:/config/mtp_target_service.cfg .
+# edit mtp_target_service.cfg
+docker compose cp mtp_target_service.cfg server:/config/
+docker compose restart server
+```
+
+### On a cloud server (VPS)
+
+Any small VPS works (Hetzner, OVH, Scaleway, DigitalOcean... the cheapest
+tier is plenty). With Docker installed on the VPS:
+
+```bash
+git clone https://github.com/ErikMartensson/mtp-target-forever.git
+cd mtp-target-forever
+docker compose up -d
+```
+
+Then open TCP 51574 in the provider's firewall / security group. Players
+connect with `--lan <vps-ip> --user <name>` or via the "Play on LAN" menu.
+
+Pick a region close to your players: the server ticks every 20 ms, so
+latency matters more than bandwidth.
+
+Without Docker, the native build works too: run the three setup/build
+scripts from [Quick Start (Linux)](#quick-start-linux) on the VPS and keep
+`./scripts/run-server.sh` alive in tmux, or wrap it in a systemd unit.
+
+### From home (no cloud)
+
+- **Port forwarding:** forward TCP 51574 on your router to your machine and
+  share your public IP with the other players.
+- **No open ports (CGNAT, etc.):** use a mesh VPN like
+  [Tailscale](https://tailscale.com/) — every player installs it and
+  connects to your Tailscale IP (`100.x.y.z`). Nothing is exposed to the
+  public internet, which is wise given the 2004-era netcode.
+
+---
+
 **Controls:**
 - **Arrow keys:** Steer penguin (requires speed in ball mode)
 - **CTRL:** Toggle between ball/gliding modes
@@ -185,7 +270,7 @@ For detailed build instructions and troubleshooting, see **[docs/BUILDING.md](do
 
 | Document | Description |
 |----------|-------------|
-| [**BUILDING.md**](docs/BUILDING.md) | Complete build guide for Windows (NeL, ODE, client, server) |
+| [**BUILDING.md**](docs/BUILDING.md) | Complete build guide for Windows and Linux (NeL, ODE, client, server) |
 | [**RUNTIME_FIXES.md**](docs/RUNTIME_FIXES.md) | Runtime crashes and fixes (water, levels, controls, files) |
 | [**KNOWN_ISSUES.md**](docs/KNOWN_ISSUES.md) | Issue tracker with planned fixes and priorities |
 | [**LEVELS.md**](docs/LEVELS.md) | Level list and chat commands for voting/forcing maps |
@@ -201,7 +286,7 @@ For detailed build instructions and troubleshooting, see **[docs/BUILDING.md](do
 ```
 ┌─────────────┐         ┌──────────────┐         ┌──────────────┐
 │   Client    │────────>│Login Service │────────>│   Database   │
-│ (Windows)   │  Auth   │  (Deno/TS)   │  Query  │  (SQLite)    │
+│(Win / Linux)│  Auth   │  (Deno/TS)   │  Query  │  (SQLite)    │
 │             │<────────│   Port 49997 │<────────│              │
 └─────────────┘  Shards └──────────────┘         └──────────────┘
        │
@@ -230,6 +315,7 @@ The original code was from 2003-2004 and needed updates for modern systems:
 - ✅ **Modern NeL API** - Updated for RyzomCore (NeL's successor)
 - ✅ **ODE 0.5 → 0.16** - Physics engine upgrade
 - ✅ **Namespace fixes** - Resolved conflicts with modern C++ std library
+- ✅ **Native Linux port** - Build scripts, XWayland mouse/cursor fixes, fullscreen and resolution options
 
 See [docs/MODIFICATIONS.md](docs/MODIFICATIONS.md) for technical details.
 
@@ -291,6 +377,8 @@ We'd love your help! This is a community effort to preserve a fun open-source ga
 
 ### Completed
 - [x] Windows build system with Visual Studio 2022
+- [x] Linux build system (GCC/Ninja, native client and server)
+- [x] Docker image + compose for dedicated servers
 - [x] Automated builds (GitHub Actions CI)
 - [x] Game server running with 32 playable levels
 - [x] Game client compiled from source
@@ -305,10 +393,9 @@ We'd love your help! This is a community effort to preserve a fun open-source ga
 - [ ] Reduce network latency
 
 ### Future
-- [ ] Docker containers for easy deployment
 - [ ] Community servers
 - [ ] Custom levels and mods
-- [ ] Linux/macOS builds
+- [ ] macOS build
 
 ---
 
@@ -324,7 +411,7 @@ See [docs/KNOWN_ISSUES.md](docs/KNOWN_ISSUES.md) for the complete issue tracker.
 - **Water rendering disabled** - Falls back gracefully when textures missing
 
 ### Fixed Issues
-- Build system - Full Windows compilation with automated scripts and CI
+- Build system - Full Windows and Linux compilation with automated scripts and CI
 - All 32 snow-theme levels working with proper scoring
 - Physics steering and momentum preservation
 - Keyboard controls with chat toggle mode
@@ -360,6 +447,7 @@ See [COPYING](COPYING) for full license text.
 
 ### Community Restoration (2025-2026)
 - Full Windows build system with automated CI
+- Native Linux port (client and server)
 - Server and client compilation from source
 - TypeScript login service implementation
 - 32 levels tested and working

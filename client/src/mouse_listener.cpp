@@ -84,11 +84,23 @@ void C3dMouseListener::reset()
 }
 
 
+// Recenter the cursor only for motion events that actually left the center.
+// Under XWayland every XWarpPointer generates a new motion event, so warping
+// unconditionally on each event creates a self-sustaining event storm (one
+// echo per warp) that grows with real mouse input until frames take seconds.
+static void recenterMouse(const CEvent &event, const CEventMouse *mouseEvent)
+{
+	if(!(event == EventMouseMoveId))
+		return;
+	if(fabs(mouseEvent->X - 0.5f) > 0.002f || fabs(mouseEvent->Y - 0.5f) > 0.002f)
+		C3DTask::getInstance().driver().setMousePos(0.5f, 0.5f);
+}
+
 void C3dMouseListener::operator ()(const CEvent& event)
 {
 	if(CGuiObjectManager::getInstance().objects.size()!=0)
 		return;
-	
+
 	CEventMouse* mouseEvent = (CEventMouse*)&event;
 
 	switch (_allowMouse)
@@ -108,7 +120,7 @@ void C3dMouseListener::operator ()(const CEvent& event)
 			MouseWheel += (mouseEvent->Direction? -1 : +1);
 		}
 		// Update mouse position
-		C3DTask::getInstance().driver().setMousePos(0.5f, 0.5f);
+		recenterMouse(event, mouseEvent);
 		break;
 	case 2:
 		if (event==EventMouseMoveId && ((mouseEvent->Button&leftButton)!=0 || !FollowEntity) )
@@ -131,7 +143,7 @@ void C3dMouseListener::operator ()(const CEvent& event)
 			MouseWheel += (mouseEvent->Direction? -1 : +1);
 		}
 		// Update mouse position
-		C3DTask::getInstance().driver().setMousePos(0.5f, 0.5f);
+		recenterMouse(event, mouseEvent);
 		break;
 	case 3:
 		if (event==EventMouseMoveId)
@@ -141,9 +153,9 @@ void C3dMouseListener::operator ()(const CEvent& event)
 				MouseY -= 0.5f - mouseEvent->Y;
 			else
 				MouseY += 0.5f - mouseEvent->Y;
-			
+
 			// Update mouse position
-			C3DTask::getInstance().driver().setMousePos(0.5f, 0.5f);
+			recenterMouse(event, mouseEvent);
 		}
 		else if (event == EventMouseUpId)
 		{

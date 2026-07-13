@@ -1,0 +1,14 @@
+# Heavy local artifacts — everything the image needs is built inside the container
+.git
+build/
+build-client/
+build-server/
+deps/
+ryzomcore/
+reference/
+logs/
+www/
+chat/
+login-service-deno/
+Dockerfile
+docker-compose.yml

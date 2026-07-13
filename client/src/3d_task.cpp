@@ -175,12 +175,7 @@ void C3DTask::init()
 	//if(CConfigFileTask::instance().configFile().getVar("NativeFragmentProgramsOnly").asInt() == 0)
 	//	Driver->forceNativeFragmentPrograms(false);
 
-#ifdef NL_OS_WINDOWS
 	Fullscreen = CConfigFileTask::instance().configFile().getVar("Fullscreen").asInt()==1;
-#else
-	// no fullscreen on linux
-	Fullscreen = false;
-#endif
 
 	uint8 aa = (CConfigFileTask::instance().configFile().getVar("AntiAlias").asInt()==1)?2:-1;
 
