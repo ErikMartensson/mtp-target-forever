@@ -96,24 +96,10 @@ string crashcallback()
 uint TaskManagerThreadId = 0;
 uint NetworkThreadId = 0;
 
-
-#ifdef NL_OS_WINDOWS
-
-int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int nCmdShow)
+// Parse command line flags shared by all platforms:
+// --autoconnect:<id>, --lan <hostname>, --user <username>, or a replay file
+static void parseCommandLine(const string &cmd)
 {
-	NLMISC::CApplicationContext myApplicationContext;
-/*	int tmp;
-	tmp = _CrtSetDbgFlag(_CRTDBG_REPORT_FLAG);
-	tmp = (tmp & 0x0000FFFF) | _CRTDBG_ALLOC_MEM_DF | _CRTDBG_CHECK_ALWAYS_DF;
-	_CrtSetDbgFlag(tmp);
-*/
-	ghInstance = hInstance;
-	// Look the command line to see if we have a cookie and a addr
-
-	nlinfo ("args: '%s'", lpCmdLine);
-
-	string cmd = lpCmdLine;
-
 	ReplayFile = "";
 	AutoServerId = -1;
 	AutoLanHost = "";
@@ -176,6 +162,27 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 		// No flags found, treat as replay file
 		ReplayFile = cmd;
 	}
+}
+
+
+#ifdef NL_OS_WINDOWS
+
+int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int nCmdShow)
+{
+	NLMISC::CApplicationContext myApplicationContext;
+/*	int tmp;
+	tmp = _CrtSetDbgFlag(_CRTDBG_REPORT_FLAG);
+	tmp = (tmp & 0x0000FFFF) | _CRTDBG_ALLOC_MEM_DF | _CRTDBG_CHECK_ALWAYS_DF;
+	_CrtSetDbgFlag(tmp);
+*/
+	ghInstance = hInstance;
+	// Look the command line to see if we have a cookie and a addr
+
+	nlinfo ("args: '%s'", lpCmdLine);
+
+	string cmd = lpCmdLine;
+
+	parseCommandLine(cmd);
 
 	if(!IsDebuggerPresent() && !ReplayFile.empty())
 	{
@@ -211,10 +218,14 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 int main(int argc, char **argv)
 {
 	NLMISC::CApplicationContext myApplicationContext;
-	if (argc == 2)
+
+	string cmd;
+	for (int i = 1; i < argc; i++)
 	{
-		ReplayFile = argv[1];
+		if (i > 1) cmd += " ";
+		cmd += argv[i];
 	}
+	parseCommandLine(cmd);
 
 #ifdef NL_OS_MAC
 	CFBundleRef bundle;

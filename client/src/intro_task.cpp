@@ -28,6 +28,8 @@
 #ifdef NL_OS_WINDOWS
 #	define NOMINMAX
 #	include <windows.h>
+#else
+#	include <unistd.h>
 #endif
 
 #include <set>
@@ -638,6 +640,21 @@ void CIntroTask::onOptionsApply()
 	{
 		CloseHandle(pi.hProcess);
 		CloseHandle(pi.hThread);
+	}
+#elif defined(NL_OS_UNIX) && !defined(NL_OS_MAC)
+	// Launch a new instance once the current one has released the display
+	char exePath[1024];
+	ssize_t len = readlink("/proc/self/exe", exePath, sizeof(exePath) - 1);
+	if(len > 0)
+	{
+		exePath[len] = '\0';
+		if(fork() == 0)
+		{
+			// let the parent finish saving the config and closing the window
+			usleep(500 * 1000);
+			execl(exePath, exePath, (char *)NULL);
+			_exit(1);
+		}
 	}
 #endif
 

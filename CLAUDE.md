@@ -4,6 +4,8 @@ A penguin bowling/curling game where players roll down slopes and land on scorin
 
 ## Quick Start
 
+**Windows:**
+
 ```powershell
 # Prerequisites: Visual Studio 2022 Build Tools + Ninja (choco install ninja)
 
@@ -20,6 +22,24 @@ A penguin bowling/curling game where players roll down slopes and land on scorin
 # Run (two terminals)
 .\scripts\run-server.bat
 .\scripts\run-client.bat --lan localhost --user YourName
+```
+
+**Linux:**
+
+```bash
+# First-time setup: check system packages, build ODE into deps/ode
+./scripts/setup-deps.sh
+
+# Build RyzomCore/NeL into ryzomcore/ (one-time)
+./scripts/setup-ryzomcore.sh
+
+# Build game (CMake presets client-linux / server-linux)
+./scripts/build-client.sh
+./scripts/build-server.sh
+
+# Run (two terminals)
+./scripts/run-server.sh
+./scripts/run-client.sh --lan localhost --user YourName
 ```
 
 ## Directory Structure

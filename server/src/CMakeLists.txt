@@ -30,14 +30,20 @@ IF(WIN32)
 	LINK_FLAGS_DEBUG "/NODEFAULTLIB:libc;libcmt;libcmtd;msvcrt"
 	LINK_FLAGS_RELEASE "/NODEFAULTLIB:libc;libcmt;libcmtd;msvcrtd")
 ELSE(WIN32)
-	TARGET_LINK_LIBRARIES(mtp-target-forever-srv	${NELMISC_LIBRARY}
-										${NELNET_LIBRARY} 
-										${NEL3D_LIBRARY}
+	# Static NeL libs: dependents must come before their dependencies
+	TARGET_LINK_LIBRARIES(mtp-target-forever-srv	${NEL3D_LIBRARY}
+										${NELNET_LIBRARY}
+										${NELMISC_LIBRARY}
 										${PLATFORM_LINKFLAGS}
 										${LUA_LIBRARIES}
 										${LIBXML2_LIBRARIES}
 										${ODE_LIBRARY}
-										${ZLIB_LIBRARY})
+										${ZLIB_LIBRARY}
+										${PNG_LIBRARIES}
+										${JPEG_LIBRARIES}
+										${GIF_LIBRARIES}
+										${FREETYPE_LIBRARIES}
+										${CMAKE_DL_LIBS})
 ENDIF(WIN32)
 
 ADD_DEFINITIONS(-DMT_SERVER -DMTPT_SERVER)
