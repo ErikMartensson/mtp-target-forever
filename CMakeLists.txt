@@ -74,9 +74,22 @@ NL_SETUP_BUILD()
 
 FIND_PACKAGE(NeL COMPONENTS nelmisc nelnet nel3d REQUIRED)
 
+IF(NOT WIN32)
+  # Linux: the game code targets Lua 5.1 (system package), used by both
+  # client and server. On Windows the Lua paths are passed as cache vars.
+  FIND_PACKAGE(Lua51 REQUIRED)
+  # Static NeL libs pull in the system image/font libraries they were built with
+  FIND_PACKAGE(PNG REQUIRED)
+  FIND_PACKAGE(JPEG REQUIRED)
+  FIND_PACKAGE(GIF REQUIRED)
+  FIND_PACKAGE(Freetype REQUIRED)
+ENDIF(NOT WIN32)
+
 IF(BUILD_CLIENT)
     FIND_PACKAGE(CURL REQUIRED)
-    FIND_PACKAGE(Lua50 REQUIRED)
+    IF(WIN32)
+	FIND_PACKAGE(Lua50 REQUIRED)
+    ENDIF(WIN32)
     FIND_PACKAGE(NeL COMPONENTS nelsound nelsnd_lowlevel nelgeorges nelligo REQUIRED)
     IF(WIN32)
 	FIND_PACKAGE(Jpeg)

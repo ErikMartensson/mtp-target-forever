@@ -219,15 +219,25 @@ IF(WIN32)
 		target_compile_definitions(mtp-target-forever PRIVATE MTPT_VERSION_SUFFIX="${MTPT_VERSION_SUFFIX}")
 	ENDIF()
 ELSE(WIN32)
-	TARGET_LINK_LIBRARIES(mtp-target-forever	${NELMISC_LIBRARY} 
-										${NELNET_LIBRARY} 
-										${NEL3D_LIBRARY}
-										${NELSOUND_LIBRARY}
+	# Static NeL libs: dependents must come before their dependencies
+	TARGET_LINK_LIBRARIES(mtp-target-forever	${NELSOUND_LIBRARY}
 										${NELSNDDRV_LIBRARY}
+										-lvorbisfile -lvorbis -logg
+										${NELLIGO_LIBRARY}
+										${NELGEORGES_LIBRARY}
+										${NEL3D_LIBRARY}
+										${NELNET_LIBRARY}
+										${NELMISC_LIBRARY}
 										${PLATFORM_LINKFLAGS}
 										${LUA_LIBRARIES}
-										${CURL_LIBRARY}
-										${LIBXML2_LIBRARIES})
+										${CURL_LIBRARIES}
+										${LIBXML2_LIBRARIES}
+										${ZLIB_LIBRARIES}
+										${PNG_LIBRARIES}
+										${JPEG_LIBRARIES}
+										${GIF_LIBRARIES}
+										${FREETYPE_LIBRARIES}
+										${CMAKE_DL_LIBS})
 ENDIF(WIN32)
 
 INSTALL(TARGETS mtp-target-forever RUNTIME DESTINATION games)

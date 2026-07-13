@@ -16,8 +16,8 @@
         "WITH_STATIC": "ON",
         "WITH_STATIC_LIBXML2": "ON",
         "WITH_STATIC_CURL": "ON",
-        "NEL_PREFIX_PATH": "${env:NEL_PREFIX_PATH:C:/ryzomcore/build}",
-        "CMAKE_PREFIX_PATH": "${env:MTPDEPS_PREFIX_PATH:C:/mtp_target_deps}"
+        "NEL_PREFIX_PATH": "C:/ryzomcore/build",
+        "CMAKE_PREFIX_PATH": "C:/mtp_target_deps"
       },
       "condition": {
         "type": "equals",
@@ -30,7 +30,9 @@
       "hidden": true,
       "generator": "Ninja",
       "cacheVariables": {
-        "CMAKE_BUILD_TYPE": "Release"
+        "CMAKE_BUILD_TYPE": "Release",
+        "NEL_PREFIX_PATH": "${sourceDir}/ryzomcore/build",
+        "CMAKE_PREFIX_PATH": "${sourceDir}/deps"
       },
       "condition": {
         "type": "equals",

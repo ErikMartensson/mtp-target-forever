@@ -160,6 +160,31 @@ cmake --build . --config Release --parallel 2 --target nel_drv_opengl_win nel_dr
 .\scripts\run-client.bat --lan localhost --user YourName
 ```
 
+## Quick Start (Linux)
+
+Most dependencies come from system packages (Lua 5.1, libxml2, curl, libpng,
+libjpeg, giflib, freetype, OpenAL, vorbis/ogg, OpenGL/X11 dev headers).
+
+```bash
+# 1. Check system packages and build ODE into deps/ode
+./scripts/setup-deps.sh
+
+# 2. Clone and build RyzomCore/NeL into ryzomcore/ (one-time)
+./scripts/setup-ryzomcore.sh
+
+# 3. Build
+./scripts/build-server.sh
+./scripts/build-client.sh
+
+# 4. Run
+./scripts/run-server.sh                                   # Terminal 1
+./scripts/run-client.sh --lan localhost --user YourName   # Terminal 2
+```
+
+See [docs/BUILDING.md](docs/BUILDING.md) for details.
+
+---
+
 **Controls:**
 - **Arrow keys:** Steer penguin (requires speed in ball mode)
 - **CTRL:** Toggle between ball/gliding modes

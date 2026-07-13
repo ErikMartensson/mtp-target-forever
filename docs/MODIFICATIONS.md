@@ -642,6 +642,80 @@ void CEntityManager::removeAll()
 
 ---
 
+## 12. Linux Build Support
+
+**Date:** July 13, 2026
+
+Changes made so the client and server compile and run natively on Linux
+(tested on Arch Linux, GCC 16, CMake 4.4).
+
+### CMakeModules/nel.cmake
+- Removed `-ansi` from `PLATFORM_CFLAGS` (forces C++98) and set
+  `CMAKE_CXX_STANDARD 17` — modern NeL/RyzomCore headers require C++17
+- `-O6` → `-O3` (non-standard GCC flag)
+- `PLATFORM_LINKFLAGS` converted from a single string to a CMake list
+  (leading whitespace is a CMP0004 error with empty `CMAKE_THREAD_LIBS_INIT`)
+
+### CMakeLists.txt (root)
+- On non-Windows platforms, `FIND_PACKAGE(Lua51 REQUIRED)` runs for both
+  client and server (the old `Lua50` module cannot find system Lua 5.1, and
+  the server never found Lua at all — Windows passes the paths as cache vars)
+- Added `FIND_PACKAGE` for PNG/JPEG/GIF/Freetype on Linux: the static NeL
+  libraries reference these system libraries
+
+### CMakePresets.json
+- `windows-base` used an invalid macro syntax (`${env:VAR:default}`) that
+  broke preset parsing on every platform; replaced with plain paths
+- `linux-base` now sets `NEL_PREFIX_PATH=${sourceDir}/ryzomcore/build` and
+  `CMAKE_PREFIX_PATH=${sourceDir}/deps` so `FindNeL`/`FindODE` work out of
+  the box
+
+### client/src/CMakeLists.txt and server/src/CMakeLists.txt
+- Fixed static link order on Linux (dependents before dependencies:
+  nelsound → nelsnd_lowlevel → nelligo → nelgeorges → nel3d → nelnet → nelmisc)
+- Added missing libraries: vorbisfile/vorbis/ogg (nelsound music streaming),
+  png/jpeg/gif (nelmisc CBitmap), freetype, `${CMAKE_DL_LIBS}`
+
+### client/src/resource_manager2.cpp
+- `curl_easy_setopt(curl, CURLOPT_NOPROGRESS, FALSE)` → `0L`
+  (`FALSE` is a Windows macro; curl options take `long`)
+
+### client/src/main.cpp
+- Extracted command-line parsing (`--autoconnect:<id>`, `--lan <host>`,
+  `--user <name>`, replay file) from the Windows-only `WinMain` into a shared
+  `parseCommandLine()` used by both `WinMain` and the Unix `main()` —
+  previously `--lan`/`--user` were silently ignored on Linux
+
+### client/src/mouse_listener.cpp — XWayland event-storm fix
+`C3dMouseListener::operator()` called `driver().setMousePos(0.5, 0.5)` on
+every incoming event. On XWayland each `XWarpPointer` generates a new motion
+event, so every event spawned another one: as soon as the player moved the
+mouse, the event queue grew without bound, frame times doubled every few
+seconds (1s → 2s → 4s → 20s...), the desktop became unresponsive and the
+server eventually kicked the client ("waiting for ready has timed out").
+The cursor is now re-centered only for motion events whose position actually
+left the center (±0.002), so warp echoes at the center terminate the chain.
+Verified with 40s of synthetic XTEST mouse motion: frame ticks stay at ~1s.
+
+### RyzomCore patch — invisible cursor after hide/show (X11)
+`scripts/patches/ryzomcore-x11-showcursor.patch`, applied by
+`setup-ryzomcore.sh`. NeL's `CDriverGL::showCursor(true)` on X11 cleared the
+current cursor name and delegated to `updateCursor()`, which early-returns
+when no named cursor is set — so after any hide/show cycle (menu ↔ game) the
+window kept the blank cursor and the mouse pointer stayed invisible in menus.
+The patch restores the default X cursor (`XUndefineCursor`) in the show path.
+Ryzom itself never hit this because it always installs named custom cursors.
+
+### New build scripts (scripts/)
+`setup-deps.sh`, `setup-ryzomcore.sh`, `build-client.sh`, `build-server.sh`,
+`post-build.sh`, `run-client.sh`, `run-server.sh` — Linux equivalents of the
+PowerShell/batch workflow. ODE is built from source (0.16.6, static, double
+precision) into `deps/ode`; NeL drivers (`libnel_drv_opengl.so`,
+`libnel_drv_openal.so`) are copied next to the client binary and found via
+`LD_LIBRARY_PATH` set by `run-client.sh`.
+
+---
+
 ## Future Modifications
 
 Potential future changes:
