@@ -18,6 +18,12 @@ Client and server now build and run natively on Linux:
 - Video settings applied from the main menu now auto-restart the game on Linux too (the restart was Windows-only, so Apply just quit the game)
 - Resolution picker now offers common resolutions on Linux (NeL's XRandR backend only reports the current monitor size, so the list had a single entry and the resolution could never be changed)
 - Applying video settings from the pause menu now shows an on-screen chat message instead of only logging (it looked like the Apply button did nothing)
+
+### Dedicated Server Docker Image (New)
+- Multi-stage `Dockerfile` building a slim Debian image with just the server binary, its data and runtime libraries (runs as a non-root user)
+- `docker-compose.yml` with a persistent `/config` volume for the config file, logs and level stats
+- `--server-only` flag on `setup-deps.sh` / `setup-ryzomcore.sh` for lean headless builds (no sound, no OpenGL/OpenAL drivers, no X11 dependencies)
+- README section on hosting a multiplayer server (Docker, VPS, home hosting via port forwarding or Tailscale)
 - Verified end-to-end: LAN client connects to Linux server, resources sync, session starts
 
 ## Client Improvements

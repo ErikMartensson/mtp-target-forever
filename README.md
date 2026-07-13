@@ -26,6 +26,7 @@
 - [Current Status](#current-status)
 - [Quick Start (Windows)](#quick-start-windows)
 - [Quick Start (Linux)](#quick-start-linux)
+- [Hosting a Multiplayer Server](#hosting-a-multiplayer-server)
 - [Documentation](#documentation)
 - [Architecture](#architecture)
 - [What We've Fixed](#what-weve-fixed)
@@ -187,6 +188,63 @@ See [docs/BUILDING.md](docs/BUILDING.md) for details.
 
 ---
 
+## Hosting a Multiplayer Server
+
+The game server is lightweight (~20 MB RAM, a few % of one core, no GPU) and
+only needs **TCP port 51574** reachable by the players. Clients connect
+directly with "Play on LAN" (or `--lan <host> --user <name>`) — despite the
+name this is a plain TCP connection that works over the internet; the Deno
+login service is only needed for the account-based "Play Online" mode.
+
+### With Docker (recommended)
+
+```bash
+docker compose up -d          # builds the image (~15 min the first time) and starts the server
+docker compose logs -f        # watch the server logs
+```
+
+Config, logs and level stats persist in the `server-config` volume. To change
+settings (level playlist, bots, port...):
+
+```bash
+docker compose cp server:/config/mtp_target_service.cfg .
+# edit mtp_target_service.cfg
+docker compose cp mtp_target_service.cfg server:/config/
+docker compose restart server
+```
+
+### On a cloud server (VPS)
+
+Any small VPS works (Hetzner, OVH, Scaleway, DigitalOcean... the cheapest
+tier is plenty). With Docker installed on the VPS:
+
+```bash
+git clone https://github.com/ErikMartensson/mtp-target-forever.git
+cd mtp-target-forever
+docker compose up -d
+```
+
+Then open TCP 51574 in the provider's firewall / security group. Players
+connect with `--lan <vps-ip> --user <name>` or via the "Play on LAN" menu.
+
+Pick a region close to your players: the server ticks every 20 ms, so
+latency matters more than bandwidth.
+
+Without Docker, the native build works too: run the three setup/build
+scripts from [Quick Start (Linux)](#quick-start-linux) on the VPS and keep
+`./scripts/run-server.sh` alive in tmux, or wrap it in a systemd unit.
+
+### From home (no cloud)
+
+- **Port forwarding:** forward TCP 51574 on your router to your machine and
+  share your public IP with the other players.
+- **No open ports (CGNAT, etc.):** use a mesh VPN like
+  [Tailscale](https://tailscale.com/) — every player installs it and
+  connects to your Tailscale IP (`100.x.y.z`). Nothing is exposed to the
+  public internet, which is wise given the 2004-era netcode.
+
+---
+
 **Controls:**
 - **Arrow keys:** Steer penguin (requires speed in ball mode)
 - **CTRL:** Toggle between ball/gliding modes
@@ -320,6 +378,7 @@ We'd love your help! This is a community effort to preserve a fun open-source ga
 ### Completed
 - [x] Windows build system with Visual Studio 2022
 - [x] Linux build system (GCC/Ninja, native client and server)
+- [x] Docker image + compose for dedicated servers
 - [x] Automated builds (GitHub Actions CI)
 - [x] Game server running with 32 playable levels
 - [x] Game client compiled from source
@@ -334,7 +393,6 @@ We'd love your help! This is a community effort to preserve a fun open-source ga
 - [ ] Reduce network latency
 
 ### Future
-- [ ] Docker containers for easy deployment
 - [ ] Community servers
 - [ ] Custom levels and mods
 - [ ] macOS build

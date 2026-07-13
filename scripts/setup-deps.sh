@@ -6,9 +6,14 @@
 # present and builds ODE (double precision, static) from source into deps/ode,
 # matching the precision used by the Windows build (ode_doubles.lib).
 #
-# Usage: ./scripts/setup-deps.sh
+# Usage:
+#   ./scripts/setup-deps.sh                # client + server
+#   ./scripts/setup-deps.sh --server-only  # skip client-only checks (audio, GL, curl)
 #
 set -euo pipefail
+
+SERVER_ONLY=0
+[ "${1:-}" = "--server-only" ] && SERVER_ONLY=1
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 REPO_ROOT="$(dirname "$SCRIPT_DIR")"
@@ -45,14 +50,17 @@ check_header() {
 
 check_header "lua 5.1 headers"  /usr/include/lua5.1/lua.h
 check_header "libxml2 headers"  /usr/include/libxml2/libxml/parser.h
-check_header "libcurl headers"  /usr/include/curl/curl.h
 check_header "libpng headers"   /usr/include/png.h
 check_header "libjpeg headers"  /usr/include/jpeglib.h
 check_header "giflib headers"   /usr/include/gif_lib.h
 check_header "freetype headers" /usr/include/freetype2/ft2build.h
-check_header "openal headers"   /usr/include/AL/al.h
-check_header "vorbis headers"   /usr/include/vorbis/vorbisfile.h
-check_header "GL headers"       /usr/include/GL/gl.h
+
+if [ "$SERVER_ONLY" = "0" ]; then
+    check_header "libcurl headers"  /usr/include/curl/curl.h
+    check_header "openal headers"   /usr/include/AL/al.h
+    check_header "vorbis headers"   /usr/include/vorbis/vorbisfile.h
+    check_header "GL headers"       /usr/include/GL/gl.h
+fi
 
 if [ ${#missing[@]} -gt 0 ]; then
     echo ""
