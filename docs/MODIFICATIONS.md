@@ -697,6 +697,18 @@ The cursor is now re-centered only for motion events whose position actually
 left the center (±0.002), so warp echoes at the center terminate the chain.
 Verified with 40s of synthetic XTEST mouse motion: frame ticks stay at ~1s.
 
+### client/src/3d_task.cpp — enable fullscreen on Linux
+The init code forced `Fullscreen = false` on non-Windows platforms (a
+workaround for old NeL X11 drivers). Modern NeL handles X11 fullscreen via
+XRandR, so the `Fullscreen` config variable is now honored on all platforms.
+
+### client/src/intro_task.cpp — restart on Apply (Linux)
+Applying video settings from the main menu restarted the game via
+`CreateProcessA` on Windows only; on Linux the game just exited, which made
+the new settings look ignored. The restart is now implemented on Linux with
+`fork()` + `execl(/proc/self/exe)` (with a short delay so the old instance
+can save its config and release the display).
+
 ### RyzomCore patch — invisible cursor after hide/show (X11)
 `scripts/patches/ryzomcore-x11-showcursor.patch`, applied by
 `setup-ryzomcore.sh`. NeL's `CDriverGL::showCursor(true)` on X11 cleared the

@@ -14,6 +14,8 @@ Client and server now build and run natively on Linux:
 - `--lan` / `--user` / `--autoconnect` command-line flags now work on Linux (parsing was Windows-only)
 - Fixed exponential slowdown/freeze under XWayland: the mouse listener re-centered the cursor on every event, and each warp generates a new motion event on XWayland, creating a self-sustaining event storm as soon as the mouse moved; the cursor is now only re-centered when it actually left the center
 - Fixed invisible mouse cursor in menus on Linux: NeL's X11 `showCursor(true)` never restored the cursor after it had been hidden (patched via `scripts/patches/ryzomcore-x11-showcursor.patch`)
+- Enabled fullscreen on Linux (was hard-disabled with a stale "no fullscreen on linux" fallback from old NeL)
+- Video settings applied from the main menu now auto-restart the game on Linux too (the restart was Windows-only, so Apply just quit the game)
 - Verified end-to-end: LAN client connects to Linux server, resources sync, session starts
 
 ## Client Improvements
