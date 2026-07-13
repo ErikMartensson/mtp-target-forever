@@ -202,5 +202,6 @@ void CGameTask::onOptionsApply()
 	// From the pause menu, just save settings - don't restart
 	// User will need to restart manually (which would disconnect them anyway)
 	nlinfo("Video settings saved. Changes will take effect on next restart.");
+	CChatTask::getInstance().addLine("Video settings saved. They will take effect on next game restart.");
 }
 

@@ -97,6 +97,38 @@ void COptionsMenu::populateResolutions()
 		}
 	}
 
+#ifndef NL_OS_WINDOWS
+	// NeL's XRandR backend only reports the current size of each monitor,
+	// not the available modes. Complete the list with common resolutions up
+	// to the largest reported monitor so the player can actually pick one.
+	{
+		int maxWidth = 0, maxHeight = 0;
+		for(size_t i = 0; i < modes.size(); i++)
+		{
+			maxWidth = std::max(maxWidth, (int)modes[i].Width);
+			maxHeight = std::max(maxHeight, (int)modes[i].Height);
+		}
+		maxWidth = std::max(maxWidth, currentWidth);
+		maxHeight = std::max(maxHeight, currentHeight);
+
+		static const int commonResolutions[][2] = {
+			{800, 600}, {1024, 768}, {1280, 720}, {1280, 800}, {1280, 1024},
+			{1366, 768}, {1440, 900}, {1600, 900}, {1680, 1050}, {1920, 1080},
+			{1920, 1200}, {2560, 1080}, {2560, 1440}, {3440, 1440}, {3840, 2160}
+		};
+		for(size_t i = 0; i < sizeof(commonResolutions) / sizeof(commonResolutions[0]); i++)
+		{
+			std::pair<int, int> res(commonResolutions[i][0], commonResolutions[i][1]);
+			if(res.first <= maxWidth && res.second <= maxHeight &&
+			   addedResolutions.find(res) == addedResolutions.end())
+			{
+				addedResolutions.insert(res);
+				_resolutions.push_back(res);
+			}
+		}
+	}
+#endif
+
 	// Sort resolutions
 	std::sort(_resolutions.begin(), _resolutions.end());
 

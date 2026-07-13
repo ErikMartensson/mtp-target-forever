@@ -16,6 +16,8 @@ Client and server now build and run natively on Linux:
 - Fixed invisible mouse cursor in menus on Linux: NeL's X11 `showCursor(true)` never restored the cursor after it had been hidden (patched via `scripts/patches/ryzomcore-x11-showcursor.patch`)
 - Enabled fullscreen on Linux (was hard-disabled with a stale "no fullscreen on linux" fallback from old NeL)
 - Video settings applied from the main menu now auto-restart the game on Linux too (the restart was Windows-only, so Apply just quit the game)
+- Resolution picker now offers common resolutions on Linux (NeL's XRandR backend only reports the current monitor size, so the list had a single entry and the resolution could never be changed)
+- Applying video settings from the pause menu now shows an on-screen chat message instead of only logging (it looked like the Apply button did nothing)
 - Verified end-to-end: LAN client connects to Linux server, resources sync, session starts
 
 ## Client Improvements
