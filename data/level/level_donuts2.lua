@@ -8,6 +8,9 @@ include("level_default_server.lua")
 ReleaseLevel = 5
 
 function CEntity:init()
+	-- This level overrides level_default_server.lua's Entity:init(), so keep
+	-- its per-round score reset here as well as the level-specific toggle limit.
+	self:setCurrentScore(0)
 	self:setMaxOpenClose(6)
 end
 

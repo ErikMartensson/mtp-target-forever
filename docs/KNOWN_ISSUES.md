@@ -155,19 +155,19 @@ The metatable fix in lunar.h should eliminate the intermittent failure. Silent c
 - Gates: 4 levels (`level_gates_easy`, `hard`, `ramp`, `zig_zag`)
 - Other: 5 levels (`level_bowls1`, `donuts2`, `mtp_paint`, `snow_line`, `team_space`)
 
-**Note:** Space levels use ReleaseLevel 6, which may need to be added to the server's allowed ReleaseLevel list. New levels require runtime testing to verify textures, scoring, and theme rendering.
+**Note:** Space levels use ReleaseLevel 6, which is accepted by the current server. The restored levels have received an initial gameplay check; any newly imported levels should also be tested for textures, scoring, and theme rendering.
 
 ---
 
-### 2. New v1.5.19 Levels Need Per-Level Fixes
-**Status:** In Progress (engine-level fixes applied; per-level testing ongoing)
-**Description:** All 28 restored v1.5.19 levels load without crashing. Engine-level fixes for friction and score timing have been applied. Individual levels need testing to verify gameplay.
+### New v1.5.19 Levels: Compatibility and Follow-ups
+**Status:** Initial per-level testing complete; follow-ups are tracked in [LEVELS.md](LEVELS.md)
+**Description:** All 28 restored v1.5.19 levels load without crashing. Engine-level fixes for friction and score timing have been applied. Initial gameplay testing for the playable levels is complete; remaining known issues and post-fix checks are tracked in the unified level checklist.
 
 **Engine-level fixes applied:**
 - ~~**Missing friction on landing platforms**~~ ✅ FIXED - Scoring modules (Score > 0) with no friction now auto-apply friction=10 in C++ level loader
 - ~~**postUpdate scoring broken**~~ ✅ FIXED - Reordered main loop so session manager runs after levelPostUpdate. Fixes city_paint and similar per-frame score recalculation levels.
 
-**Remaining issues:**
+**Other compatibility fixes:**
 
 **a) ~~Missing level Name~~ ✅ FIXED**
 - ~~New levels didn't display a name in chat or match bot replay files~~
@@ -177,38 +177,7 @@ The metatable fix in lunar.h should eliminate the intermittent failure. Silent c
 - ~~Bots loaded wrong replay data because level Name was empty, causing `string::find("")` to match every replay file~~
 - Fixed: Adding level names prevents cross-level replay file matching. Bots are now passive (no matching replays) rather than erratic
 
-**Per-level testing checklist:**
-
-| Level | Loads | Ramp OK | Scoring | Bots | Notes |
-|-------|-------|---------|---------|------|-------|
-| `level_space_asteroids` | ✓ | ✓ | ✓ | Passive | Maybe too fast, but playable |
-| `level_space_atomium` | ? | ? | ? | ? | |
-| `level_space_calbren` | ? | ? | ? | ? | |
-| `level_space_cargo_inside` | ? | ? | ? | ? | |
-| `level_space_fleet` | ? | ? | ? | ? | |
-| `level_space_hangar18` | ? | ? | ? | ? | |
-| `level_space_havoc` | ? | ? | ? | ? | |
-| `level_space_hotwings` | ? | ? | ? | ? | |
-| `level_space_imo_rings` | ? | ? | ? | ? | |
-| `level_space_stabilo` | ? | ? | ? | ? | |
-| `level_sun_target` | ✓ | ✓ | ✓ | Passive | Works fine |
-| `level_sun_cross` | ? | ? | ? | ? | |
-| `level_sun_extra_ball` | ? | ? | ? | ? | |
-| `level_sun_paint` | ? | ? | ? | ? | |
-| `level_city_easy` | ✓ | ✓ | ✓ | Passive | Fixed with engine-level friction |
-| `level_city_darts` | ✓ | ✓ | ✓ | Passive | Fixed: Z-height-gated proximity scoring for thin sign meshes |
-| `level_city_paint` | ✓ | ✓ | ✓ | Passive | Painting and scoring work (fixed with main loop reorder, texture preloading) |
-| `level_city_destroy` | ? | ? | ? | ? | |
-| `level_city_precision` | ? | ? | ? | ? | |
-| `level_gates_easy` | ✓ | ✓ | ✓ | Passive | Works fine, gate scoring works |
-| `level_gates_hard` | ? | ? | ? | ? | |
-| `level_gates_ramp` | ? | ? | ? | ? | |
-| `level_gates_zig_zag` | ? | ? | ? | ? | |
-| `level_bowls1` | ✓ | ✓ | **BUG** | Passive | See Issue #1 - Intermittent scoring failure |
-| `level_donuts2` | ? | ? | ? | ? | |
-| `level_mtp_paint` | ? | ? | ? | ? | |
-| `level_snow_line` | ? | ? | ? | ? | |
-| `level_team_space` | ? | ? | ? | ? | |
+See [LEVELS.md](LEVELS.md) for the current per-level status and the short post-fix checks still pending. That checklist is the single source of truth; this issue entry records the shared engine work and compatibility context.
 
 **Related Files:**
 - `data/lua/utilities.lua` - Base CLevel shim (addModule defaults)
@@ -450,9 +419,37 @@ Despite boxes extending 0.5 units in Z (from Z to Z+0.5), they behave as distinc
 
 ---
 
+### 22. Donuts 2 red 300-point platform collision gap
+**Status:** Reported September 30, 2026; needs reproduction and investigation
+**Severity:** Collision correctness — player reports falling through the visible red platform into water on `level_donuts2`
+**Affected Levels:** `level_donuts2`
+
+**Description:**
+During playtesting, the player fell through the visible flat red 300-point target/platform into the water near the edge closest to the intended approach. The ramp/start is at positive Y and the target is centered at Y=-8.5, so this is the target's +Y/front edge. The player did not observe whether a score was awarded. Only this highest-scoring platform has been tested; it is not yet clear whether the collision mesh is displaced, too small, or missing part of its surface.
+
+The target is created in `data/level/level_donuts2.lua` as a `snow_box` at `CVector(-0.6,-8.5,2.4)` with scale `CVector(50,5,1)`. No compensating offset is explicitly applied in the level script.
+
+**Next step:** Reproduce the fall-through and compare the rendered `snow_box.shape` with the server's ODE collision mesh. Do not move the target until the mismatch is understood.
+
+---
+
+### 21. Donuts 2 steering loss after returning to ball form
+**Status:** Reported September 30, 2026; cause under investigation
+**Severity:** Controls — player may lose steering during the first Donuts 2 session after switching back to ball form
+**Affected Levels:** `level_donuts2`
+
+**Description:**
+On the first map after connecting, the player reported that the penguin continued rolling in ball form but steering input no longer affected it. The intended route uses two flight segments separated by a funnel/tunnel roll. Control appeared to work again after advancing to another map and returning to Donuts 2. The player did not perceive a crash when control was lost.
+
+**Log evidence:** The server log for the September 30 test records a scene contact while the player was marked open at approximately `(1.96, -8.53, 3.76)`, near the level's vertical funnel/tube. In `server/src/physics.cpp`, a scene contact while open sets `FreezeCommand`, consumes the remaining open/close allowance, and zeros the force/velocity. `CEntity::openClose()` and `CEntity::setForce()` then reject further input. This is a plausible explanation, but it is not confirmed as the cause of the reported loss of steering; the player recalls still rolling in ball form.
+
+**Next step:** Reproduce on the first Donuts 2 session and correlate the moment steering stops with server collision/freeze logs. Do not change the general crash-in-flight behavior until the cause is confirmed.
+
+---
+
 ### ~~20. Gate AABB scores on frame hits and near-misses~~ (FIXED)
-**Status:** ✅ FIXED April 25, 2026
-**Severity:** Scoring correctness — verified on `level_sun_extra_ball`; still want a sanity-check pass on the other 4 gate levels
+**Status:** ✅ FIX APPLIED April 25, 2026; basic gameplay check completed September 29, 2026
+**Severity:** Scoring correctness — normal gate and landing scoring verified on `level_sun_extra_ball` and the four `level_gates_*` levels
 **Affected Levels:** `level_sun_extra_ball`, `level_gates_easy`, `level_gates_hard`, `level_gates_ramp`, `level_gates_zig_zag`
 
 **Two distinct bugs combined to make this hard to diagnose:**
@@ -478,6 +475,8 @@ Two stale shadow copies of `helpers.lua`, `level_bowls1_server.lua`, and `level_
 - `build-server/bin/data/helpers.lua` (and `level_bowls1_server.lua`, `level_team_server.lua`) — refreshed to match the canonical `data/lua/` versions, killing the shadow effect
 
 The **real** fix needed both (a) the runtime mesh move AND (b) the tightened opening — neither alone was sufficient.
+
+**Gameplay check (September 29, 2026):** Gate-pass and landing scores worked on `level_gates_easy`, `level_gates_hard`, `level_gates_ramp`, and `level_gates_zig_zag`. The frame-graze/near-miss edge case was not specifically exercised.
 
 ---
 
@@ -539,12 +538,12 @@ For comparison, the working 50 target on this level has the same axis but a smal
 - Add explicit high friction: `m:setFriction(1000)`
 - Reduce the rotation angle from -4 to ~-2 rad
 
-**Decision:** Keep level as-is, accept the missing 300-point opportunity. Revisit if/when we do a "minimal upstream fixes" pass.
+**Decision:** Keep the upstream level geometry as-is and accept the missing 300-point opportunity as a non-blocking known limitation. It does not block this hobby project's merge. Revisit if/when we do a "minimal upstream fixes" pass.
 
 ---
 
-### ~~17. level_sun_extra_ball: i18n keys, no live score, score persists across rounds~~ (FIXED)
-**Status:** ✅ All three sub-issues fixed April 25, 2026
+### 17. Cumulative-score HUD updates and per-round reset
+**Status:** Live-update/i18n fixes applied April 25, 2026; Donuts 2 reset fix and both levels' HUD updates verified September 30, 2026
 **Severity:** Visual/UX, not blocking
 **Affected Levels:** `level_sun_extra_ball`, all `level_gates_*`, `level_donuts2` (anything with cumulative scoring / non-standard round-end conditions)
 
@@ -564,7 +563,7 @@ Both (b) and (c) had the **same structural root cause**: there was no server→c
 
 For standard-scoring levels (e.g. `level_classic`), this *appeared* to work because rounds ended quickly (player lands → freeze → EndSession), so the displayed score was always recent. For cumulative-scoring levels (gates, sun_extra_ball, donuts2), rounds last the full timer — so the scoreboard showed the **previous round's** final the entire time the new round was being played, then jumped to the new round's final at round-end. This created the "no live updates" symptom (b) AND the "persists across rounds" symptom (c) — both were the same single bug.
 
-(The earlier hypothesis about init-style mismatch in KI #17 was a false trail — verified that `CEntity:init` IS called per-round and `setCurrentScore(0)` does execute on the server. The reset just never reached the client.)
+(The initial investigation ruled out entities not being reinitialized. A later level-specific exception was found in Donuts 2: its custom initializer replaced the default and omitted the score reset.)
 
 **Fix Applied (architectural):** Added a new `CNetMessage::ScoreUpdate` message that carries `(eid, currentScore)` pairs. Sent from the server's existing 50Hz network tick loop for every entity whose `CurrentScore` differs from a new `LastSentScore` field. Comparison-based dirty detection means *every* writer (Lua proxy, physics resets, end-of-round bonuses, per-round `Entity:init`) is caught for free without setter wrapping. Per-round reset (c) is automatic — when round 2's `Entity:init` calls `setCurrentScore(0)`, that differs from `LastSentScore` (carrying round 1's final), so the reset is broadcast like any other change.
 
@@ -576,6 +575,8 @@ For standard-scoring levels (e.g. `level_classic`), this *appeared* to work beca
 - `client/src/net_callbacks.cpp` — added `cbScoreUpdate` handler and dispatch table entry
 
 **Note on the bottom-right HUD score:** Originally displayed `totalScore()` only. Switched to `currentScore()` so it ticks live per scoring event; the cumulative session total is still visible in the Tab scoreboard's `total` column.
+
+**Follow-up found and verified September 30:** Donuts 2 correctly reset when transitioning to MTP Paint, but the reverse transition retained the prior score. `level_donuts2.lua` defines its own `CEntity:init()`, replacing the `Entity:init()` from `level_default_server.lua`; the custom initializer set the open/close limit but did not reset `CurrentScore`. Added `self:setCurrentScore(0)` to Donuts 2's initializer and refreshed the server runtime copy. The score reset was verified in both transition directions, and live HUD updates were confirmed on Donuts 2 and MTP Paint.
 
 ---
 

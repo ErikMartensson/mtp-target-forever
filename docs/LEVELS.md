@@ -24,8 +24,8 @@ scripts\run-client.bat --lan localhost --user tester
 See [Playlist Tooling](#playlist-tooling) below for all the ways to launch.
 
 **Status legend:**
-- ✅ Working - Verified playable, no known issues
-- ⚠️ Has known issue - Playable but bugged; see Issue Ref
+- ✅ Working - Playable and basic gameplay verified; non-blocking quirks may be noted
+- ⚠️ Follow-up needed - A known issue affects gameplay or a targeted regression check remains pending; see Issue Ref/Notes
 - 🚫 Broken - Not playable, blocking issue
 - ❓ Untested - Loads in theory but no human verification yet
 - ⏭ Test-only - `ReleaseLevel = 0/20/200`, excluded from rotation
@@ -94,7 +94,7 @@ See [Playlist Tooling](#playlist-tooling) below for all the ways to launch.
 |--------------------------------|-------|--------|-------------|-----------|-------------------------------------------------|
 | `level_sun_target`             | sun   | ✅     | 2026-02-04  | —         | Standard sun targets                            |
 | `level_sun_cross`              | sun   | ✅     | 2026-04-25  | —         | Cross pattern layout                            |
-| `level_sun_extra_ball`         | sun   | ⚠️     | 2026-04-25  | KI #17    | Gate scoring works but: i18n keys leak to HUD, no live scoreboard updates, score persists into next round |
+| `level_sun_extra_ball`         | sun   | ✅     | 2026-04-25  | —         | KI #17 score updates and KI #20 gate trigger/visual sync fixes applied; KI #20 verified here. |
 | `level_sun_paint`              | sun   | ✅     | 2026-04-25  | —         | Territory claim. Fixed math.mod→% Lua 5.1. Minor Z-fighting between overlapping grid cells (cosmetic). |
 | `level_sun_shrinker`           | sun   | ⏭      | —           | —         | ReleaseLevel=0, modules shrink over time       |
 | `level_sun_test`               | sun   | ⏭      | —           | —         | ReleaseLevel=200, test only                     |
@@ -106,7 +106,7 @@ See [Playlist Tooling](#playlist-tooling) below for all the ways to launch.
 | `level_city_easy`              | city  | ✅     | 2026-02-04  | —         | Standard city targets                           |
 | `level_city_darts`             | city  | ✅     | 2026-02-04  | —         | Z-height-gated proximity scoring                |
 | `level_city_paint`             | city  | ✅     | 2026-02-21  | —         | Painting + texture preloading fixed             |
-| `level_city_destroy`           | city  | ⚠️     | 2026-04-25  | KI #18    | Playable. 50 + 100 targets work; 300 target unlandable due to ~25° tilt (upstream geometry, kept as-is). |
+| `level_city_destroy`           | city  | ⚠️     | 2026-04-25  | KI #18    | Playable. 50 + 100 targets work; 300 target unlandable due to ~25° tilt (upstream geometry, accepted non-blocking limitation). |
 | `level_city_precision`         | city  | ✅     | 2026-04-25  | —         | Precision landing                               |
 | `level_city_test`              | city  | ⏭      | —           | —         | ReleaseLevel=200, test only                     |
 
@@ -116,18 +116,18 @@ Fly through scoring gates that decrease in value each pass.
 
 | Level                          | Theme | Status | Last Tested | Issue Ref | Notes                                           |
 |--------------------------------|-------|--------|-------------|-----------|-------------------------------------------------|
-| `level_gates_easy`             | gates | ⚠️     | 2026-04-25  | KI #17, #19 | Playable, gate scoring works. Same family bugs: persistent score (KI #17c) + snow particles (KI #19). |
-| `level_gates_hard`             | gates | ⚠️     | 2026-04-25  | KI #17, #19 | Playable. Gate scoring works mechanically. Score persists across rounds (KI #17c). Snow particles on sun theme (KI #19). Balance: final landing platform out-scores running all gates. |
-| `level_gates_ramp`             | gates | ⚠️     | 2026-04-25  | KI #17, #19 | Playable, gate scoring works. Same family bugs: persistent score (KI #17c) + snow particles (KI #19). |
-| `level_gates_zig_zag`          | gates | ⚠️     | 2026-04-25  | KI #17, #19 | Playable, gate scoring works. Same family bugs: persistent score (KI #17c) + snow particles (KI #19). |
+| `level_gates_easy`             | gates | ✅     | 2026-09-29  | —         | Gameplay smoke test: scored by flying through gates and landing on the target. |
+| `level_gates_hard`             | gates | ✅     | 2026-09-29  | —         | Gameplay smoke test: scored by flying through gates and landing on the target. Balance quirk: final landing platform can out-score running all gates. |
+| `level_gates_ramp`             | gates | ✅     | 2026-09-29  | —         | Gameplay smoke test: scored by flying through gates and landing on the target. |
+| `level_gates_zig_zag`          | gates | ✅     | 2026-09-29  | —         | Gameplay smoke test: scored by flying through gates and landing on the target; closely spaced gates worked in the tested run. |
 
 ### Other New Ports (4 + 1 test)
 
 | Level                          | Theme | Status | Last Tested | Issue Ref | Notes                                           |
 |--------------------------------|-------|--------|-------------|-----------|-------------------------------------------------|
 | `level_bowls1`                 | other | ⚠️     | 2026-02-08  | KI #1     | Intermittent scoring failure (fix in testing)  |
-| `level_donuts2`                | snow  | ⚠️     | 2026-04-25  | KI #17    | Playable. Score persists into next round (KI #17c). Note: requires opening wings 2× per round, suggesting the persistent-score bug correlates with non-standard round-end conditions, not just CEntity init style. |
-| `level_mtp_paint`              | sun   | ⚠️     | 2026-04-25  | KI #17    | Playable. Score persists into next round (KI #17c). Sun themed; uses ShowSnow=0 in Lua to suppress snow particles. |
+| `level_donuts2`                | snow  | ⚠️     | 2026-09-30  | KI #17, #21, #22 | Points, live HUD, and score reset across both level transitions verified. Control loss is reproducible with Ctrl+F6; red 300-point platform fall-through at the approach edge remains. |
+| `level_mtp_paint`              | sun   | ✅     | 2026-09-30  | —         | Points, live HUD updates, and score reset on transition verified. Uses ShowSnow=0 to suppress snow particles. |
 | `level_snow_line`              | snow  | ✅     | 2026-04-25  | —         | Snow line layout                                |
 | `level_physics_test`           | other | ⏭      | —           | —         | ReleaseLevel=200, test only                     |
 
@@ -145,8 +145,8 @@ Fly through scoring gates that decrease in value each pass.
 
 | Status | Count |
 |--------|-------|
-| ✅ Working | 50 |
-| ⚠️ Has known issue | 10 |
+| ✅ Working | 56 |
+| ⚠️ Follow-up needed | 4 |
 | 🚫 Broken | 0 |
 | ❓ Untested | 0 |
 | ⏭ Test-only | 10 |

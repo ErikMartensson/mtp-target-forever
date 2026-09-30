@@ -6,7 +6,7 @@
 
 > A free multiplayer online action game where you roll down a giant ramp and delicately land on platforms to score points. Fight with and against players in this mix of action, dexterity, and strategy - inspired by Monkey Target from Super Monkey Ball.
 
-**Status:** 🎮 Playable - Version 1.2.2a client and server with 60 levels (32 fully tested + 28 ported from v1.5.19, in testing)
+**Status:** 🎮 Playable - Version 1.2.2a client and server with 60 playable levels (56 marked working, 4 with a documented issue or follow-up check)
 
 ### Download Latest Build
 
@@ -71,7 +71,7 @@ The v1.5.19 client source code is preserved in [`reference/mtp-target-v1.5.19/`]
 ### What Works ✅
 
 - ✅ **Build System:** Full Windows build with Visual Studio 2022 and automated scripts
-- ✅ **Game Server:** Compiles and runs on Windows, 60 levels loaded (32 verified, 28 in per-level testing)
+- ✅ **Game Server:** Compiles and runs on Windows; all 60 playable levels have received an initial gameplay test
 - ✅ **Game Client:** Compiles and runs on Windows with OpenGL/OpenAL drivers
 - ✅ **Login Service:** Modern TypeScript/Deno implementation handles authentication
 - ✅ **Database:** SQLite-based user and shard management
@@ -79,7 +79,7 @@ The v1.5.19 client source code is preserved in [`reference/mtp-target-v1.5.19/`]
 - ✅ **Network:** Full protocol working (VLP login + game server connection)
 - ✅ **Controls:** Arrow keys for steering, Ctrl for ball/glide toggle, Enter for chat
 - ✅ **Scoring:** Full scoring system with targets and friction
-- ⚠️ **Bots:** AI bots present but not working correctly on all maps
+- ⚠️ **Bots:** Imported levels without replay data use passive bots; one low-priority bouncing issue was observed on `level_space_havoc`
 - ✅ **Game Assets:** All textures, shapes, sounds included in repository
 
 ### Known Issues ⚠️
@@ -88,12 +88,14 @@ See [docs/KNOWN_ISSUES.md](docs/KNOWN_ISSUES.md) for the complete issue tracker.
 
 See [docs/KNOWN_ISSUES.md](docs/KNOWN_ISSUES.md) for the up-to-date list of open and fixed issues. Highlights:
 
-- ⚠️ **Intermittent scoring failure** investigation (high priority, fix applied — needs verification)
-- ⚠️ **28 ported v1.5.19 levels** — engine-level fixes applied, per-level testing in progress
+- ⚠️ **`level_bowls1` scoring** — fix applied; repeat playtesting is still useful because the issue was intermittent
+- ⚠️ **Cumulative scoring** — gate scoring passed on all four gate levels; Donuts 2 and MTP Paint live HUD updates and score resets in both directions were verified.
+- ⚠️ **Donuts 2** — first-session steering loss and falling through the visible red 300-point platform are being investigated.
+- ⚠️ **`level_city_destroy`** — the 300-point target is unlandable due to upstream geometry; accepted non-blocking limitation
 - ⚠️ **High ping / input delay on localhost** — not yet investigated
 - ⚠️ **Water rendering disabled** — falls back gracefully when textures missing
 
-**The game is fully playable.** All 32 original levels work with proper scoring and physics.
+**The game is playable.** The level checklist records 56 working levels, 4 with a documented issue or follow-up check, and no broken or untested playable levels. See [docs/LEVELS.md](docs/LEVELS.md) for details.
 
 See [docs/RUNTIME_FIXES.md](docs/RUNTIME_FIXES.md) for detailed fix documentation.
 
