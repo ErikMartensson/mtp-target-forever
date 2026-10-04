@@ -34,7 +34,7 @@ jobs:
 
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
 
       - name: Setup MSVC
         uses: ilammy/msvc-dev-cmd@v1
@@ -48,7 +48,7 @@ jobs:
 
       - name: Cache Dependencies
         id: cache-deps
-        uses: actions/cache@v4
+        uses: actions/cache@v6
         with:
           path: C:/external
           key: deps-v1
@@ -302,7 +302,7 @@ jobs:
       # Build RyzomCore
       - name: Cache RyzomCore
         id: cache-ryzomcore
-        uses: actions/cache@v4
+        uses: actions/cache@v6
         with:
           path: C:/ryzomcore
           key: ryzomcore-v2
@@ -460,7 +460,7 @@ jobs:
 
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
 
       - name: Setup MSVC
         uses: ilammy/msvc-dev-cmd@v1
@@ -471,14 +471,14 @@ jobs:
         run: choco install ninja -y
 
       - name: Restore RyzomCore Cache
-        uses: actions/cache/restore@v4
+        uses: actions/cache/restore@v6
         with:
           path: C:/ryzomcore
           key: ryzomcore-v2
           fail-on-cache-miss: true
 
       - name: Restore Dependencies Cache
-        uses: actions/cache/restore@v4
+        uses: actions/cache/restore@v6
         with:
           path: C:/external
           key: deps-v1
@@ -518,7 +518,7 @@ jobs:
             -UseNinjaPaths
 
       - name: Upload Client Artifact
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: MTP-Target-Forever-Client-win64
           path: |
@@ -538,7 +538,7 @@ jobs:
 
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
 
       - name: Setup MSVC
         uses: ilammy/msvc-dev-cmd@v1
@@ -549,14 +549,14 @@ jobs:
         run: choco install ninja -y
 
       - name: Restore RyzomCore Cache
-        uses: actions/cache/restore@v4
+        uses: actions/cache/restore@v6
         with:
           path: C:/ryzomcore
           key: ryzomcore-v2
           fail-on-cache-miss: true
 
       - name: Restore Dependencies Cache
-        uses: actions/cache/restore@v4
+        uses: actions/cache/restore@v6
         with:
           path: C:/external
           key: deps-v1
@@ -600,7 +600,7 @@ jobs:
             -UseNinjaPaths
 
       - name: Upload Server Artifact
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: MTP-Target-Forever-Server-win64
           path: |

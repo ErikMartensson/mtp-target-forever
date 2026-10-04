@@ -14,6 +14,12 @@ The CI build failed in the `build-deps` job with `stdopenal.h(51): fatal error C
 
 **Files changed:** `.github/workflows/build.yml`, `scripts/setup-ryzomcore.ps1`, `docs/BUILDING.md`
 
+### Maintenance: GitHub Actions bumped to latest majors
+
+Updated all third-party actions to their current major versions: `actions/checkout` v4→v7, `actions/cache`/`cache/restore` v4→v6, `actions/upload-artifact` v4→v7 (all Node 24 / ESM era, no input changes needed for our usage). `ilammy/msvc-dev-cmd` stays at v1 — v1.13.0 (2024-01) is the latest upstream release and still runs on Node 20, so its deprecation annotation remains until upstream publishes an update.
+
+**File changed:** `.github/workflows/build.yml`
+
 ---
 
 ## Gate Trigger Volume + Visual Sync (April 25, 2026)
