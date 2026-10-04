@@ -43,7 +43,7 @@ Done September 30:
 - ✅ Ctrl+F6 provides a repeatable way to trigger the Donuts 2 control-loss report.
 
 ### Merge to `main`
-After the focused gameplay checks, open a PR from `wip/level-testing-feb-2026` to `main` and use CI as the final build check. The branch includes six commits on local `main` that are not currently in the local `origin/main` ref; refresh remotes and confirm the PR comparison before publishing. Do not tag a release as part of this merge; review the release workflow separately first.
+After the focused gameplay checks, open a PR from `wip/level-testing-feb-2026` to `main` and use CI as the final build check. The branch includes six commits on local `main` that are not currently in the local `origin/main` ref; refresh remotes and confirm the PR comparison before publishing. Do not tag a release as part of this merge; the unused (and broken) release workflow was deleted. README downloads come from `build.yml` artifacts via nightly.link, so no release/tagging step is needed.
 
 ### Accepted non-blocking issue
 KI #18 (`level_city_destroy`'s 300-point target is unlandable) is documented and accepted. Keep the upstream geometry unchanged for this merge.
