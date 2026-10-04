@@ -6,7 +6,7 @@
 
 > A free multiplayer online action game where you roll down a giant ramp and delicately land on platforms to score points. Fight with and against players in this mix of action, dexterity, and strategy - inspired by Monkey Target from Super Monkey Ball.
 
-**Status:** 🎮 Playable - Version 1.2.2a client and server with 60 playable levels (56 marked working, 4 with a documented issue or follow-up check)
+**Status:** 🎮 Playable - v1.2.2a client and server with 60 playable levels (56 verified working, 4 with a documented issue or follow-up check)
 
 ### Download Latest Build
 
@@ -15,354 +15,72 @@
 | **Game Client** | [MTP-Target-Forever-Client-win64.zip](https://nightly.link/ErikMartensson/mtp-target-forever/workflows/build/main/MTP-Target-Forever-Client-win64.zip) |
 | **Game Server** | [MTP-Target-Forever-Server-win64.zip](https://nightly.link/ErikMartensson/mtp-target-forever/workflows/build/main/MTP-Target-Forever-Server-win64.zip) |
 
-*Built automatically from the latest `main` branch commit.*
+*Built automatically from the latest `main` branch commit. Extract, run the server, then the client - see [docs/CONTROLS.md](docs/CONTROLS.md) to get started.*
 
 ---
 
-## Table of Contents
+## About
 
-- [Download Latest Build](#download-latest-build)
-- [About This Project](#about-this-project)
-- [Current Status](#current-status)
-- [Quick Start (Windows)](#quick-start-windows)
-- [Documentation](#documentation)
-- [Architecture](#architecture)
-- [What We've Fixed](#what-weve-fixed)
-- [Contributing](#contributing)
-- [Original Game Info](#original-game-info)
-- [Project Goals](#project-goals)
-- [Known Issues](#known-issues)
-- [License](#license)
-- [Credits](#credits)
-- [Contact & Community](#contact--community)
+**MTP Target** was created by Melting Pot in 2003-2004 and went offline around 2013. This is a community revival built on the original v1.2.2a source code, modernized to compile and run on current Windows against the Ryzom Core/NeL libraries, with levels and assets ported from the v1.5.19 release.
 
----
+Server, client, physics, and scoring all work, and every playable level has been through an initial gameplay test. What's been changed and fixed is documented in the [changelog](docs/CHANGELOG.md); what's still rough is in the [issue tracker](docs/KNOWN_ISSUES.md).
 
-## About This Project
+## Built With AI - Transparency
 
-**MTP Target** was created by Melting Pot in 2003-2004 and went offline around 2013. This is a community effort to bring it back to life by:
+I want to be upfront about how this project was made: **it was developed extensively with AI coding tools.**
 
-1. ✅ **Building a local server** - Run your own game server
-2. ✅ **Creating a modern login service** - TypeScript/Deno replacement for authentication
-3. ✅ **Compiling the client** - Build from source for debugging and modifications
-4. ✅ **Windows support** - Full Windows build with Visual Studio 2022
+Two honest reasons:
 
-### Version Strategy
+1. **I can't write C or C++, and my Lua knowledge is limited.** Reviving a 20-year-old C++ codebase would have been far beyond my ability without AI assistance.
+2. **Nobody else had done it.** I couldn't find any working, maintained copy of this game anywhere. I have so much love and nostalgia for MTP Target that I felt I had to do it myself, for my own sake at least.
 
-We're currently running **version 1.2.2a** (from this repository's source code) for both client and server. This ensures full compatibility between all components.
+I don't expect the outcome to be perfect. Far from it actually. In terms of development I did the bare minimum to get the game building and playable, and rough edges remain. Though, I have done extensive manual testing in order to sort out bugs and improve some of the user experience. My hope is simply that at least one other person out there finds this project, plays it, and enjoys themselves, even momentarily.
 
-**Future Plans:**
-- Port features and improvements from version 1.5.19 where possible
-- Add additional levels from 1.5.19 release
-- Consider protocol upgrade to 1.5.19 if compatible with gameplay
+The best-case scenario would be for someone with actual NeL/Ryzom engine experience to find this and revive the game properly. If that's you: the code is GPL, the docs are in [docs/](docs/), and forks are very welcome.
 
-The original v1.5.19 server source is unavailable, so we're starting with the v1.2.2a codebase we have and will enhance it over time.
+## Building From Source
 
-### Reference Source Code
-
-The v1.5.19 client source code is preserved in [`reference/mtp-target-v1.5.19/`](reference/mtp-target-v1.5.19/) for comparison and asset extraction. This includes shapes and textures for space/sun/city themes that are missing from v1.2.2a.
-
-**Original download:** [Internet Archive](https://web.archive.org/web/20130630212354/http://www.mtp-target.org/files/mtp-target-src.19.tar.bz2)
-
----
-
-## Current Status
-
-### What Works ✅
-
-- ✅ **Build System:** Full Windows build with Visual Studio 2022 and automated scripts
-- ✅ **Game Server:** Compiles and runs on Windows; all 60 playable levels have received an initial gameplay test
-- ✅ **Game Client:** Compiles and runs on Windows with OpenGL/OpenAL drivers
-- ✅ **Login Service:** Modern TypeScript/Deno implementation handles authentication
-- ✅ **Database:** SQLite-based user and shard management
-- ✅ **Physics:** ODE 0.16.5 engine with Lua 5.x scripting
-- ✅ **Network:** Full protocol working (VLP login + game server connection)
-- ✅ **Controls:** Arrow keys for steering, Ctrl for ball/glide toggle, Enter for chat
-- ✅ **Scoring:** Full scoring system with targets and friction
-- ⚠️ **Bots:** Imported levels without replay data use passive bots; one low-priority bouncing issue was observed on `level_space_havoc`
-- ✅ **Game Assets:** All textures, shapes, sounds included in repository
-
-### Known Issues ⚠️
-
-See [docs/KNOWN_ISSUES.md](docs/KNOWN_ISSUES.md) for the complete issue tracker.
-
-See [docs/KNOWN_ISSUES.md](docs/KNOWN_ISSUES.md) for the up-to-date list of open and fixed issues. Highlights:
-
-- ⚠️ **`level_bowls1` scoring** — fix applied; repeat playtesting is still useful because the issue was intermittent
-- ⚠️ **Cumulative scoring** — gate scoring passed on all four gate levels; Donuts 2 and MTP Paint live HUD updates and score resets in both directions were verified.
-- ⚠️ **Donuts 2** — first-session steering loss and falling through the visible red 300-point platform are being investigated.
-- ⚠️ **`level_city_destroy`** — the 300-point target is unlandable due to upstream geometry; accepted non-blocking limitation
-- ⚠️ **High ping / input delay on localhost** — not yet investigated
-- ⚠️ **Water rendering disabled** — falls back gracefully when textures missing
-
-**The game is playable.** The level checklist records 56 working levels, 4 with a documented issue or follow-up check, and no broken or untested playable levels. See [docs/LEVELS.md](docs/LEVELS.md) for details.
-
-See [docs/RUNTIME_FIXES.md](docs/RUNTIME_FIXES.md) for detailed fix documentation.
-
----
-
-## Quick Start (Windows)
-
-**Prerequisites:**
-- Windows 10/11
-- Visual Studio 2022 Build Tools (with C++ Desktop Development)
-- CMake 3.20+
-- 7-Zip (for extracting dependencies)
-- PowerShell 5.1+
-
-**Optional:**
-- vcpkg (for server builds - ODE physics library)
-- Deno 2.6.0+ (for login service, only needed for "Play Online")
-
-### 1. Setup Dependencies
-
-```powershell
-# Download and install dependencies (~1.3GB)
-.\scripts\setup-deps.ps1
-
-# Client only (skip ODE physics library)
-.\scripts\setup-deps.ps1 -SkipODE
-```
-
-This downloads pre-built libraries to `deps/` (git-ignored).
-
-### 2. Build RyzomCore (NeL)
-
-One-time build of the NeL engine libraries (~15 minutes):
-
-```powershell
-git clone --depth 1 https://github.com/ryzom/ryzomcore.git C:\ryzomcore
-cd C:\ryzomcore && mkdir build && cd build
-
-cmake .. -G "Visual Studio 17 2022" -A x64 `
-    -DWITH_SOUND=ON -DWITH_NEL=ON -DWITH_NEL_TOOLS=OFF `
-    -DWITH_NEL_TESTS=OFF -DWITH_NEL_SAMPLES=OFF -DWITH_RYZOM=OFF `
-    -DWITH_STATIC=ON -DCMAKE_PREFIX_PATH="C:/path/to/mtp-target-forever/deps"
-
-cmake --build . --config Release --parallel 4 --target nelmisc nel3d nelnet nelsound nelsnd_lowlevel nelgeorges nelligo
-cmake --build . --config Release --parallel 2 --target nel_drv_opengl_win nel_drv_openal_win
-```
-
-### 3. Build Game
-
-```powershell
-.\scripts\build-client.bat
-.\scripts\build-server.bat
-```
-
-### 4. Run the Game
-
-```powershell
-# Terminal 1: Start server
-.\scripts\run-server.bat
-
-# Terminal 2: Start client (LAN mode - no login service needed)
-.\scripts\run-client.bat --lan localhost --user YourName
-```
-
-**Controls:**
-- **Arrow keys:** Steer penguin (requires speed in ball mode)
-- **CTRL:** Toggle between ball/gliding modes
-- **Enter:** Open chat (press again to send)
-- **Escape:** Cancel chat
-
-**Chat Commands:**
-
-| Command | Description |
-|---------|-------------|
-| `/help` | Show available commands |
-| `/v <name>` | Vote for a level (e.g., `/v arena`) |
-| `/forcemap <name>` | Force next level (admin) |
-| `/forceend` | End current session (admin) |
-
-See **[docs/LEVELS.md](docs/LEVELS.md)** for the complete level list and map names.
-
-For detailed build instructions and troubleshooting, see **[docs/BUILDING.md](docs/BUILDING.md)** and **[docs/RUNTIME_FIXES.md](docs/RUNTIME_FIXES.md)**.
-
----
+See **[docs/BUILDING.md](docs/BUILDING.md)** - automated scripts handle dependencies, the NeL engine build, and the game itself on Windows 10/11.
 
 ## Documentation
 
-| Document | Description |
-|----------|-------------|
-| [**CURRENT_FOCUS.md**](docs/CURRENT_FOCUS.md) | Where I left off and what's next (rolling snapshot) |
-| [**BUILDING.md**](docs/BUILDING.md) | Complete build guide for Windows (NeL, ODE, client, server) |
-| [**RUNTIME_FIXES.md**](docs/RUNTIME_FIXES.md) | Runtime crashes and fixes (water, levels, controls, files) |
-| [**KNOWN_ISSUES.md**](docs/KNOWN_ISSUES.md) | Issue tracker with planned fixes and priorities |
-| [**LEVELS.md**](docs/LEVELS.md) | Level list and chat commands for voting/forcing maps |
-| [**MODIFICATIONS.md**](docs/MODIFICATIONS.md) | Source code changes for modern compatibility |
-| [**PROTOCOL_NOTES.md**](docs/PROTOCOL_NOTES.md) | NeL network protocol technical reference |
-| [**scripts/post-build.bat**](scripts/post-build.bat) | Automated post-build file copy script |
-| [**docs/archive/**](docs/archive/) | Historical development notes (reference only) |
+| Doc | Contents |
+|-----|----------|
+| [BUILDING.md](docs/BUILDING.md) | Build guide (quick start + troubleshooting) |
+| [CONTROLS.md](docs/CONTROLS.md) | Game controls and debug keys |
+| [CHAT.md](docs/CHAT.md) | Chat commands and level voting |
+| [LEVELS.md](docs/LEVELS.md) | All levels and their testing status |
+| [KNOWN_ISSUES.md](docs/KNOWN_ISSUES.md) | Open and fixed issues |
+| [CHANGELOG.md](docs/CHANGELOG.md) | Everything changed since the original v1.2.2a |
+| [ARCHITECTURE.md](docs/ARCHITECTURE.md) | Client / server / login service overview |
+| [MODIFICATIONS.md](docs/MODIFICATIONS.md) | Source changes for modern compatibility |
+| [RUNTIME_FIXES.md](docs/RUNTIME_FIXES.md) | Runtime problems and solutions |
 
----
+## The Original Game
 
-## Architecture
+Created by **Melting Pot** (Ace, Muf, Skeet) in 2003-2004, active until ~2009, gone by ~2013. It promised - and delivered - immediate fun: one-minute rounds, five minutes to learn but weeks to master, tons of easy and hard levels, team maps, and up to 16 players per server. Free software (GPL) then, still GPL now.
 
-```
-┌─────────────┐         ┌──────────────┐         ┌──────────────┐
-│   Client    │────────>│Login Service │────────>│   Database   │
-│ (Windows)   │  Auth   │  (Deno/TS)   │  Query  │  (SQLite)    │
-│             │<────────│   Port 49997 │<────────│              │
-└─────────────┘  Shards └──────────────┘         └──────────────┘
-       │
-       │ Connect with cookie
-       v
-┌─────────────┐
-│Game Server  │
-│  (C++/NeL)  │  Lua scripts, ODE physics, multiplayer logic
-│ Port 51574  │
-└─────────────┘
-```
-
-**Technology Stack:**
-- **Game Server:** C++ with NeL framework, ODE physics, Lua 5.1
-- **Login Service:** TypeScript/Deno with SQLite
-- **Client:** C++ with NeL 3D engine (original Windows binary or from source)
-
----
-
-## What We've Fixed
-
-The original code was from 2003-2004 and needed updates for modern systems:
-
-- ✅ **Lua 5.0 → 5.1** - Migrated to currently supported Lua version
-- ✅ **64-bit compatibility** - Fixed pointer casts and size types
-- ✅ **Modern NeL API** - Updated for RyzomCore (NeL's successor)
-- ✅ **ODE 0.5 → 0.16** - Physics engine upgrade
-- ✅ **Namespace fixes** - Resolved conflicts with modern C++ std library
-
-See [docs/MODIFICATIONS.md](docs/MODIFICATIONS.md) for technical details.
-
----
-
-## Contributing
-
-We'd love your help! This is a community effort to preserve a fun open-source game.
-
-### Areas Where We Need Help
-
-- **Windows Build System:** CMake configuration for Visual Studio
-- **Client Compilation:** Getting the client to build on Windows
-- **Protocol Documentation:** Reverse engineering remaining message formats
-- **Testing:** Trying the server on different platforms
-- **macOS Support:** Build instructions and testing
-
-### How to Contribute
-
-1. Fork this repository
-2. Create a feature branch (`git checkout -b feature/amazing-feature`)
-3. Make your changes
-4. Test thoroughly
-5. Commit with clear messages
-6. Push and create a Pull Request
-
-**Not a coder?** You can still help with:
-- Documentation improvements
-- Testing and bug reports
-- Sharing knowledge about the original game
-- Spreading the word
-
----
-
-## Original Game Info
-
-**MTP Target** was created by Melting Pot (Ace, Muf, Skeet) in 2003-2004 and active until ~2009.
-
-**Main Features (from original site):**
-- Immediate fun - no need to play 10 hours
-- Short games - 1 minute rounds
-- Original gameplay
-- Five minutes to learn, weeks to master
-- Tons of easy and hard levels
-- Team maps with specific gameplay
-- Up to 16 players simultaneously per server
-- Free software (GPL) and free to play
-- Tournaments
-
-**Technical Stack:**
-- **Engine:** NeL 3D (Nevrax Engine Library) from Ryzom
-- **Physics:** ODE (Open Dynamics Engine)
-- **Scripting:** Lua for game modes and levels
-- **Platforms:** Windows, Linux, and Mac (originally)
-
----
-
-## Project Goals
-
-### Completed
-- [x] Windows build system with Visual Studio 2022
-- [x] Automated builds (GitHub Actions CI)
-- [x] Game server running with all 60 levels loadable
-- [x] Game client compiled from source
-- [x] Full network protocol working
-- [x] Modern Lua 5.x compatibility
-- [x] Physics fixes (momentum preservation, steering)
-- [x] Scoring system fully functional
-- [x] v1.5.19 level engine support (Lua compatibility bridge)
-- [x] All space/sun/city/gates theme assets ported
-
-### In Progress
-- [ ] Per-level testing of the 28 ported v1.5.19 levels
-- [ ] Investigate intermittent scoring failure (fix applied, needs verification)
-- [ ] Reduce network latency / input delay
-
-### Future
-- [ ] Docker containers for easy deployment
-- [ ] Community servers
-- [ ] Custom levels and mods
-- [ ] Linux/macOS builds
-
----
-
-## Known Issues
-
-See [docs/KNOWN_ISSUES.md](docs/KNOWN_ISSUES.md) for the complete, up-to-date issue tracker (open issues, fixes applied, per-level testing checklist).
-
----
+The original site (www.mtp-target.org) is long offline, but the v1.5.19 client source survives on the [Internet Archive](https://web.archive.org/web/20130630212354/http://www.mtp-target.org/files/mtp-target-src.19.tar.bz2).
 
 ## License
 
-This game is free software released under the **GNU GPL v2+** license.
-
-See [COPYING](COPYING) for full license text.
-
----
+Free software released under the **GNU GPL v2+** license. See [COPYING](COPYING) for the full text.
 
 ## Credits
 
 ### Original Developers (2003-2004)
 - **Code:** Ace, Muf, Skeet (Melting Pot)
-- **Sounds:** Garou
+- **Additional code:** Mickey
+- **Sounds:** Garou (Melting Pot)
 - **Music:** Hulud (Digital Murder)
 - **Graphics:** 9dan, Paul, Kaiser Foufou, Hades
-- **Testing:** Darky, Dyze, Felix, Grib, R!pper, Snagrot, Uzgrot, Lithrel
+- **Testing:** Darky, Dyze, Felix, Grib, R!pper, Snagrot, Uzgrot, Lithrel, and the #ryzom.epiknet beta testers
+- **Community levels:** erendis, Phail, Wedgee
 
 ### Libraries & Engines
 - **NeL Framework:** Nevrax / Ryzom Core team
 - **ODE Physics:** Russell Smith and contributors
 - **Lua:** PUC-Rio team
-
-### Community Restoration (2025-2026)
-- Full Windows build system with automated CI
-- Server and client compilation from source
-- TypeScript login service implementation
-- 32 levels tested and working
-- Comprehensive documentation
-
----
-
-## Contact & Community
-
-- **Issues:** Use GitHub [Issues](../../issues) for bugs and questions
-- **Discussions:** GitHub [Discussions](../../discussions) for ideas and help
-- **Original Site:** www.mtp-target.org (offline, domain expired/repurposed)
-
----
-
-## Star This Repository
-
-If you're interested in this project or want to see it succeed, please give it a star! It helps others discover this game restoration effort.
 
 ---
 
