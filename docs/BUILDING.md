@@ -150,8 +150,11 @@ The script:
 If you prefer manual control:
 
 ```powershell
-# Clone RyzomCore
-git clone --depth 1 https://github.com/ryzom/ryzomcore.git ryzomcore
+# Clone RyzomCore (pinned to known-good commit - see scripts/setup-ryzomcore.ps1)
+git init ryzomcore
+git -C ryzomcore remote add origin https://github.com/ryzom/ryzomcore.git
+git -C ryzomcore fetch --depth 1 origin 2f597b8874c11f17d6ee812c7a0933b78aad5999
+git -C ryzomcore checkout --detach FETCH_HEAD
 cd ryzomcore
 mkdir build
 cd build

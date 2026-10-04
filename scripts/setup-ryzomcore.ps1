@@ -139,7 +139,19 @@ if (!$BuildOnly) {
 
         Write-Host "=== Cloning RyzomCore ==="
         Write-Host ""
-        git clone --depth 1 https://github.com/ryzom/ryzomcore.git $RyzomCorePath
+
+        # Pin to a known-good commit. A floating master checkout breaks the build:
+        # upstream PR #818 (2026-03-27) reworked the OpenAL driver to use the
+        # OpenAL::OpenAL imported target, dropping the ${OPENAL_INCLUDE_DIR}/AL
+        # include dir that NeL's `#include <al.h>` requires
+        # (fatal error C1083: 'al.h': No such file or directory).
+        # Keep in sync with .github/workflows/build.yml.
+        $ryzomCoreCommit = "2f597b8874c11f17d6ee812c7a0933b78aad5999"
+        Write-Host "Pinned to commit: $ryzomCoreCommit"
+        git init $RyzomCorePath
+        git -C $RyzomCorePath remote add origin https://github.com/ryzom/ryzomcore.git
+        git -C $RyzomCorePath fetch --depth 1 origin $ryzomCoreCommit
+        git -C $RyzomCorePath checkout --detach FETCH_HEAD
         if ($LASTEXITCODE -ne 0) {
             Write-Error "Failed to clone RyzomCore"
             exit 1

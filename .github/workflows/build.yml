@@ -305,7 +305,7 @@ jobs:
         uses: actions/cache@v4
         with:
           path: C:/ryzomcore
-          key: ryzomcore-v1
+          key: ryzomcore-v2
 
 
       - name: Build RyzomCore
@@ -318,7 +318,22 @@ jobs:
           }
 
           Write-Host "Cloning RyzomCore..."
-          git clone --depth 1 https://github.com/ryzom/ryzomcore.git C:/ryzomcore
+          # Pin to a known-good commit. A floating master checkout breaks the build:
+          # upstream PR #818 (2026-03-27) reworked the OpenAL driver to use the
+          # OpenAL::OpenAL imported target, dropping the ${OPENAL_INCLUDE_DIR}/AL
+          # include dir that NeL's `#include <al.h>` requires
+          # (fatal error C1083: 'al.h': No such file or directory).
+          # This only surfaced when the ryzomcore cache was evicted and a fresh
+          # clone picked up the new master. Keep in sync with
+          # scripts/setup-ryzomcore.ps1.
+          $ryzomCoreCommit = "2f597b8874c11f17d6ee812c7a0933b78aad5999"
+          Write-Host "Pinned to commit: $ryzomCoreCommit"
+          git init C:/ryzomcore
+          git -C C:/ryzomcore remote add origin https://github.com/ryzom/ryzomcore.git
+          git -C C:/ryzomcore fetch --depth 1 origin $ryzomCoreCommit
+          if ($LASTEXITCODE -ne 0) { Write-Error "Failed to fetch RyzomCore commit"; exit 1 }
+          git -C C:/ryzomcore checkout --detach FETCH_HEAD
+          if ($LASTEXITCODE -ne 0) { Write-Error "Failed to checkout RyzomCore commit"; exit 1 }
 
           Write-Host "Configuring RyzomCore..."
           cd C:/ryzomcore
@@ -459,7 +474,7 @@ jobs:
         uses: actions/cache/restore@v4
         with:
           path: C:/ryzomcore
-          key: ryzomcore-v1
+          key: ryzomcore-v2
           fail-on-cache-miss: true
 
       - name: Restore Dependencies Cache
@@ -537,7 +552,7 @@ jobs:
         uses: actions/cache/restore@v4
         with:
           path: C:/ryzomcore
-          key: ryzomcore-v1
+          key: ryzomcore-v2
           fail-on-cache-miss: true
 
       - name: Restore Dependencies Cache

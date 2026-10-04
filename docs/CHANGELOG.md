@@ -2,6 +2,20 @@
 
 All notable improvements and changes from the original MTP Target v1.2.2a.
 
+## Build Infrastructure (October 4, 2026)
+
+### Fix: CI RyzomCore build broke when upstream master moved (al.h not found)
+
+The CI build failed in the `build-deps` job with `stdopenal.h(51): fatal error C1083: Cannot open include file: 'al.h'` while compiling `nel_drv_openal_win`.
+
+**Root cause:** The workflow cloned RyzomCore with a floating `--depth 1` master checkout on cache miss. Upstream PR [#818](https://github.com/ryzom/ryzomcore/pull/818) (2026-03-27) reworked the OpenAL driver CMake to link the `OpenAL::OpenAL` imported target, dropping the explicit `${OPENAL_INCLUDE_DIR}/AL` include directory. Since NeL's `stdopenal.h` includes `<al.h>` (not `<AL/al.h>`) and our deps package keeps headers under `openal-soft/include/AL/`, the compile broke. It only surfaced months later because the `ryzomcore-v1` GitHub Actions cache had been masking the drift — once evicted, the fresh clone picked up the incompatible master.
+
+**Fix:** Pinned the RyzomCore clone to known-good commit `2f597b8` (2025-12-25, matches local dev builds) in both `.github/workflows/build.yml` and `scripts/setup-ryzomcore.ps1`, using `git init` + `fetch --depth 1 <sha>` + detached checkout. Bumped the CI cache key to `ryzomcore-v2` so the pinned build is cached fresh.
+
+**Files changed:** `.github/workflows/build.yml`, `scripts/setup-ryzomcore.ps1`, `docs/BUILDING.md`
+
+---
+
 ## Gate Trigger Volume + Visual Sync (April 25, 2026)
 
 ### Fix: Gates scored on frame hits and near-misses; visible gate didn't move when AABB teleported (KI #20)
